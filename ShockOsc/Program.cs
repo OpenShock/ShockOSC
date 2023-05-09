@@ -29,7 +29,7 @@ public static class Program
         Log.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
 
         Log.Information("Connecting UDP Clients...");
-        SenderClient.Connect(IPAddress.Loopback, 9001);
+        SenderClient.Connect(IPAddress.Loopback, (int)Config.ConfigInstance.Osc.SendPort);
 
         await ShockLinkApi.Initialize();
 
