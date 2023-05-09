@@ -1,6 +1,7 @@
 ﻿using System.Net.WebSockets;
 using System.Threading.Channels;
 using Serilog;
+#pragma warning disable CS4014
 
 namespace ShockOsc;
 
@@ -61,7 +62,7 @@ public static class ShockLinkApi
         {
             await _webSocket.ConnectAsync(new Uri("wss://api.shocklink.net/1/ws/user"), _close.Token);
             Logger.Information("Connected to websocket");
-
+            
             SlTask.Run(ReceiveLoop, _close.Token);
             SlTask.Run(MessageLoop, _close.Token);
         }
@@ -77,15 +78,15 @@ public static class ShockLinkApi
 
     public static async Task ReceiveLoop()
     {
-        WebSocketReceiveResult result = null;
+        ValueWebSocketReceiveResult? result = null;
         do
         {
             try
             {
                 if (_webSocket.State == WebSocketState.Aborted) break;
-                var message = await WebSocketUtils.ReceiveFullMessage(_webSocket, _close.Token);
+                var message = await WebSocketUtils.ReceiveFullMessageAsyncNonAlloc(_webSocket, _close.Token);
                 result = message.Item1;
-                if (result.MessageType == WebSocketMessageType.Close) break;
+                if (result.Value.MessageType == WebSocketMessageType.Close) break;
             }
             catch (OperationCanceledException)
             {
@@ -98,14 +99,14 @@ public static class ShockLinkApi
 
                 await Task.Delay(3000);
 
-                SlTask.Run(() => ConnectAsync());
+                SlTask.Run(ConnectAsync);
                 return;
             }
             catch (Exception e)
             {
                 Logger.Error(e, "Error in receive loop");
             }
-        } while (result is { CloseStatus: null });
+        } while (result != null && result.Value.MessageType != WebSocketMessageType.Close);
 
         // Fallback, should not be reached unless api wants shutdown
 
@@ -115,6 +116,6 @@ public static class ShockLinkApi
 
         await Task.Delay(3000);
 
-        SlTask.Run(() => ConnectAsync());
+        SlTask.Run(ConnectAsync);
     }
 }
