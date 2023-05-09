@@ -14,8 +14,8 @@ public static class ShockLinkApi
     private static readonly Channel<BaseRequest> Channel =
         System.Threading.Channels.Channel.CreateUnbounded<BaseRequest>();
 
-    public static readonly ILogger Logger = Log.Logger.ForContext(typeof(ShockLinkApi));
-    public static ValueTask QueueMessage(BaseRequest data) => Channel.Writer.WriteAsync(data);
+    private static readonly ILogger Logger = Log.Logger.ForContext(typeof(ShockLinkApi));
+    private static ValueTask QueueMessage(BaseRequest data) => Channel.Writer.WriteAsync(data);
 
     public static ValueTask Control(Control data) => QueueMessage(new BaseRequest
     {
@@ -27,7 +27,7 @@ public static class ShockLinkApi
     });
 
 
-    public static async Task MessageLoop()
+    private static async Task MessageLoop()
     {
         try
         {
@@ -44,10 +44,7 @@ public static class ShockLinkApi
         }
     }
 
-    public static Task Initialize()
-    {
-        return ConnectAsync();
-    }
+    public static Task Initialize() => ConnectAsync();
 
     private static async Task ConnectAsync()
     {
@@ -77,7 +74,7 @@ public static class ShockLinkApi
         }
     }
 
-    public static async Task ReceiveLoop()
+    private static async Task ReceiveLoop()
     {
         ValueWebSocketReceiveResult? result = null;
         do

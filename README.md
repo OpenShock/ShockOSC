@@ -11,3 +11,6 @@ Use at your own risk.
 
 ## Discord
 https://discord.gg/AHcCbXbEcF
+
+## Credits
+[CoreOSC by dastevens](https://github.com/dastevens/CoreOSC)
