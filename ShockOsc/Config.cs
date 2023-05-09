@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using Serilog;
 
-namespace ShockOsc;
+namespace ShockLink.ShockOsc;
 
 public static class Config
 {

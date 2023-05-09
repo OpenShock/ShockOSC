@@ -6,6 +6,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PublishSingleFile>true</PublishSingleFile>
+        <AssemblyName>ShockLink.ShockOsc</AssemblyName>
+        <RootNamespace>ShockLink.ShockOsc</RootNamespace>
+        <Company>ShockLink</Company>
+        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <FileVersion>1.0.0.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

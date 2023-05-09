@@ -1,9 +1,10 @@
 ﻿using System.Net.WebSockets;
 using System.Threading.Channels;
 using Serilog;
+
 #pragma warning disable CS4014
 
-namespace ShockOsc;
+namespace ShockLink.ShockOsc;
 
 public static class ShockLinkApi
 {

@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace ShockOsc;
+﻿namespace ShockLink.ShockOsc;
 
 public class BaseRequest
 {

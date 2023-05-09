@@ -1,4 +1,4 @@
-﻿namespace ShockOsc;
+﻿namespace ShockLink.ShockOsc;
 
 public enum RequestType
 {

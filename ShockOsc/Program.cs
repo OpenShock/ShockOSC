@@ -1,13 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using CoreOSC;
 using CoreOSC.IO;
 using Serilog;
 
-// ReSharper disable UnusedAutoPropertyAccessor.Global
-
-namespace ShockOsc;
+namespace ShockLink.ShockOsc;
 
 public static class Program
 {
@@ -25,7 +24,8 @@ public static class Program
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .CreateLogger();
-
+        
+        Log.Information("Starting ShockLink.ShockOsc version {Version}", Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString() ?? "error");
         Log.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
 
         Log.Information("Connecting UDP Clients...");
@@ -33,14 +33,13 @@ public static class Program
 
         await ShockLinkApi.Initialize();
 
-        // Start the listen thread
+        // Start tasks
 #pragma warning disable CS4014
         SlTask.Run(ReceiverLoopAsync);
         SlTask.Run(CheckLoop);
 #pragma warning restore CS4014
-
-        // wait for a key press to exit
-        Log.Information("All started");
+        
+        Log.Information("Ready");
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
     }
 

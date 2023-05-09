@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.IO;
 
-namespace ShockOsc;
+namespace ShockLink.ShockOsc;
 
 public static class WebSocketUtils
 {
