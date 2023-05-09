@@ -60,7 +60,7 @@ public static class ShockLinkApi
         Logger.Information("Connecting to websocket");
         try
         {
-            await _webSocket.ConnectAsync(new Uri("wss://api.shocklink.net/1/ws/user"), _close.Token);
+            await _webSocket.ConnectAsync(new Uri(Config.ConfigInstance.ShockLink.BaseUri, "/1/ws/user"), _close.Token);
             Logger.Information("Connected to websocket");
             
             SlTask.Run(ReceiveLoop, _close.Token);
