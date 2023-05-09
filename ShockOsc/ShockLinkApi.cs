@@ -8,22 +8,22 @@ public static class ShockLinkApi
 {
     private static ClientWebSocket _webSocket = null!;
     private static CancellationTokenSource _close = null!;
-    private static readonly Channel<BaseRequest> Channel = System.Threading.Channels.Channel.CreateUnbounded<BaseRequest>();
+
+    private static readonly Channel<BaseRequest> Channel =
+        System.Threading.Channels.Channel.CreateUnbounded<BaseRequest>();
 
     public static readonly ILogger Logger = Log.Logger.ForContext(typeof(ShockLinkApi));
     public static ValueTask QueueMessage(BaseRequest data) => Channel.Writer.WriteAsync(data);
-    
-    public static async Task Control(Control data)
+
+    public static ValueTask Control(Control data) => QueueMessage(new BaseRequest
     {
-        await QueueMessage(new BaseRequest
+        RequestType = RequestType.Control,
+        Data = new List<Control>
         {
-            RequestType = RequestType.Control,
-            Data = new List<Control>
-            {
-                data
-            }
-        });
-    }
+            data
+        }
+    });
+
 
     public static async Task MessageLoop()
     {
