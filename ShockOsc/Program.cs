@@ -24,8 +24,9 @@ public static class Program
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .CreateLogger();
-        
-        Log.Information("Starting ShockLink.ShockOsc version {Version}", Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString() ?? "error");
+
+        Log.Information("Starting ShockLink.ShockOsc version {Version}",
+            Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString() ?? "error");
         Log.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
 
         Log.Information("Connecting UDP Clients...");
@@ -38,7 +39,7 @@ public static class Program
         SlTask.Run(ReceiverLoopAsync);
         SlTask.Run(CheckLoop);
 #pragma warning restore CS4014
-        
+
         Log.Information("Ready");
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
     }
@@ -53,21 +54,17 @@ public static class Program
     {
         var received = await ReceiverClient.ReceiveMessageAsync();
         var addr = received.Address.Value;
-        /*
-            if(!addr.StartsWith("/avatar/parameters/ShockOsc")) continue;
-            
-            var pos = addr.Substring(28, addr.Length - 28);
-            if (!Config.ConfigInstance.ShockLink.Shockers.ContainsKey(pos))
-            {
-                Log.Warning("Unknown shocker {Shocker}", pos);
-                continue;
-            }*/
 
-        if (addr != "/avatar/parameters/Nsfw/BD/ToggleToy") return;
-        var pos = "Leg/Left";
+        if (!addr.StartsWith("/avatar/parameters/ShockOsc")) return;
+
+        var pos = addr.Substring(28, addr.Length - 28);
+        if (!Config.ConfigInstance.ShockLink.Shockers.ContainsKey(pos))
+        {
+            Log.Warning("Unknown shocker {Shocker}", pos);
+            return;
+        }
 
         var value = received.Arguments.ElementAtOrDefault(0);
-
         if (value is OscTrue) Active[pos] = DateTime.UtcNow;
         else Active.TryRemove(pos, out _);
     }
@@ -80,7 +77,7 @@ public static class Program
             await Task.Delay(20);
         }
     }
-    
+
     private static async Task CheckLogic()
     {
         foreach (var shocker in Active.Where(shocker =>
