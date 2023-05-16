@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -37,6 +37,7 @@ public static class Program
         // Start tasks
 #pragma warning disable CS4014
         SlTask.Run(ReceiverLoopAsync);
+        SlTask.Run(SenderLoopAsync);
         SlTask.Run(CheckLoop);
 #pragma warning restore CS4014
 
@@ -67,6 +68,27 @@ public static class Program
         var value = received.Arguments.ElementAtOrDefault(0);
         if (value is OscTrue) Active[pos] = DateTime.UtcNow;
         else Active.TryRemove(pos, out _);
+    }
+    
+    private static async Task SenderLoopAsync()
+    {
+        while (true)
+        {
+            await SendLogic();
+            await Task.Delay(300);
+        }
+    }
+
+    private static async Task SendLogic()
+    {
+        foreach (var shocker in Cooldown.Keys)
+        {
+            var onCoolDown = Cooldown.TryGetValue(shocker, out var lastExecution) && lastExecution >
+                DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime));
+
+            await SenderClient.SendMessageAsync(new OscMessage(new Address($"/avatar/parameters/ShockOsc/{shocker}Cooldown"),
+                new object[] { onCoolDown ? OscTrue.True : OscFalse.False }));
+        }
     }
 
     private static async Task CheckLoop()
