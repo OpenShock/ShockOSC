@@ -3,7 +3,7 @@ Used as an interface for ShockLink to communicate with applications that support
 Use at your own risk.
 
 ## Avatar setup  VRC
-1. Add new **bool** parameters to your avatar (animator & params file). Name template ``/ShockOsc/{ShockerSlug}``
+1. Add new **bool** parameters to your avatar (animator & params file). Name template ``ShockOsc/{ShockerSlug}``
 2. Configure one or more contact receivers on your avatar
 3. Set it to constant and have it drive the designated parameter you have just created
 4. Upload
