@@ -27,14 +27,15 @@ Use at your own risk.
   },
   "Behaviour": {
     "RandomIntensity": true,
-    "RandomDuration": true,
+    "RandomDuration": true, # Durations/time measurements are all in milliseconds since v1.0.1.0
+    "RandomDurationStep": 100, # Random step, e.g. 1000 would be full seconds
     "RandomIntensityRange": {
       "Min": 1,
       "Max": 100
     },
     "RandomDurationRange": {
-      "Min": 1,
-      "Max": 5
+      "Min": 300,
+      "Max": 5000
     },
     "FixedIntensity": 50, # If RandomIntensity is false
     "FixedDuration": 2, # If RandomDuration is false
