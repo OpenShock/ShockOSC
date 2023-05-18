@@ -82,9 +82,10 @@ public static class Config
         {
             RandomDuration = true,
             RandomIntensity = true,
-            RandomDurationRange = new JsonRange { Min = 1, Max = 5 },
+            RandomDurationStep = 1000,
+            RandomDurationRange = new JsonRange { Min = 1000, Max = 5000 },
             RandomIntensityRange = new JsonRange { Min = 1, Max = 100 },
-            FixedDuration = 2,
+            FixedDuration = 2000,
             FixedIntensity = 50,
             CooldownTime = 5000,
             HoldTime = 250
@@ -116,6 +117,7 @@ public static class Config
         {
             public required bool RandomIntensity { get; set; }
             public required bool RandomDuration { get; set; }
+            public uint RandomDurationStep { get; set; } = 1000;  
             public required JsonRange RandomIntensityRange { get; set; }
             public required JsonRange RandomDurationRange { get; set; }
             public required byte FixedIntensity { get; set; }

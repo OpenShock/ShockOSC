@@ -94,29 +94,30 @@ public static class Program
             byte intensity;
             uint duration;
 
-            if (Config.ConfigInstance.Behaviour.RandomDuration)
+            var beh = Config.ConfigInstance.Behaviour;
+            if (beh.RandomDuration)
             {
-                var rdr = Config.ConfigInstance.Behaviour.RandomDurationRange;
-                duration = (uint)Random.Next((int)rdr.Min, (int)rdr.Max);
+                var rdr = beh.RandomDurationRange;
+                duration = (uint)(Random.Next((int)(rdr.Min / beh.RandomDurationStep), (int)(rdr.Max / beh.RandomDurationStep)) * beh.RandomDurationStep);
             }
-            else duration = Config.ConfigInstance.Behaviour.FixedDuration;
+            else duration = beh.FixedDuration;
 
-            if (Config.ConfigInstance.Behaviour.RandomIntensity)
+            if (beh.RandomIntensity)
             {
-                var rir = Config.ConfigInstance.Behaviour.RandomIntensityRange;
+                var rir = beh.RandomIntensityRange;
                 intensity = (byte)Random.Next((int)rir.Min, (int)rir.Max);
             }
-            else intensity = Config.ConfigInstance.Behaviour.FixedIntensity;
+            else intensity = beh.FixedIntensity;
 
             Log.Information("Sending shock to {Shocker} with {Intensity}:{Duration}", pos,
-                intensity, duration);
+                intensity, duration / 1000);
 
             var code = Config.ConfigInstance.ShockLink.Shockers[pos];
             await ShockLinkApi.Control(new Control
             {
                 Id = code,
                 Intensity = intensity,
-                Duration = duration * 1000,
+                Duration = duration,
                 Type = ControlType.Shock
             });
 
