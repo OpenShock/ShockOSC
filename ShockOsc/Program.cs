@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -109,8 +110,9 @@ public static class Program
             }
             else intensity = beh.FixedIntensity;
 
+            var inSeconds = (float)duration / 1000;
             Log.Information("Sending shock to {Shocker} with {Intensity}:{Duration}", pos,
-                intensity, duration / 1000);
+                intensity, inSeconds);
 
             var code = Config.ConfigInstance.ShockLink.Shockers[pos];
             await ShockLinkApi.Control(new Control
@@ -122,7 +124,7 @@ public static class Program
             });
 
             if (!Config.ConfigInstance.Osc.Chatbox) return;
-            var msg = $"Shock on {pos} with {intensity}:{duration}";
+            var msg = $"Shock on {pos} with {intensity}:{inSeconds.ToString(CultureInfo.InvariantCulture)}";
             await SenderClient.SendMessageAsync(Config.ConfigInstance.Osc.Hoscy
                 ? new OscMessage(new Address("/hoscy/message"), new[] { msg })
                 : new OscMessage(new Address("/chatbox/input"), new object[] { msg, OscTrue.True }));
