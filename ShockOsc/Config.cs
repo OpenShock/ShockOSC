@@ -94,7 +94,7 @@ public static class Config
         {
             Shockers = new Dictionary<string, Guid>(),
             Type = ControlType.Shock,
-            BaseUri = new Uri("wss://api.shocklink.net"),
+            UserHub = new Uri("https://api.shocklink.net/1/hubs/user"),
             ApiToken = "SET THIS TO YOUR SHOCKLINK API TOKEN"
         }
     };
@@ -129,7 +129,7 @@ public static class Config
         public class ShockLinkConf
         {
             public required ControlType Type { get; set; }
-            public required Uri BaseUri { get; set; }
+            public Uri UserHub { get; set; } = new("https://api.shocklink.net/1/hubs/user");
             public required string ApiToken { get; set; }
             public required IReadOnlyDictionary<string, Guid> Shockers { get; set; }
         }

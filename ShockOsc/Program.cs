@@ -6,6 +6,7 @@ using System.Reflection;
 using CoreOSC;
 using CoreOSC.IO;
 using Serilog;
+using Serilog.Events;
 
 namespace ShockLink.ShockOsc;
 
@@ -16,24 +17,25 @@ public static class Program
     private static readonly Random Random = new();
 
     private static readonly UdpClient ReceiverClient = new((int)Config.ConfigInstance.Osc.ReceivePort);
-
     private static readonly UdpClient SenderClient =
         new(new IPEndPoint(IPAddress.Loopback, 0));
 
     private static async Task Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
+            .Filter.ByExcluding(ev => ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides"))
+            .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
         Log.Information("Starting ShockLink.ShockOsc version {Version}",
-            Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString() ?? "error");
+            Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "error");
         Log.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
+
+        Log.Information("Init user hub...");
+        await UserHubClient.InitializeAsync();
 
         Log.Information("Connecting UDP Clients...");
         SenderClient.Connect(IPAddress.Loopback, (int)Config.ConfigInstance.Osc.SendPort);
-
-        await ShockLinkApi.Initialize();
 
         // Start tasks
 #pragma warning disable CS4014
@@ -115,7 +117,7 @@ public static class Program
                 intensity, inSeconds);
 
             var code = Config.ConfigInstance.ShockLink.Shockers[pos];
-            await ShockLinkApi.Control(new Control
+            await UserHubClient.Control(new Control
             {
                 Id = code,
                 Intensity = intensity,
