@@ -73,8 +73,12 @@ public static class Program
     {
         var received = await ReceiverClient.ReceiveMessageAsync();
         var addr = received.Address.Value;
+        
+        if (addr == "/avatar/change")
+            Shockers.Clear();
 
-        if (!addr.StartsWith("/avatar/parameters/ShockOsc")) return;
+        if (!addr.StartsWith("/avatar/parameters/ShockOsc"))
+            return;
 
         var pos = addr.Substring(28, addr.Length - 28);
         var lastUnderscoreIndex = pos.LastIndexOf('_') + 1;
