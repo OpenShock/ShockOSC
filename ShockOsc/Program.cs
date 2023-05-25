@@ -173,13 +173,13 @@ public static class Program
         foreach (var (pos, shocker) in Shockers)
         {
             if (shocker.triggerMethod == TriggerMethod.None || shocker.lastActive.AddMilliseconds(Config.ConfigInstance.Behaviour.HoldTime) > DateTime.UtcNow)
-                return;
+                continue;
             
             if (shocker.lastExecuted >
                 DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime)))
             {
                 shocker.triggerMethod = TriggerMethod.None;
-                return;
+                continue;
             }
             shocker.lastExecuted = DateTime.UtcNow;
 
@@ -222,7 +222,7 @@ public static class Program
                 Type = ControlType.Shock
             });
 
-            if (!Config.ConfigInstance.Osc.Chatbox) return;
+            if (!Config.ConfigInstance.Osc.Chatbox) continue;
             var msg = $"Shock on {pos} with {intensity}:{inSeconds.ToString(CultureInfo.InvariantCulture)}";
             await SenderClient.SendMessageAsync(Config.ConfigInstance.Osc.Hoscy
                 ? new OscMessage(new Address("/hoscy/message"), new[] { msg })
