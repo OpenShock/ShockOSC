@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
@@ -29,6 +29,7 @@ public static class Program
         public TriggerMethod triggerMethod;
     }
 
+    private static bool IsAfk;
     private static readonly ConcurrentDictionary<string, Shocker> Shockers = new();
     private static readonly Random Random = new();
 
@@ -74,8 +75,15 @@ public static class Program
         var received = await ReceiverClient.ReceiveMessageAsync();
         var addr = received.Address.Value;
         
-        if (addr == "/avatar/change")
-            Shockers.Clear();
+        switch (addr)
+        {
+            case "/avatar/change":
+                Shockers.Clear();
+                return;
+            case "/avatar/parameters/afk":
+                IsAfk = received.Arguments.ElementAtOrDefault(0) is OscTrue;
+                return;
+        }
 
         if (!addr.StartsWith("/avatar/parameters/ShockOsc"))
             return;
@@ -179,8 +187,17 @@ public static class Program
                 DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime)))
             {
                 shocker.triggerMethod = TriggerMethod.None;
+                Log.Information("Ignoring shock \"{Shocker}\" is on cooldown", pos);
                 continue;
             }
+            
+            if (IsAfk && Config.ConfigInstance.Behaviour.DisableWhileAfk)
+            {
+                shocker.triggerMethod = TriggerMethod.None;
+                Log.Information("Ignoring shock \"{Shocker}\" user is AFK", pos);
+                continue;
+            }
+            
             shocker.lastExecuted = DateTime.UtcNow;
 
             byte intensity;
@@ -196,22 +213,25 @@ public static class Program
 
             if (beh.RandomIntensity)
             {
-                var rir = beh.RandomIntensityRange;
+                var rir = beh.IntensityRange;
                 intensity = (byte)Random.Next((int)rir.Min, (int)rir.Max);
             }
             else intensity = beh.FixedIntensity;
 
             if (shocker.triggerMethod == TriggerMethod.PhysBoneRelease)
             {
-                var rir = beh.RandomIntensityRange;
+                var rir = beh.IntensityRange;
                 intensity = (byte)LerpFloat(rir.Min, rir.Max, shocker.lastStretchValue);
                 shocker.lastStretchValue = 0;
             }
 
+            if (Config.ConfigInstance.Behaviour.ForceUnmute)
+                await SenderClient.SendMessageAsync(new OscMessage(new Address("/input/Voice"), new object[] { 1 }));
+
             shocker.triggerMethod = TriggerMethod.None;
-            var inSeconds = (float)duration / 1000;
-            Log.Information("Sending shock to {Shocker} with {Intensity}:{Duration}", pos,
-                intensity, inSeconds);
+            var inSeconds = ((float)duration / 1000).ToString(CultureInfo.InvariantCulture);
+            var msg = $"Sending shock to \"{pos}\" strength: {intensity}% length:{inSeconds}s";
+            Log.Information(msg);
 
             var code = Config.ConfigInstance.ShockLink.Shockers[pos];
             await UserHubClient.Control(new Control
@@ -223,7 +243,6 @@ public static class Program
             });
 
             if (!Config.ConfigInstance.Osc.Chatbox) continue;
-            var msg = $"Shock on {pos} with {intensity}:{inSeconds.ToString(CultureInfo.InvariantCulture)}";
             await SenderClient.SendMessageAsync(Config.ConfigInstance.Osc.Hoscy
                 ? new OscMessage(new Address("/hoscy/message"), new[] { msg })
                 : new OscMessage(new Address("/chatbox/input"), new object[] { msg, OscTrue.True }));
