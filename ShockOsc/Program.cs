@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
 using CoreOSC;
 using CoreOSC.IO;
 using Serilog;
@@ -195,14 +194,14 @@ public static class Program
                 DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime)))
             {
                 shocker.triggerMethod = TriggerMethod.None;
-                Log.Information("Ignoring shock \"{Shocker}\" is on cooldown", pos);
+                Log.Information("Ignoring shock {Shocker} is on cooldown", pos);
                 continue;
             }
             
             if (IsAfk && Config.ConfigInstance.Behaviour.DisableWhileAfk)
             {
                 shocker.triggerMethod = TriggerMethod.None;
-                Log.Information("Ignoring shock \"{Shocker}\" user is AFK", pos);
+                Log.Information("Ignoring shock {Shocker} user is AFK", pos);
                 continue;
             }
             
@@ -247,7 +246,7 @@ public static class Program
             
             shocker.triggerMethod = TriggerMethod.None;
             var inSeconds = ((float)duration / 1000).ToString(CultureInfo.InvariantCulture);
-            Log.Information("Sending shock to \"{Shocker}\" strength:{Intensity} length:{Length}s", pos, intensity, inSeconds);
+            Log.Information("Sending shock to {Shocker} strength:{Intensity} length:{Length}s", pos, intensity, inSeconds);
 
             var code = Config.ConfigInstance.ShockLink.Shockers[pos];
             await UserHubClient.Control(new Control
