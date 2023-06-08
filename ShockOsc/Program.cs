@@ -206,7 +206,7 @@ public static class Program
             var beh = Config.ConfigInstance.Behaviour;
             if (beh.RandomDuration)
             {
-                var rdr = beh.RandomDurationRange;
+                var rdr = beh.DurationRange;
                 duration = (uint)(Random.Next((int)(rdr.Min / beh.RandomDurationStep), (int)(rdr.Max / beh.RandomDurationStep)) * beh.RandomDurationStep);
             }
             else duration = beh.FixedDuration;
