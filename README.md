@@ -41,7 +41,7 @@ You can add a cooldown parameter to your avatar to visualize when the shocker is
     "RandomIntensity": true,
     "RandomDuration": true, # Durations/time measurements are all in milliseconds since v1.0.1.0
     "RandomDurationStep": 100, # Random step, e.g. 1000 would be full seconds
-    "RandomDurationRange": {
+    "DurationRange": {
       "Min": 300,
       "Max": 5000
     },
