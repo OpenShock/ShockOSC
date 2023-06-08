@@ -84,11 +84,13 @@ public static class Config
             RandomIntensity = true,
             RandomDurationStep = 1000,
             RandomDurationRange = new JsonRange { Min = 1000, Max = 5000 },
-            RandomIntensityRange = new JsonRange { Min = 1, Max = 100 },
+            IntensityRange = new JsonRange { Min = 1, Max = 30 },
             FixedDuration = 2000,
             FixedIntensity = 50,
             CooldownTime = 5000,
-            HoldTime = 250
+            HoldTime = 250,
+            DisableWhileAfk = true,
+            ForceUnmute = false
         },
         ShockLink = new Conf.ShockLinkConf
         {
@@ -117,13 +119,15 @@ public static class Config
         {
             public required bool RandomIntensity { get; set; }
             public required bool RandomDuration { get; set; }
-            public uint RandomDurationStep { get; set; } = 1000;  
-            public required JsonRange RandomIntensityRange { get; set; }
+            public uint RandomDurationStep { get; set; } = 1000;
             public required JsonRange RandomDurationRange { get; set; }
+            public required JsonRange IntensityRange { get; set; }
             public required byte FixedIntensity { get; set; }
             public required uint FixedDuration { get; set; }
             public required uint HoldTime { get; set; }
             public required uint CooldownTime { get; set; }
+            public required bool DisableWhileAfk { get; set; }
+            public required bool ForceUnmute { get; set; }
         }
 
         public class ShockLinkConf
