@@ -6,4 +6,5 @@ public class ControlLog
     public required ControlType Type { get; set; }
     public required byte Intensity { get; set; }
     public required uint Duration { get; set; }
+    public required DateTime ExecutedAt { get; set; }
 }

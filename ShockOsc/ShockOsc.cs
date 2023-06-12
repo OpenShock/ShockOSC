@@ -12,7 +12,7 @@ using ShockLink.ShockOsc.Utils;
 
 namespace ShockLink.ShockOsc;
 
-public static class Program
+public static class ShockOsc
 {
     private enum TriggerMethod
     {
