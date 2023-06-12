@@ -21,16 +21,16 @@ public static class Program
     
     private class Shocker
     {
-        public DateTime lastActive;
-        public DateTime lastExecuted;
-        public float lastStretchValue;
-        public bool isGrabbed;
-        public bool hasCooldownParam;
-        public TriggerMethod triggerMethod;
+        public DateTime LastActive { get; set; }
+        public DateTime LastExecuted { get; set; }
+        public float LastStretchValue { get; set; }
+        public bool IsGrabbed { get; set; }
+        public bool HasCooldownParam { get; set; }
+        public TriggerMethod TriggerMethod { get; set; }
     }
 
-    private static bool IsAfk;
-    private static bool IsMuted;
+    private static bool _isAfk;
+    private static bool _isMuted;
     private static readonly ConcurrentDictionary<string, Shocker> Shockers = new();
     private static readonly Random Random = new();
 
@@ -75,17 +75,21 @@ public static class Program
     {
         var received = await ReceiverClient.ReceiveMessageAsync();
         var addr = received.Address.Value;
+        Log.Verbose("Received message: {Addr}", addr);
         
         switch (addr)
         {
             case "/avatar/change":
                 Shockers.Clear();
+                Log.Debug("Clearing shockers");
                 return;
             case "/avatar/parameters/AFK":
-                IsAfk = received.Arguments.ElementAtOrDefault(0) is OscTrue;
+                _isAfk = received.Arguments.ElementAtOrDefault(0) is OscTrue;
+                Log.Debug("Afk: {State}", _isAfk);
                 return;
             case "/avatar/parameters/MuteSelf":
-                IsMuted = received.Arguments.ElementAtOrDefault(0) is OscTrue;
+                _isMuted = received.Arguments.ElementAtOrDefault(0) is OscTrue;
+                Log.Debug("Muted: {State}", _isMuted);
                 return;
         }
 
@@ -116,22 +120,22 @@ public static class Program
         {
             case "Stretch":
                 if (value is float stretch)
-                    Shockers[shockerName].lastStretchValue = stretch;
+                    Shockers[shockerName].LastStretchValue = stretch;
                 return;
 
             case "IsGrabbed":
                 var isGrabbed = value is OscTrue;
-                if (Shockers[shockerName].isGrabbed && !isGrabbed && Shockers[shockerName].lastStretchValue != 0)
+                if (Shockers[shockerName].IsGrabbed && !isGrabbed && Shockers[shockerName].LastStretchValue != 0)
                 {
-                    Shockers[shockerName].triggerMethod = TriggerMethod.PhysBoneRelease;
-                    Shockers[shockerName].lastActive = DateTime.UtcNow;
+                    Shockers[shockerName].TriggerMethod = TriggerMethod.PhysBoneRelease;
+                    Shockers[shockerName].LastActive = DateTime.UtcNow;
                 }
                 
-                Shockers[shockerName].isGrabbed = isGrabbed;
+                Shockers[shockerName].IsGrabbed = isGrabbed;
                 return;
             
             case "Cooldown":
-                Shockers[shockerName].hasCooldownParam = true;
+                Shockers[shockerName].HasCooldownParam = true;
                 return;
             
             case "":
@@ -143,10 +147,10 @@ public static class Program
 
         if (value is OscTrue)
         {
-            Shockers[shockerName].triggerMethod = TriggerMethod.Manual;
-            Shockers[shockerName].lastActive = DateTime.UtcNow;
+            Shockers[shockerName].TriggerMethod = TriggerMethod.Manual;
+            Shockers[shockerName].LastActive = DateTime.UtcNow;
         }
-        else Shockers[shockerName].triggerMethod = TriggerMethod.None;
+        else Shockers[shockerName].TriggerMethod = TriggerMethod.None;
     }
         
     private static async Task SenderLoopAsync()
@@ -162,10 +166,10 @@ public static class Program
     {
         foreach (var shocker in Shockers.Values)
         {
-            if (!shocker.hasCooldownParam)
+            if (!shocker.HasCooldownParam)
                 continue;
             
-            var onCoolDown = shocker.lastExecuted > DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime));
+            var onCoolDown = shocker.LastExecuted > DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime));
             await SenderClient.SendMessageAsync(new OscMessage(new Address($"/avatar/parameters/ShockOsc/{shocker}_Cooldown"),
                 new object[] { onCoolDown ? OscTrue.True : OscFalse.False }));
         }
@@ -184,28 +188,28 @@ public static class Program
     {
         foreach (var (pos, shocker) in Shockers)
         {
-            if (shocker.triggerMethod == TriggerMethod.None)
+            if (shocker.TriggerMethod == TriggerMethod.None)
                 continue;
             
-            if (shocker.triggerMethod == TriggerMethod.Manual && shocker.lastActive.AddMilliseconds(Config.ConfigInstance.Behaviour.HoldTime) > DateTime.UtcNow)
+            if (shocker.TriggerMethod == TriggerMethod.Manual && shocker.LastActive.AddMilliseconds(Config.ConfigInstance.Behaviour.HoldTime) > DateTime.UtcNow)
                 continue;
             
-            if (shocker.lastExecuted >
+            if (shocker.LastExecuted >
                 DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime)))
             {
-                shocker.triggerMethod = TriggerMethod.None;
+                shocker.TriggerMethod = TriggerMethod.None;
                 Log.Information("Ignoring shock {Shocker} is on cooldown", pos);
                 continue;
             }
             
-            if (IsAfk && Config.ConfigInstance.Behaviour.DisableWhileAfk)
+            if (_isAfk && Config.ConfigInstance.Behaviour.DisableWhileAfk)
             {
-                shocker.triggerMethod = TriggerMethod.None;
+                shocker.TriggerMethod = TriggerMethod.None;
                 Log.Information("Ignoring shock {Shocker} user is AFK", pos);
                 continue;
             }
             
-            shocker.lastExecuted = DateTime.UtcNow;
+            shocker.LastExecuted = DateTime.UtcNow;
 
             byte intensity = 0;
             uint duration;
@@ -218,7 +222,7 @@ public static class Program
             }
             else duration = beh.FixedDuration;
 
-            if (shocker.triggerMethod == TriggerMethod.Manual)
+            if (shocker.TriggerMethod == TriggerMethod.Manual)
             {
                 if (beh.RandomIntensity)
                 {
@@ -228,15 +232,16 @@ public static class Program
                 else intensity = beh.FixedIntensity;
             }
 
-            if (shocker.triggerMethod == TriggerMethod.PhysBoneRelease)
+            if (shocker.TriggerMethod == TriggerMethod.PhysBoneRelease)
             {
                 var rir = beh.IntensityRange;
-                intensity = (byte)LerpFloat(rir.Min, rir.Max, shocker.lastStretchValue);
-                shocker.lastStretchValue = 0;
+                intensity = (byte)LerpFloat(rir.Min, rir.Max, shocker.LastStretchValue);
+                shocker.LastStretchValue = 0;
             }
 
-            if (Config.ConfigInstance.Behaviour.ForceUnmute && IsMuted)
+            if (Config.ConfigInstance.Behaviour.ForceUnmute && _isMuted)
             {
+                Log.Information("Force unmuting..");
                 await SenderClient.SendMessageAsync(new OscMessage(new Address("/input/Voice"), new object[] { OscFalse.False }));
                 await Task.Delay(50);
                 await SenderClient.SendMessageAsync(new OscMessage(new Address("/input/Voice"), new object[] { OscTrue.True }));
@@ -244,7 +249,7 @@ public static class Program
                 await SenderClient.SendMessageAsync(new OscMessage(new Address("/input/Voice"), new object[] { OscFalse.False }));
             }
             
-            shocker.triggerMethod = TriggerMethod.None;
+            shocker.TriggerMethod = TriggerMethod.None;
             var inSeconds = ((float)duration / 1000).ToString(CultureInfo.InvariantCulture);
             Log.Information("Sending shock to {Shocker} strength:{Intensity} length:{Length}s", pos, intensity, inSeconds);
 
@@ -258,15 +263,12 @@ public static class Program
             });
 
             if (!Config.ConfigInstance.Osc.Chatbox) continue;
-            var msg = $"Sending shock to \"{pos}\" strength:{intensity} length:{inSeconds}s";
+            var msg = $"[ShockOsc] \"{pos}\" {intensity}:{inSeconds}s       ";
             await SenderClient.SendMessageAsync(Config.ConfigInstance.Osc.Hoscy
                 ? new OscMessage(new Address("/hoscy/message"), new[] { msg })
                 : new OscMessage(new Address("/chatbox/input"), new object[] { msg, OscTrue.True }));
         }
     }
 
-    private static float LerpFloat(float min, float max, float t)
-    {
-        return min + (max - min) * t;
-    }
+    private static float LerpFloat(float min, float max, float t) => min + (max - min) * t;
 }
