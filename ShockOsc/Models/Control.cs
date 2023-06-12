@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ShockLink.ShockOsc;
+namespace ShockLink.ShockOsc.Models;
 
 public class Control
 {

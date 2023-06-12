@@ -1,5 +1,5 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
-namespace ShockLink.ShockOsc;
+namespace ShockLink.ShockOsc.Models;
 
 public struct JsonRange
 {

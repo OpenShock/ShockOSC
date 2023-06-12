@@ -7,6 +7,8 @@ using CoreOSC;
 using CoreOSC.IO;
 using Serilog;
 using Serilog.Events;
+using ShockLink.ShockOsc.Models;
+using ShockLink.ShockOsc.Utils;
 
 namespace ShockLink.ShockOsc;
 

@@ -1,4 +1,4 @@
-﻿namespace ShockLink.ShockOsc;
+﻿namespace ShockLink.ShockOsc.Models;
 
 public enum ControlType
 {

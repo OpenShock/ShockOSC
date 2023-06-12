@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using ShockLink.ShockOsc.Models;
 
 namespace ShockLink.ShockOsc;
 
@@ -19,10 +20,22 @@ public static class UserHubClient
         })
         .Build();
 
+    static UserHubClient()
+    {
+        Connection.On<GenericIni, IEnumerable<ControlLog>>("Log", LogReceive);
+    }
+
     public static Task InitializeAsync() => Connection.StartAsync();
     
-    public static Task Control(params Control[] data)
+    public static Task Control(params Control[] data) => Connection.SendAsync("Control", data);
+
+    #region Handlers
+
+    private static Task LogReceive(GenericIni sender, IEnumerable<ControlLog> logs)
     {
-        return Connection.SendAsync("Control", data);
+        return Task.CompletedTask;
     }
+
+    #endregion
+    
 }
