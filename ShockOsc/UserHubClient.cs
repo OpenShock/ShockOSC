@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http.Connections;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -33,6 +34,11 @@ public static class UserHubClient
 
     private static Task LogReceive(GenericIni sender, IEnumerable<ControlLog> logs)
     {
+        Log.Debug("Received: {Json}", JsonSerializer.Serialize(logs));
+        
+        foreach (var log in logs)
+            ShockOsc.RemoteActivateShocker(log);
+        
         return Task.CompletedTask;
     }
 

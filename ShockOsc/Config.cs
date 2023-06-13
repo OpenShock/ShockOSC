@@ -90,13 +90,13 @@ public static class Config
             FixedIntensity = 50,
             CooldownTime = 5000,
             HoldTime = 250,
+            VibrateWhileBoneHeld = true,
             DisableWhileAfk = true,
             ForceUnmute = false
         },
         ShockLink = new Conf.ShockLinkConf
         {
             Shockers = new Dictionary<string, Guid>(),
-            Type = ControlType.Shock,
             UserHub = new Uri("https://api.shocklink.net/1/hubs/user"),
             ApiToken = "SET THIS TO YOUR SHOCKLINK API TOKEN"
         }
@@ -127,13 +127,13 @@ public static class Config
             public required uint FixedDuration { get; set; }
             public required uint HoldTime { get; set; }
             public required uint CooldownTime { get; set; }
+            public required bool VibrateWhileBoneHeld { get; set; }
             public required bool DisableWhileAfk { get; set; }
             public required bool ForceUnmute { get; set; }
         }
 
         public class ShockLinkConf
         {
-            public required ControlType Type { get; set; }
             public Uri UserHub { get; set; } = new("https://api.shocklink.net/1/hubs/user");
             public required string ApiToken { get; set; }
             public required IReadOnlyDictionary<string, Guid> Shockers { get; set; }
