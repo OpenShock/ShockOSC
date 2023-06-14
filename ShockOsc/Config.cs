@@ -127,9 +127,9 @@ public static class Config
             public required uint FixedDuration { get; set; }
             public required uint HoldTime { get; set; }
             public required uint CooldownTime { get; set; }
-            public required bool VibrateWhileBoneHeld { get; set; }
-            public required bool DisableWhileAfk { get; set; }
-            public required bool ForceUnmute { get; set; }
+            public bool VibrateWhileBoneHeld { get; set; } = true;
+            public bool DisableWhileAfk { get; set; } = true;
+            public bool ForceUnmute { get; set; } = false;
         }
 
         public class ShockLinkConf
