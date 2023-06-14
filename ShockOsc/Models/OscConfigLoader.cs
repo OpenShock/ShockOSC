@@ -16,12 +16,12 @@ public static class OscConfigLoader
             return;
         }
 
-        foreach (var param in avatarConfig.parameters)
+        foreach (var param in avatarConfig.Parameters)
         {
-            if (!param.name.StartsWith("ShockOsc/"))
+            if (!param.Name.StartsWith("ShockOsc/"))
                 continue;
             
-            var paramName = param.name.Substring(9, param.name.Length - 9);
+            var paramName = param.Name.Substring(9, param.Name.Length - 9);
             var lastUnderscoreIndex = paramName.LastIndexOf('_') + 1;
             var action = string.Empty;
             if (lastUnderscoreIndex != 0)
@@ -45,17 +45,17 @@ public static class OscConfigLoader
             switch (action)
             {
                 case "Cooldown":
-                    if (param.input.type != "Bool") break;
+                    if (param.Input.Type != "Bool") break;
                     shocker.HasCooldownParam = true;
                     parameterCount++;
                     break;
                 case "Active":
-                    if (param.input.type != "Bool") break;
+                    if (param.Input.Type != "Bool") break;
                     shocker.HasActiveParam = true;
                     parameterCount++;
                     break;
                 case "Intensity":
-                    if (param.input.type != "Float") break;
+                    if (param.Input.Type != "Float") break;
                     shocker.HasIntensityParam = true;
                     parameterCount++;
                     break;
@@ -91,7 +91,7 @@ public static class OscConfigLoader
             {
                 var configText = File.ReadAllText(aviFile);
                 var config = JsonSerializer.Deserialize<AvatarConfigJson>(configText);
-                if (config == null || config.id != avatarId)
+                if (config == null || config.Id != avatarId)
                     continue;
                 
                 var lastWriteTime = File.GetLastWriteTime(aviFile);

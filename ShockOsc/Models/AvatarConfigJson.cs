@@ -1,21 +1,34 @@
+using System.Text.Json.Serialization;
+
 namespace ShockLink.ShockOsc.Models;
 
 public class AvatarConfigJson
 {
-    public string id { get; set; }
-    public string name { get; set; }
-    public List<Parameter> parameters { get; set; }
+    [JsonPropertyName("id")]
+    public required string Id { get; set; }
+    [JsonPropertyName("name")]
+    public required string Name { get; set; }
+    [JsonPropertyName("parameters")]
+    public required IEnumerable<Parameter> Parameters { get; set; }
+    
+    public class Parameter
+    {
+        [JsonPropertyName("name")]
+        public required string Name { get; set; }
+        [JsonPropertyName("input")]
+        public required InputOutput Input { get; set; }
+        [JsonPropertyName("output")]
+        public required InputOutput Output { get; set; }
+    }
+    
+    public class InputOutput
+    {
+        [JsonPropertyName("address")]
+        public required string Address { get; set; }
+        [JsonPropertyName("type")]
+        public required string Type { get; set; }
+    }
 }
 
-public class Parameter
-{
-    public string name { get; set; }
-    public InputOutput input { get; set; }
-    public InputOutput output { get; set; }
-}
 
-public class InputOutput
-{
-    public string address { get; set; }
-    public string type { get; set; }
-}
+
