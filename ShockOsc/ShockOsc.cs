@@ -42,9 +42,12 @@ public static class ShockOsc
             .Filter.ByExcluding(ev => ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides"))
             .WriteTo.Console(LogEventLevel.Information, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
-        
-        bool isDebug;
-        Debug.Assert(isDebug = true);
+
+        // ReSharper disable once RedundantAssignment
+        var isDebug = false;
+        #if DEBUG
+                isDebug = true;
+        #endif
         if ((args.Length > 0 && args[0] == "--debug") || isDebug)
         {
             Log.Information("Debug logging enabled");
