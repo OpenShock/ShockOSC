@@ -45,17 +45,17 @@ public static class OscConfigLoader
             switch (action)
             {
                 case "Cooldown":
-                    if (param.Input.Type != "Bool") break;
+                    if (param.Input?.Type != "Bool") break;
                     shocker.HasCooldownParam = true;
                     parameterCount++;
                     break;
                 case "Active":
-                    if (param.Input.Type != "Bool") break;
+                    if (param.Input?.Type != "Bool") break;
                     shocker.HasActiveParam = true;
                     parameterCount++;
                     break;
                 case "Intensity":
-                    if (param.Input.Type != "Float") break;
+                    if (param.Input?.Type != "Float") break;
                     shocker.HasIntensityParam = true;
                     parameterCount++;
                     break;

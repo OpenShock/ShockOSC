@@ -16,9 +16,9 @@ public class AvatarConfigJson
         [JsonPropertyName("name")]
         public required string Name { get; set; }
         [JsonPropertyName("input")]
-        public required InputOutput Input { get; set; }
+        public InputOutput? Input { get; set; }
         [JsonPropertyName("output")]
-        public required InputOutput Output { get; set; }
+        public InputOutput? Output { get; set; }
     }
     
     public class InputOutput
