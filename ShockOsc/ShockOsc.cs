@@ -343,7 +343,10 @@ public static class ShockOsc
         var shocker = Shockers.Values.FirstOrDefault(s => s.Id == log.Shocker.Id);
         if (shocker == null)
             return;
-        
+
+        // TODO: remove once shocker trigger method is implemented
+        return;
+
         switch (log.Type)
         {
             case ControlType.Shock:
