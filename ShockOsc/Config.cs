@@ -6,6 +6,7 @@ namespace ShockLink.ShockOsc;
 
 public static class Config
 {
+    private static readonly ILogger Logger = Log.ForContext(typeof(Config));
     private static Conf? _internalConfig;
     private static readonly string Path = Directory.GetCurrentDirectory() + "/config.json";
     public static Conf ConfigInstance
@@ -25,29 +26,29 @@ public static class Config
     private static void TryLoad()
     {
         if (_internalConfig != null) return;
-        Log.Information("Config file found, trying to load config from {Path}", Path);
+        Logger.Information("Config file found, trying to load config from {Path}", Path);
         if (File.Exists(Path))
         {
-            Log.Verbose("Config file exists");
+            Logger.Verbose("Config file exists");
             var json = File.ReadAllText(Path);
             if (!string.IsNullOrWhiteSpace(json))
             {
-                Log.Verbose("Config file is not empty");
+                Logger.Verbose("Config file is not empty");
                 try
                 {
                     _internalConfig = JsonSerializer.Deserialize<Conf>(json);
-                    Log.Information("Successfully loaded config");
+                    Logger.Information("Successfully loaded config");
                 }
                 catch (JsonException e)
                 {
-                    Log.Fatal(e, "Error during deserialization/loading of config");
+                    Logger.Fatal(e, "Error during deserialization/loading of config");
                     return;
                 }
             }
         }
 
         if (_internalConfig != null) return;
-        Log.Information("No valid config file found, generating new one at {Path}", Path);
+        Logger.Information("No valid config file found, generating new one at {Path}", Path);
         _internalConfig = GetDefaultConfig();
         Save();
     }
@@ -59,14 +60,14 @@ public static class Config
 
     public static void Save()
     {
-        Log.Information("Saving config");
+        Logger.Information("Saving config");
         try
         {
             File.WriteAllText(Path, JsonSerializer.Serialize(_internalConfig, Options));
         }
         catch (Exception e)
         {
-            Log.Error(e, "Error occurred while saving new config file");
+            Logger.Error(e, "Error occurred while saving new config file");
         }
     }
 
@@ -78,6 +79,7 @@ public static class Config
             Hoscy = false,
             ReceivePort = 9001,
             SendPort = 9000,
+            HoscySendPort = 9001
         },
         Behaviour = new Conf.BehaviourConf
         {
@@ -98,7 +100,8 @@ public static class Config
         {
             Shockers = new Dictionary<string, Guid>(),
             UserHub = new Uri("https://api.shocklink.net/1/hubs/user"),
-            ApiToken = "SET THIS TO YOUR SHOCKLINK API TOKEN"
+            ApiToken = "SET THIS TO YOUR SHOCKLINK API TOKEN",
+            ChatboxRemoteControls = true
         }
     };
 
@@ -114,6 +117,7 @@ public static class Config
             public required bool Hoscy { get; set; }
             public required uint ReceivePort { get; set; }
             public required uint SendPort { get; set; }
+            public uint HoscySendPort { get; set; } = 9001;
         }
 
         public class BehaviourConf
@@ -137,6 +141,7 @@ public static class Config
             public Uri UserHub { get; set; } = new("https://api.shocklink.net/1/hubs/user");
             public required string ApiToken { get; set; }
             public required IReadOnlyDictionary<string, Guid> Shockers { get; set; }
+            public bool ChatboxRemoteControls { get; set; } = true;
         }
     }
 }

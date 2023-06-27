@@ -5,6 +5,8 @@ namespace ShockLink.ShockOsc.Models;
 
 public static class OscConfigLoader
 {
+    private static readonly ILogger Logger = Log.ForContext(typeof(OscConfigLoader));
+    
     public static void OnAvatarChange(string? avatarId)
     {
         ShockOsc.Shockers.Clear();
@@ -12,7 +14,7 @@ public static class OscConfigLoader
         var avatarConfig = ReadOscConfigFile(avatarId);
         if (avatarConfig == null)
         {
-            Log.Error("Failed to read avatar config file for {AvatarId}", avatarId);
+            Logger.Error("Failed to read avatar config file for {AvatarId}", avatarId);
             return;
         }
 
@@ -35,7 +37,7 @@ public static class OscConfigLoader
             {
                 if (!Config.ConfigInstance.ShockLink.Shockers.ContainsKey(shockerName))
                 {
-                    Log.Warning("Unknown shocker {Shocker}", shockerName);
+                    Logger.Warning("Unknown shocker {Shocker}", shockerName);
                     continue;
                 }
                 ShockOsc.Shockers.TryAdd(shockerName, new Shocker(Config.ConfigInstance.ShockLink.Shockers[shockerName]));
@@ -67,7 +69,7 @@ public static class OscConfigLoader
             }
         }
         
-        Log.Information("Loaded avatar config for {AvatarId} with {ParamCount} parameters", avatarId, parameterCount);
+        Logger.Information("Loaded avatar config for {AvatarId} with {ParamCount} parameters", avatarId, parameterCount);
     }
 
     private static AvatarConfigJson? ReadOscConfigFile(string? avatarId)
