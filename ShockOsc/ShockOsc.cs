@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using CoreOSC;
@@ -355,7 +354,13 @@ public static class ShockOsc
 
     public static async Task RemoteActivateShocker(ControlLogSender sender, ControlLog log)
     {
-        if (Config.ConfigInstance.Osc.Chatbox && sender.ConnectionId != UserHubClient.ConnectionId)
+        if (sender.ConnectionId == UserHubClient.ConnectionId)
+        {
+            _logger.Debug("Ignoring remote command log cause it was the local connection");
+            return;
+        }
+        
+        if (Config.ConfigInstance.Osc.Chatbox)
         {
             Console.WriteLine("Remote message sent!");
             var inSeconds = ((float)log.Duration / 1000).ToString(CultureInfo.InvariantCulture);
@@ -391,7 +396,8 @@ public static class ShockOsc
             case ControlType.Sound:
                 break;
             default:
-                throw new ArgumentOutOfRangeException();
+                _logger.Error("ControlType was out of range. Value was: {Type}", log.Type);
+                break;
         }
     }
 
