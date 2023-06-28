@@ -1,7 +1,8 @@
 using System.Text.Json;
 using Serilog;
+using ShockLink.ShockOsc.Models;
 
-namespace ShockLink.ShockOsc.Models;
+namespace ShockLink.ShockOsc;
 
 public static class OscConfigLoader
 {
