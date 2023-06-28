@@ -110,6 +110,7 @@ public static class Config
         public required OscConf Osc { get; set; }
         public required BehaviourConf Behaviour { get; set; }
         public required ShockLinkConf ShockLink { get; set; }
+        public Version? LastIgnoredVersion { get; set; }
 
         public class OscConf
         {

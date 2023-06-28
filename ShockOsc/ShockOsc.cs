@@ -65,6 +65,20 @@ public static class ShockOsc
 
         _logger.Information("Starting ShockLink.ShockOsc version {Version}",
             Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "error");
+
+        try
+        {
+            if (await Updater.CheckUpdate())
+            {
+                _logger.Information("Terminating due to update");
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.Error(e, "Unknown error in updater");
+        }
+
         _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
 
         _logger.Information("Init user hub...");
