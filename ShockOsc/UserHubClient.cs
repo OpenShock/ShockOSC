@@ -32,7 +32,7 @@ public static class UserHubClient
 
     public static Task InitializeAsync() => Connection.StartAsync();
     
-    public static Task Control(params Control[] data) => Connection.SendAsync("Control", data);
+    public static Task<bool> Control(params Control[] data) => Connection.InvokeAsync<bool>("ControlV2", data, null);
 
     #region Handlers
 
