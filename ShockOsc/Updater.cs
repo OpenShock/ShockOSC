@@ -8,7 +8,7 @@ namespace ShockLink.ShockOsc;
 
 public static class Updater
 {
-    private static readonly ILogger Logger = Log.ForContext(typeof(UserHubClient));
+    private static readonly ILogger Logger = Log.ForContext(typeof(Updater));
     private static readonly HttpClient HttpClient = new();
     private const string GithubLatest = "https://api.github.com/repos/Shock-Link/ShockOsc/releases/latest";
     private const string CurrentFileName = "ShockLink.ShockOsc.exe";

@@ -373,12 +373,26 @@ public static class ShockOsc
             _logger.Debug("Ignoring remote command log cause it was the local connection");
             return;
         }
-        
+
+        var inSeconds = ((float)log.Duration / 1000).ToString(CultureInfo.InvariantCulture);
+
+        if (sender.CustomName == null)
+            _logger.Information(
+                "Received remote shock for \"{ShockerName}\" at {Intensity}%:{Duration}s by {Sender}",
+                log.Shocker.Name, log.Intensity, inSeconds, sender.Name);
+
+        else
+            _logger.Information(
+                "Received remote shock for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
+                log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
+
+
         if (Config.ConfigInstance.Osc.Chatbox)
         {
-            Console.WriteLine("Remote message sent!");
-            var inSeconds = ((float)log.Duration / 1000).ToString(CultureInfo.InvariantCulture);
-            var msg = $"[ShockOsc] \"{log.Shocker.Name}\" {log.Intensity}%:{inSeconds}s by {sender.Name}";
+            var msg = $"[ShockOsc] \"{log.Shocker.Name}\" {log.Intensity}%:{inSeconds}s by ";
+            if (sender.CustomName == null) msg += sender.Name;
+            else msg += $"{sender.CustomName} [{sender.Name}]";
+
             await SenderClient.SendChatboxMessage(msg);
         }
 
