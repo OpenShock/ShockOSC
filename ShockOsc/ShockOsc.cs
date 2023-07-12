@@ -245,7 +245,15 @@ public static class ShockOsc
     {
         while (true)
         {
-            await CheckLogic();
+            try
+            {
+                await CheckLogic();
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Error in check loop");
+            }
+
             await Task.Delay(20);
         }
     }
@@ -380,12 +388,10 @@ public static class ShockOsc
             _logger.Information(
                 "Received remote shock for \"{ShockerName}\" at {Intensity}%:{Duration}s by {Sender}",
                 log.Shocker.Name, log.Intensity, inSeconds, sender.Name);
-
         else
             _logger.Information(
                 "Received remote shock for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
                 log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
-
 
         if (Config.ConfigInstance.Osc.Chatbox)
         {
