@@ -1,6 +1,6 @@
 # ShockOsc
 ![Downloads](https://img.shields.io/github/downloads/Shock-Link/ShockOsc/total?style=for-the-badge&color=6451f1)
-![Discord](https://img.shields.io/discord/1078124408775901204?style=for-the-badge&color=6451f1)
+![Discord](https://img.shields.io/discord/1078124408775901204?style=for-the-badge&color=6451f1&label=Discord&logo=discord)
 
 
 Used as an interface for ShockLink to communicate with applications that support OSC like ChilloutVR and VRChat.  
