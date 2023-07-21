@@ -1,7 +1,7 @@
 # ShockOsc
-![Downloads](https://img.shields.io/github/downloads/Shock-Link/ShockOsc/total?style=for-the-badge&color=6451f1)
-![Discord](https://img.shields.io/discord/1078124408775901204?style=for-the-badge&color=6451f1&label=Discord&logo=discord)
-
+[![Downloads](https://img.shields.io/github/downloads/Shock-Link/ShockOsc/total?style=for-the-badge&color=6451f1)](https://github.com/Shock-Link/ShockOsc/releases/tag/v1.4.1.0)
+[![License](https://img.shields.io/github/license/Shock-Link/ShockOsc?style=for-the-badge&color=6451f1)](https://github.com/Shock-Link/ShockOsc/blob/master/LICENSE)  
+[![Discord](https://img.shields.io/discord/1078124408775901204?style=for-the-badge&color=6451f1&label=ShockLink%20Discord&logo=discord)](https://shockl.ink/discord)
 
 Used as an interface for ShockLink to communicate with applications that support OSC like ChilloutVR and VRChat.  
 Use at your own risk.
@@ -72,9 +72,6 @@ Add these parameters to your avatars animator & params file.
   }
 }
 ```
-
-## Discord
-https://discord.gg/AHcCbXbEcF
 
 ## Credits
 [CoreOSC by dastevens](https://github.com/dastevens/CoreOSC)
