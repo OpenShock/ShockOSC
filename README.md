@@ -69,6 +69,37 @@ Add these parameters to your avatars animator & params file.
     "DisableWhileAfk": true, # Disable shocks when AFK (VRChats AFK Detection needs to be turned on for this)
     "ForceUnmute": false # Force unmute when shock is triggered
   },
+  "Chatbox": {
+    "Prefix": "[ShockOsc] ", # Prefix shown on all messages
+    "DisplayRemoteControl": true, # Display commands from outside of ShockOsc in the chatbox?
+    "HoscyType": "Message", # Send as Message or Notification type in hosy?
+    "Types": { ## If you chose to specify any of those, you need to specify all, all or nothing :)
+      "Stop": {
+        "Enabled": true, # Weither to show this type as a message at all or not
+        "Local": "⏸ '{ShockerName}'", # When a action is done from ShockOsc
+        "Remote": "⏸ '{ShockerName}' by {Name}", # When it comes from a share code or share link (logged in)
+        "RemoteWithCustomName": "⏸ '{ShockerName}' by {CustomName} [{Name}]" # When its a share link guest controlling
+      },
+      "Shock": {
+        "Enabled": true,
+        "Local": "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+        "Remote": "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
+        "RemoteWithCustomName": "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
+      },
+      "Vibrate": {
+        "Enabled": true,
+        "Local": "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+        "Remote": "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
+        "RemoteWithCustomName": "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
+      },
+     "Sound": {
+        "Enabled": true,
+        "Local": "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+        "Remote": "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
+        "RemoteWithCustomName": "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
+     }
+    }
+  },
   "ShockLink": {
     "UserHub": "https://api.shocklink.net/1/hubs/user",
     "ApiToken": "SET THIS TO YOUR SHOCKLINK API TOKEN",

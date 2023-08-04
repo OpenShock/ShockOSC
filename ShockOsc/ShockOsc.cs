@@ -396,7 +396,8 @@ public static class ShockOsc
                 "Received remote shock for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
                 log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
 
-        if (Config.ConfigInstance.Osc.Chatbox && Config.ConfigInstance.Chatbox.DisplayRemoteControl)
+        var template = Config.ConfigInstance.Chatbox.Types[log.Type];
+        if (Config.ConfigInstance.Osc.Chatbox && Config.ConfigInstance.Chatbox.DisplayRemoteControl && template.Enabled)
         {
             // Chatbox message remote
             var dat = new
@@ -408,9 +409,8 @@ public static class ShockOsc
                 Name = sender.Name,
                 CustomName = sender.CustomName
             };
-            var template = Config.ConfigInstance.Chatbox.Types[log.Type];
-            var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
 
+            var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
             await OscClient.SendChatboxMessage(msg);
         }
 
