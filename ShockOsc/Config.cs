@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Serilog;
 using ShockLink.ShockOsc.Models;
 
@@ -9,6 +10,7 @@ public static class Config
     private static readonly ILogger Logger = Log.ForContext(typeof(Config));
     private static Conf? _internalConfig;
     private static readonly string Path = Directory.GetCurrentDirectory() + "/config.json";
+
     public static Conf ConfigInstance
     {
         get
@@ -55,7 +57,8 @@ public static class Config
 
     private static readonly JsonSerializerOptions Options = new()
     {
-        WriteIndented = true
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
     public static void Save()
@@ -81,6 +84,13 @@ public static class Config
             SendPort = 9000,
             HoscySendPort = 9001
         },
+        Chatbox = new Conf.ChatboxConf
+        {
+            DisplayRemoteControl = true,
+            HoscyType = Conf.ChatboxConf.HoscyMessageType.Message,
+            Prefix = null!,
+            Types = null!
+        },
         Behaviour = new Conf.BehaviourConf
         {
             RandomDuration = true,
@@ -99,9 +109,8 @@ public static class Config
         ShockLink = new Conf.ShockLinkConf
         {
             Shockers = new Dictionary<string, Guid>(),
-            UserHub = new Uri("https://api.shocklink.net/1/hubs/user"),
+            UserHub = null!,
             ApiToken = "SET THIS TO YOUR SHOCKLINK API TOKEN",
-            ChatboxRemoteControls = true
         }
     };
 
@@ -110,39 +119,102 @@ public static class Config
         public required OscConf Osc { get; set; }
         public required BehaviourConf Behaviour { get; set; }
         public required ShockLinkConf ShockLink { get; set; }
+        public ChatboxConf Chatbox { get; set; } = new();
         public Version? LastIgnoredVersion { get; set; }
+
+        public class ChatboxConf
+        {
+            public string Prefix { get; set; } = "[ShockOsc] ";
+            public bool DisplayRemoteControl { get; set; } = true;
+            [JsonConverter(typeof(JsonStringEnumConverter))]
+            public HoscyMessageType HoscyType { get; set; } = HoscyMessageType.Message;
+
+            public IDictionary<ControlType, ControlTypeConf> Types { get; set; } =
+                new Dictionary<ControlType, ControlTypeConf>
+                {
+                    {
+                        ControlType.Stop, new ControlTypeConf
+                        {
+                            Enabled = true,
+                            Local = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+                            Remote = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
+                            RemoteWithCustomName = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
+                        }
+                    },
+                    {
+                        ControlType.Shock, new ControlTypeConf
+                        {
+                            Enabled = true,
+                            Local = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+                            Remote = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
+                            RemoteWithCustomName = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
+                        }
+                    },
+                    {
+                        ControlType.Vibrate, new ControlTypeConf
+                        {
+                            Enabled = true,
+                            Local = "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+                            Remote = "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
+                            RemoteWithCustomName = "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
+                        }
+                    },
+                    {
+                        ControlType.Sound, new ControlTypeConf
+                        {
+                            Enabled = true,
+                            Local = "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+                            Remote = "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
+                            RemoteWithCustomName = "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
+                        }
+                    }
+                };
+
+            public class ControlTypeConf
+            {
+                public required bool Enabled { get; set; }
+                public required string Local { get; set; }
+                public required string Remote { get; set; }
+                public required string RemoteWithCustomName { get; set; }
+            }
+            
+            public enum HoscyMessageType
+            {
+                Message,
+                Notification
+            }
+        }
 
         public class OscConf
         {
-            public required bool Chatbox { get; set; }
-            public required bool Hoscy { get; set; }
-            public required uint ReceivePort { get; set; }
-            public required uint SendPort { get; set; }
-            public uint HoscySendPort { get; set; } = 9001;
+            public required bool Chatbox { get; init; }
+            public required bool Hoscy { get; init; }
+            public required ushort ReceivePort { get; init; }
+            public required ushort SendPort { get; init; }
+            public ushort HoscySendPort { get; init; } = 9001;
         }
 
         public class BehaviourConf
         {
-            public required bool RandomIntensity { get; set; }
-            public required bool RandomDuration { get; set; }
-            public required uint RandomDurationStep { get; set; } = 1000;
-            public required JsonRange DurationRange { get; set; }
-            public required JsonRange IntensityRange { get; set; }
-            public required byte FixedIntensity { get; set; }
-            public required uint FixedDuration { get; set; }
-            public required uint HoldTime { get; set; }
-            public required uint CooldownTime { get; set; }
-            public bool VibrateWhileBoneHeld { get; set; } = true;
-            public bool DisableWhileAfk { get; set; } = true;
-            public bool ForceUnmute { get; set; } = false;
+            public required bool RandomIntensity { get; init; }
+            public required bool RandomDuration { get; init; }
+            public required uint RandomDurationStep { get; init; } = 1000;
+            public required JsonRange DurationRange { get; init; }
+            public required JsonRange IntensityRange { get; init; }
+            public required byte FixedIntensity { get; init; }
+            public required uint FixedDuration { get; init; }
+            public required uint HoldTime { get; init; }
+            public required uint CooldownTime { get; init; }
+            public bool VibrateWhileBoneHeld { get; init; } = true;
+            public bool DisableWhileAfk { get; init; } = true;
+            public bool ForceUnmute { get; init; } = false;
         }
 
         public class ShockLinkConf
         {
-            public Uri UserHub { get; set; } = new("https://api.shocklink.net/1/hubs/user");
-            public required string ApiToken { get; set; }
-            public required IReadOnlyDictionary<string, Guid> Shockers { get; set; }
-            public bool ChatboxRemoteControls { get; set; } = true;
+            public Uri UserHub { get; init; } = new("https://api.shocklink.net/1/hubs/user");
+            public required string ApiToken { get; init; }
+            public required IReadOnlyDictionary<string, Guid> Shockers { get; init; }
         }
     }
 }

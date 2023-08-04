@@ -2,12 +2,11 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net.Sockets;
 using System.Reflection;
-using CoreOSC;
-using CoreOSC.IO;
 using Serilog;
 using Serilog.Events;
 using ShockLink.ShockOsc.Models;
 using ShockLink.ShockOsc.Utils;
+using SmartFormat;
 
 #pragma warning disable CS4014
 
@@ -32,8 +31,6 @@ public static class ShockOsc
         "Active",
         "Intensity"
     };
-
-    private static readonly UdpClient ReceiverClient = new((int)Config.ConfigInstance.Osc.ReceivePort);
 
     private static async Task Main(string[] args)
     {
@@ -85,7 +82,7 @@ public static class ShockOsc
         await UserHubClient.InitializeAsync();
 
         _logger.Information("Connecting UDP Clients...");
-
+        
         // Start tasks
         SlTask.Run(ReceiverLoopAsync);
         SlTask.Run(SenderLoopAsync);
@@ -95,6 +92,7 @@ public static class ShockOsc
             Shockers.TryAdd(shockerName, new Shocker(shockerId));
 
         _logger.Information("Ready");
+
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
     }
 
@@ -105,8 +103,8 @@ public static class ShockOsc
 
     private static async Task ReceiveLogic()
     {
-        var received = await ReceiverClient.ReceiveMessageAsync();
-        var addr = received.Address.Value;
+        var received = await OscClient.ReceiveGameMessage();
+        var addr = received.Address;
         _logger.Verbose("Received message: {Addr}", addr);
 
         switch (addr)
@@ -116,11 +114,11 @@ public static class ShockOsc
                 OscConfigLoader.OnAvatarChange(avatarId?.ToString());
                 return;
             case "/avatar/parameters/AFK":
-                _isAfk = received.Arguments.ElementAtOrDefault(0) is OscTrue;
+                _isAfk = received.Arguments.ElementAtOrDefault(0) is true;
                 _logger.Debug("Afk: {State}", _isAfk);
                 return;
             case "/avatar/parameters/MuteSelf":
-                _isMuted = received.Arguments.ElementAtOrDefault(0) is OscTrue;
+                _isMuted = received.Arguments.ElementAtOrDefault(0) is true;
                 _logger.Debug("Muted: {State}", _isMuted);
                 return;
         }
@@ -159,7 +157,7 @@ public static class ShockOsc
                     shocker.LastStretchValue = stretch;
                 return;
             case "IsGrabbed":
-                var isGrabbed = value is OscTrue;
+                var isGrabbed = value is true;
                 if (shocker.IsGrabbed && !isGrabbed)
                 {
                     // on physbone release
@@ -170,7 +168,7 @@ public static class ShockOsc
                     }
                     else if (Config.ConfigInstance.Behaviour.VibrateWhileBoneHeld)
                     {
-                        CancelAction(shocker);
+                        await CancelAction(shocker);
                     }
                 }
 
@@ -182,7 +180,7 @@ public static class ShockOsc
                 return;
         }
 
-        if (value is OscTrue)
+        if (value is true)
         {
             shocker.TriggerMethod = TriggerMethod.Manual;
             shocker.LastActive = DateTime.UtcNow;
@@ -212,19 +210,17 @@ public static class ShockOsc
 
             if (shocker.HasActiveParam)
             {
-                await SenderClient.SendOscMessage($"/avatar/parameters/ShockOsc/{shockerName}_Active",
-                    new object[] { isActive ? OscTrue.True : OscFalse.False });
+                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Active", isActive);
 
                 if (isActive)
-                    _logger.Debug("Set param: Active: {Active}", isActive ? "true" : "false");
+                    _logger.Debug("Set param: Active: {Active} [{ParamName}]", isActive ? "true" : "false", shockerName);
             }
 
             if (shocker.HasCooldownParam)
             {
                 var onCoolDown = !isActive && isActiveOrOnCooldown;
 
-                await SenderClient.SendOscMessage($"/avatar/parameters/ShockOsc/{shockerName}_Cooldown",
-                    new object[] { onCoolDown ? OscTrue.True : OscFalse.False });
+                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Cooldown", onCoolDown);
 
                 if (onCoolDown)
                     _logger.Debug("Set param: Cooldown: {Cooldown}", onCoolDown ? "true" : "false");
@@ -232,8 +228,7 @@ public static class ShockOsc
 
             if (shocker.HasIntensityParam)
             {
-                await SenderClient.SendOscMessage($"/avatar/parameters/ShockOsc/{shockerName}_Intensity",
-                    new object[] { shocker.LastIntensity });
+                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Intensity", shocker.LastIntensity);
 
                 if (shocker.LastIntensity > 0)
                     _logger.Debug("Set param: Intensity: {Intensity}", shocker.LastIntensity);
@@ -366,11 +361,19 @@ public static class ShockOsc
                 Duration = duration,
                 Type = ControlType.Shock
             });
-
+            
             if (!Config.ConfigInstance.Osc.Chatbox) continue;
-            var msg = $"[ShockOsc] \"{pos}\" {intensityPercentage}%:{inSeconds}s";
-
-            await SenderClient.SendChatboxMessage(msg);
+            // Chatbox message local
+            var dat = new
+            {
+                ShockerName = pos,
+                Intensity = intensity,
+                Duration = duration,
+                DurationSeconds = inSeconds
+            };
+            var template = Config.ConfigInstance.Chatbox.Types[ControlType.Shock];
+            var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(template.Local, dat)}";
+            await OscClient.SendChatboxMessage(msg);
         }
     }
 
@@ -393,69 +396,91 @@ public static class ShockOsc
                 "Received remote shock for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
                 log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
 
-        if (Config.ConfigInstance.Osc.Chatbox)
+        if (Config.ConfigInstance.Osc.Chatbox && Config.ConfigInstance.Chatbox.DisplayRemoteControl)
         {
-            var msg = $"[ShockOsc] \"{log.Shocker.Name}\" {log.Intensity}%:{inSeconds}s by ";
-            if (sender.CustomName == null) msg += sender.Name;
-            else msg += $"{sender.CustomName} [{sender.Name}]";
+            // Chatbox message remote
+            var dat = new
+            {
+                ShockerName = log.Shocker.Name,
+                Intensity = log.Intensity,
+                Duration = log.Duration,
+                DurationSeconds = inSeconds,
+                Name = sender.Name,
+                CustomName = sender.CustomName
+            };
+            var template = Config.ConfigInstance.Chatbox.Types[log.Type];
+            var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
 
-            await SenderClient.SendChatboxMessage(msg);
+            await OscClient.SendChatboxMessage(msg);
         }
 
-        var shocker = Shockers.Values.FirstOrDefault(s => s.Id == log.Shocker.Id);
-        if (shocker == null)
+        var shocker = Shockers.Values.Where(s => s.Id == log.Shocker.Id).ToArray();
+        if (shocker.Length <= 0)
             return;
 
-        switch (log.Type)
+        bool oneShock = false;
+        
+        foreach (var pain in shocker)
         {
-            case ControlType.Shock:
+            switch (log.Type)
             {
-                var rir = Config.ConfigInstance.Behaviour.IntensityRange;
-                if (shocker.LastIntensity == 0) // don't override calculated intensity
-                    shocker.LastIntensity = ClampFloat((float)log.Intensity / rir.Max);
-                shocker.LastDuration = log.Duration;
-                shocker.LastExecuted = log.ExecutedAt;
+                case ControlType.Shock:
+                {
+                    Console.WriteLine(log.ExecutedAt);
+                    var rir = Config.ConfigInstance.Behaviour.IntensityRange;
+                    if (pain.LastIntensity == 0) // don't override calculated intensity
+                        pain.LastIntensity = ClampFloat((float)log.Intensity / rir.Max);
+                    pain.LastDuration = log.Duration;
+                    pain.LastExecuted = log.ExecutedAt;
 
+                    oneShock = true;
+                    break;
+                }
+                case ControlType.Vibrate:
+                    pain.LastVibration = log.ExecutedAt;
+                    break;
+                case ControlType.Stop:
+                    pain.LastDuration = 0;
+                    SendParams();
+                    break;
+                case ControlType.Sound:
+                    break;
+                default:
+                    _logger.Error("ControlType was out of range. Value was: {Type}", log.Type);
+                    break;
+            }
+
+            if (oneShock)
+            {
                 ForceUnmute();
                 SendParams();
-                break;
             }
-            case ControlType.Vibrate:
-                shocker.LastVibration = log.ExecutedAt;
-                break;
-            case ControlType.Stop:
-                shocker.LastDuration = 0;
-                SendParams();
-                break;
-            case ControlType.Sound:
-                break;
-            default:
-                _logger.Error("ControlType was out of range. Value was: {Type}", log.Type);
-                break;
         }
+
+
     }
 
     private static async Task ForceUnmute()
     {
         if (!Config.ConfigInstance.Behaviour.ForceUnmute || !_isMuted) return;
         _logger.Debug("Force unmuting...");
-        await SenderClient.SendOscMessage("/input/Voice", new object[] { OscFalse.False });
+        await OscClient.SendGameMessage("/input/Voice", false);
         await Task.Delay(50);
-        await SenderClient.SendOscMessage("/input/Voice", new object[] { OscTrue.True });
+        await OscClient.SendGameMessage("/input/Voice", true);
         await Task.Delay(50);
-        await SenderClient.SendOscMessage("/input/Voice", new object[] { OscFalse.False });
+        await OscClient.SendGameMessage("/input/Voice", false);
     }
 
-    private static async Task CancelAction(Shocker shocker)
+    private static Task CancelAction(Shocker shocker)
     {
-        await UserHubClient.Control(new Control
+        _logger.Debug("Cancelling action");
+        return UserHubClient.Control(new Control
         {
             Id = shocker.Id,
             Intensity = 0,
             Duration = 0,
             Type = ControlType.Stop
         });
-        _logger.Debug("Cancelling action");
     }
 
     private static float LerpFloat(float min, float max, float t) => min + (max - min) * t;

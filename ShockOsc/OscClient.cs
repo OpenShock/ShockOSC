@@ -1,22 +1,18 @@
 ﻿using System.Net;
-using System.Net.Sockets;
 using System.Threading.Channels;
-using CoreOSC;
-using CoreOSC.IO;
+using LucHeart.CoreOSC;
 using Serilog;
 
 namespace ShockLink.ShockOsc;
 
-public static class SenderClient
+public static class OscClient
 {
-    private static readonly UdpClient GameSenderClient = new();
-    private static readonly UdpClient HoscySenderClient = new();
-    private static readonly ILogger Logger = Log.ForContext(typeof(SenderClient));
+    private static readonly OscDuplex GameConnection = new(new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.ReceivePort), new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.SendPort));
+    private static readonly OscSender HoscySenderClient = new(new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.HoscySendPort));
+    private static readonly ILogger Logger = Log.ForContext(typeof(OscClient));
 
-    static SenderClient()
+    static OscClient()
     {
-        GameSenderClient.Connect(IPAddress.Loopback, (int)Config.ConfigInstance.Osc.SendPort);
-        if(Config.ConfigInstance.Osc.Hoscy) HoscySenderClient.Connect(IPAddress.Loopback, (int)Config.ConfigInstance.Osc.HoscySendPort);
         Task.Run(GameSenderLoop);
         Task.Run(HoscySenderLoop);
     }
@@ -32,33 +28,33 @@ public static class SenderClient
     });
 
 
-    public static ValueTask SendOscMessage(string address, IEnumerable<object>? arguments = null)
+    public static ValueTask SendGameMessage(string address, params object?[]?arguments)
     {
         arguments ??= Array.Empty<object>();
-        return GameSenderChannel.Writer.WriteAsync(new OscMessage(new Address(address), arguments));
+        return GameSenderChannel.Writer.WriteAsync(new OscMessage(address, arguments));
     }
     
     public static ValueTask SendChatboxMessage(string message)
     {
         if (Config.ConfigInstance.Osc.Hoscy)
         {
+            string address = $"/hoscy/{Config.ConfigInstance.Chatbox.HoscyType.ToString().ToLowerInvariant()}";
             return HoscySenderChannel.Writer.WriteAsync(
-                new OscMessage(new Address("/hoscy/message"), new[] { message }));
+                new OscMessage("/hoscy/message", message));
         }
 
-        return GameSenderChannel.Writer.WriteAsync(new OscMessage(new Address("/chatbox/input"),
-            new object[] { message, OscTrue.True }));
+        return GameSenderChannel.Writer.WriteAsync(new OscMessage("/chatbox/input", message, true));
     }
 
 
-    public static async Task GameSenderLoop()
+    private static async Task GameSenderLoop()
     {
         Logger.Debug("Starting game sender loop");
         await foreach (var oscMessage in GameSenderChannel.Reader.ReadAllAsync())
         {
             try
             {
-                await GameSenderClient.SendMessageAsync(oscMessage);
+                await GameConnection.SendAsync(oscMessage);
             }
             catch (Exception e)
             {
@@ -66,15 +62,15 @@ public static class SenderClient
             }
         }
     }
-    
-    public static async Task HoscySenderLoop()
+
+    private static async Task HoscySenderLoop()
     {
         Logger.Debug("Starting hoscy sender loop");
         await foreach (var oscMessage in HoscySenderChannel.Reader.ReadAllAsync())
         {
             try
             {
-                await HoscySenderClient.SendMessageAsync(oscMessage);
+                await HoscySenderClient.SendAsync(oscMessage);
             }
             catch (Exception e)
             {
@@ -82,5 +78,7 @@ public static class SenderClient
             }
         }
     }
+
+    public static Task<OscMessage> ReceiveGameMessage() => GameConnection.ReceiveMessageAsync();
     
 }
