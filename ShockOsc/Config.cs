@@ -11,14 +11,7 @@ public static class Config
     private static Conf? _internalConfig;
     private static readonly string Path = Directory.GetCurrentDirectory() + "/config.json";
 
-    public static Conf ConfigInstance
-    {
-        get
-        {
-            TryLoad();
-            return _internalConfig!;
-        }
-    }
+    public static Conf ConfigInstance => _internalConfig!;
 
     static Config()
     {
@@ -50,9 +43,13 @@ public static class Config
         }
 
         if (_internalConfig != null) return;
-        Logger.Information("No valid config file found, generating new one at {Path}", Path);
+        Logger.Information("No config file found (does not exist or empty), generating new one at {Path}", Path);
         _internalConfig = GetDefaultConfig();
         Save();
+        var jsonNew = File.ReadAllText(Path);
+        _internalConfig = JsonSerializer.Deserialize<Conf>(jsonNew);
+        Logger.Information("New configuration file generated! Please configure it!");
+        Environment.Exit(10);
     }
 
     private static readonly JsonSerializerOptions Options = new()

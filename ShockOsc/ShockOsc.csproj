@@ -5,12 +5,12 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <PublishSingleFile>true</PublishSingleFile>
+        <!--<PublishSingleFile>true</PublishSingleFile>-->
         <AssemblyName>ShockLink.ShockOsc</AssemblyName>
         <RootNamespace>ShockLink.ShockOsc</RootNamespace>
         <Company>ShockLink</Company>
-        <AssemblyVersion>1.4.1.0</AssemblyVersion>
-        <FileVersion>1.4.1.0</FileVersion>
+        <AssemblyVersion>1.5.0.0</AssemblyVersion>
+        <FileVersion>1.5.0.0</FileVersion>
         <ApplicationIcon>Resources\shocklink-logo-only.ico</ApplicationIcon>
     </PropertyGroup>
 
@@ -21,6 +21,7 @@
       <PackageReference Include="Serilog" Version="2.12.0" />
       <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
       <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+      <PackageReference Include="SmartFormat.NET" Version="3.2.1" />
     </ItemGroup>
 
 </Project>
