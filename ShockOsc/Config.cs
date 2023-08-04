@@ -133,9 +133,9 @@ public static class Config
                         ControlType.Stop, new ControlTypeConf
                         {
                             Enabled = true,
-                            Local = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s",
-                            Remote = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
-                            RemoteWithCustomName = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
+                            Local = "⏸ '{ShockerName}'",
+                            Remote = "⏸ '{ShockerName}' by {Name}",
+                            RemoteWithCustomName = "⏸ '{ShockerName}' by {CustomName} [{Name}]"
                         }
                     },
                     {
