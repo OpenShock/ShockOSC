@@ -98,7 +98,18 @@ public static class ShockOsc
 
     private static async Task ReceiverLoopAsync()
     {
-        while (true) await ReceiveLogic();
+        while (true)
+        {
+            try
+            {
+                await ReceiveLogic();
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Error in receiver loop");
+            }
+        }
+        // ReSharper disable once FunctionNeverReturns
     }
 
     private static async Task ReceiveLogic()

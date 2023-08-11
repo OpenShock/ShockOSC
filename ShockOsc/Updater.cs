@@ -114,7 +114,8 @@ public static class Updater
         }
 
         Logger.Debug("Downloaded file within {TimeTook}ms", sp.ElapsedMilliseconds);
-        Logger.Information("Download complete, now restarting to newer application");
+        Logger.Information("Download complete, now restarting to newer application in one second");
+        await Task.Delay(1000);
         var startInfo = new ProcessStartInfo
         {
             FileName = currentFilePath,
