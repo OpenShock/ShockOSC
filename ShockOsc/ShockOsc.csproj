@@ -12,6 +12,7 @@
         <AssemblyVersion>1.5.1.0</AssemblyVersion>
         <FileVersion>1.5.1.0</FileVersion>
         <ApplicationIcon>Resources\shocklink-logo-only.ico</ApplicationIcon>
+        <SelfContained>true</SelfContained>
     </PropertyGroup>
 
     <ItemGroup>
@@ -25,8 +26,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Resources\shocklink-logo-only.ico" />
-      <Resource Include="Resources\shocklink-logo-only.ico" />
+      <None Update="Resources\shocklink-logo-only.ico">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
