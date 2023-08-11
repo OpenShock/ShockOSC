@@ -25,10 +25,4 @@
       <PackageReference Include="SmartFormat.NET" Version="3.2.1" />
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="Resources\shocklink-logo-only.ico">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-
 </Project>
