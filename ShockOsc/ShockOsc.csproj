@@ -24,4 +24,9 @@
       <PackageReference Include="SmartFormat.NET" Version="3.2.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Resources\shocklink-logo-only.ico" />
+      <Resource Include="Resources\shocklink-logo-only.ico" />
+    </ItemGroup>
+
 </Project>
