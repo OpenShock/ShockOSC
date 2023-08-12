@@ -400,12 +400,12 @@ public static class ShockOsc
 
         if (sender.CustomName == null)
             _logger.Information(
-                "Received remote shock for \"{ShockerName}\" at {Intensity}%:{Duration}s by {Sender}",
-                log.Shocker.Name, log.Intensity, inSeconds, sender.Name);
+                "Received remote {Type} for \"{ShockerName}\" at {Intensity}%:{Duration}s by {Sender}",
+                log.Type, log.Shocker.Name, log.Intensity, inSeconds, sender.Name);
         else
             _logger.Information(
-                "Received remote shock for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
-                log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
+                "Received remote {Type} for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
+                log.Type, log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
 
         var template = Config.ConfigInstance.Chatbox.Types[log.Type];
         if (Config.ConfigInstance.Osc.Chatbox && Config.ConfigInstance.Chatbox.DisplayRemoteControl && template.Enabled)
