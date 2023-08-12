@@ -362,7 +362,7 @@ public static class ShockOsc
             shocker.TriggerMethod = TriggerMethod.None;
             var inSeconds = ((float)duration / 1000).ToString(CultureInfo.InvariantCulture);
             _logger.Information(
-                "Sending shock to {Shocker} strength:{Intensity} intensityPercentage:{IntensityPercentage}% length:{Length}s",
+                "Sending shock to {Shocker} intensity:{Intensity} intensityPercentage:{IntensityPercentage}% length:{Length}s",
                 pos, intensity, intensityPercentage, inSeconds);
 
             await UserHubClient.Control(new Control
@@ -379,6 +379,7 @@ public static class ShockOsc
             {
                 ShockerName = pos,
                 Intensity = intensity,
+                IntensityPercentage = intensityPercentage,
                 Duration = duration,
                 DurationSeconds = inSeconds
             };
@@ -429,7 +430,7 @@ public static class ShockOsc
         if (shocker.Length <= 0)
             return;
 
-        bool oneShock = false;
+        var oneShock = false;
         
         foreach (var pain in shocker)
         {
