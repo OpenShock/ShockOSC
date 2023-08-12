@@ -9,8 +9,8 @@
         <AssemblyName>ShockLink.ShockOsc</AssemblyName>
         <RootNamespace>ShockLink.ShockOsc</RootNamespace>
         <Company>ShockLink</Company>
-        <AssemblyVersion>1.5.1.0</AssemblyVersion>
-        <FileVersion>1.5.1.0</FileVersion>
+        <AssemblyVersion>1.5.2.0</AssemblyVersion>
+        <FileVersion>1.5.2.0</FileVersion>
         <ApplicationIcon>Resources\shocklink-logo-only.ico</ApplicationIcon>
         <SelfContained>true</SelfContained>
     </PropertyGroup>
