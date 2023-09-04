@@ -5,6 +5,7 @@ using System.Reflection;
 using Serilog;
 using Serilog.Events;
 using ShockLink.ShockOsc.Models;
+using ShockLink.ShockOsc.OscChangeTracker;
 using ShockLink.ShockOsc.Utils;
 using SmartFormat;
 
@@ -203,8 +204,14 @@ public static class ShockOsc
         }
     }
 
+    private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("_Any", "_Active", false);
+    private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("_Any", "_Cooldown", false);
+
     private static async Task SendParams()
     {
+        var anyActive = false;
+        var anyCooldown = false;
+        
         foreach (var (_, shocker) in Shockers)
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
@@ -219,7 +226,13 @@ public static class ShockOsc
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);
             await shocker.ParamIntensity.SetValue(shocker.LastIntensity);
+            
+            if(isActive) anyActive = true;
+            if (onCoolDown) anyCooldown = true;
         }
+
+        await ParamAnyActive.SetValue(anyActive);
+        await ParamAnyCooldown.SetValue(anyCooldown);
     }
 
     private static async Task CheckLoop()
