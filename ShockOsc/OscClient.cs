@@ -36,16 +36,10 @@ public static class OscClient
     
     public static ValueTask SendChatboxMessage(string message)
     {
-        if (Config.ConfigInstance.Osc.Hoscy)
-        {
-            string address = $"/hoscy/{Config.ConfigInstance.Chatbox.HoscyType.ToString().ToLowerInvariant()}";
-            return HoscySenderChannel.Writer.WriteAsync(
-                new OscMessage("/hoscy/message", message));
-        }
+        if (Config.ConfigInstance.Osc.Hoscy) return HoscySenderChannel.Writer.WriteAsync(new OscMessage("/hoscy/message", message));
 
         return GameSenderChannel.Writer.WriteAsync(new OscMessage("/chatbox/input", message, true));
     }
-
 
     private static async Task GameSenderLoop()
     {

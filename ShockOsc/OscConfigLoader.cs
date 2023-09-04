@@ -10,7 +10,10 @@ public static class OscConfigLoader
     
     public static void OnAvatarChange(string? avatarId)
     {
-        ShockOsc.Shockers.Clear();
+        foreach (var obj in ShockOsc.Shockers)
+        {
+            obj.Value.Reset();
+        }
         var parameterCount = 0;
         var avatarConfig = ReadOscConfigFile(avatarId);
         if (avatarConfig == null)
@@ -32,38 +35,27 @@ public static class OscConfigLoader
             
             var shockerName = paramName;
             if (ShockOsc.ShockerParams.Contains(action))
-                shockerName = paramName.Substring(0, lastUnderscoreIndex - 1);
+                shockerName = paramName[..(lastUnderscoreIndex - 1)];
             
             if (!ShockOsc.Shockers.ContainsKey(shockerName))
             {
-                if (!Config.ConfigInstance.ShockLink.Shockers.ContainsKey(shockerName))
-                {
-                    Logger.Warning("Unknown shocker {Shocker}", shockerName);
-                    continue;
-                }
-                ShockOsc.Shockers.TryAdd(shockerName, new Shocker(Config.ConfigInstance.ShockLink.Shockers[shockerName]));
+                Logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
+                continue;
             }
             
-            var shocker = ShockOsc.Shockers[shockerName];
             switch (action)
             {
                 case "Cooldown":
-                    if (param.Input?.Type != "Bool") break;
-                    shocker.HasCooldownParam = true;
-                    parameterCount++;
-                    break;
                 case "Active":
+                case "IsGrabbed":
                     if (param.Input?.Type != "Bool") break;
-                    shocker.HasActiveParam = true;
                     parameterCount++;
                     break;
                 case "Intensity":
+                case "Stretch":
                     if (param.Input?.Type != "Float") break;
-                    shocker.HasIntensityParam = true;
                     parameterCount++;
                     break;
-                case "Stretch":
-                case "IsGrabbed":
                 case "":
                     parameterCount++;
                     break;

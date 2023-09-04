@@ -82,14 +82,14 @@ public static class ShockOsc
         await UserHubClient.InitializeAsync();
 
         _logger.Information("Connecting UDP Clients...");
-        
+
         // Start tasks
         SlTask.Run(ReceiverLoopAsync);
         SlTask.Run(SenderLoopAsync);
         SlTask.Run(CheckLoop);
 
         foreach (var (shockerName, shockerId) in Config.ConfigInstance.ShockLink.Shockers)
-            Shockers.TryAdd(shockerName, new Shocker(shockerId));
+            Shockers.TryAdd(shockerName, new Shocker(shockerId, shockerName));
 
         _logger.Information("Ready");
 
@@ -149,13 +149,8 @@ public static class ShockOsc
 
         if (!Shockers.ContainsKey(shockerName))
         {
-            if (!Config.ConfigInstance.ShockLink.Shockers.ContainsKey(shockerName))
-            {
-                _logger.Warning("Unknown shocker {Shocker}", shockerName);
-                return;
-            }
-
-            Shockers.TryAdd(shockerName, new Shocker(Config.ConfigInstance.ShockLink.Shockers[shockerName]));
+            _logger.Warning("Unknown shocker {Shocker}", shockerName);
+            return;
         }
 
         var shocker = Shockers[shockerName];
@@ -210,7 +205,7 @@ public static class ShockOsc
 
     private static async Task SendParams()
     {
-        foreach (var (shockerName, shocker) in Shockers)
+        foreach (var (_, shocker) in Shockers)
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             var isActiveOrOnCooldown =
@@ -219,31 +214,11 @@ public static class ShockOsc
             if (!isActiveOrOnCooldown && shocker.LastIntensity > 0)
                 shocker.LastIntensity = 0;
 
-            if (shocker.HasActiveParam)
-            {
-                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Active", isActive);
-
-                if (isActive)
-                    _logger.Debug("Set param: Active: {Active} [{ParamName}]", isActive ? "true" : "false", shockerName);
-            }
-
-            if (shocker.HasCooldownParam)
-            {
-                var onCoolDown = !isActive && isActiveOrOnCooldown;
-
-                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Cooldown", onCoolDown);
-
-                if (onCoolDown)
-                    _logger.Debug("Set param: Cooldown: {Cooldown}", onCoolDown ? "true" : "false");
-            }
-
-            if (shocker.HasIntensityParam)
-            {
-                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Intensity", shocker.LastIntensity);
-
-                if (shocker.LastIntensity > 0)
-                    _logger.Debug("Set param: Intensity: {Intensity}", shocker.LastIntensity);
-            }
+            var onCoolDown = !isActive && isActiveOrOnCooldown;
+            
+            await shocker.ParamActive.SetValue(isActive);
+            await shocker.ParamCooldown.SetValue(onCoolDown);
+            await shocker.ParamIntensity.SetValue(shocker.LastIntensity);
         }
     }
 
@@ -372,7 +347,7 @@ public static class ShockOsc
                 Duration = duration,
                 Type = ControlType.Shock
             });
-            
+
             if (!Config.ConfigInstance.Osc.Chatbox) continue;
             // Chatbox message local
             var dat = new
@@ -422,7 +397,8 @@ public static class ShockOsc
                 CustomName = sender.CustomName
             };
 
-            var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
+            var msg =
+                $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
             await OscClient.SendChatboxMessage(msg);
         }
 
@@ -431,14 +407,13 @@ public static class ShockOsc
             return;
 
         var oneShock = false;
-        
+
         foreach (var pain in shocker)
         {
             switch (log.Type)
             {
                 case ControlType.Shock:
                 {
-                    Console.WriteLine(log.ExecutedAt);
                     var rir = Config.ConfigInstance.Behaviour.IntensityRange;
                     if (pain.LastIntensity == 0) // don't override calculated intensity
                         pain.LastIntensity = ClampFloat((float)log.Intensity / rir.Max);
@@ -468,8 +443,6 @@ public static class ShockOsc
                 SendParams();
             }
         }
-
-
     }
 
     private static async Task ForceUnmute()

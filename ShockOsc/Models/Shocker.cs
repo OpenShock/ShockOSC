@@ -1,3 +1,5 @@
+using ShockLink.ShockOsc.OscChangeTracker;
+
 namespace ShockLink.ShockOsc.Models;
 
 public class Shocker
@@ -9,14 +11,29 @@ public class Shocker
     public float LastIntensity { get; set; }
     public float LastStretchValue { get; set; }
     public bool IsGrabbed { get; set; }
-    public bool HasCooldownParam { get; set; }
-    public bool HasActiveParam { get; set; }
-    public bool HasIntensityParam { get; set; }
+    
+    public ChangeTrackedOscParam<bool> ParamActive { get; }
+    public ChangeTrackedOscParam<bool> ParamCooldown { get; }
+    public ChangeTrackedOscParam<float> ParamIntensity { get; }
+    
+    
     public Guid Id { get; }
+    public string Name { get; }
     public TriggerMethod TriggerMethod { get; set; }
 
-    public Shocker(Guid id)
+    public Shocker(Guid id, string name)
     {
         Id = id;
+        Name = name;
+
+        ParamActive = new ChangeTrackedOscParam<bool>(Name, "_Active", false);
+        ParamCooldown = new ChangeTrackedOscParam<bool>(Name, "_Cooldown", false);
+        ParamIntensity = new ChangeTrackedOscParam<float>(Name, "_Intensity", 0f);
+    }
+
+    public void Reset()
+    {
+        IsGrabbed = false;
+        LastStretchValue = 0;
     }
 }
