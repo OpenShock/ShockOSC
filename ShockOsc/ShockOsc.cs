@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Net.Sockets;
 using System.Reflection;
 using Serilog;
 using Serilog.Events;
