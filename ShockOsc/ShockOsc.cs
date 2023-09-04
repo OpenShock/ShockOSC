@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
+using OscQueryLibrary;
 using Serilog;
 using Serilog.Events;
 using ShockLink.ShockOsc.Models;
@@ -81,8 +82,16 @@ public static class ShockOsc
         _logger.Information("Init user hub...");
         await UserHubClient.InitializeAsync();
 
-        _logger.Information("Connecting UDP Clients...");
+        _logger.Information("Creating OSC Query Server...");
+        _ = new OscQueryServer(
+            "ShockOsc", // service name
+            "127.0.0.1", // ip address for udp and http server
+            Config.ConfigInstance.Osc.ReceivePort, // osc server port
+            OnAvatarChange // optional parameter list callback on vrc discovery
+        );
 
+        _logger.Information("Connecting UDP Clients...");
+        
         // Start tasks
         SlTask.Run(ReceiverLoopAsync);
         SlTask.Run(SenderLoopAsync);
@@ -94,6 +103,61 @@ public static class ShockOsc
         _logger.Information("Ready");
 
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
+    }
+
+    private static void OnAvatarChange(Dictionary<string, object?>? parameters)
+    {
+        foreach (var obj in Shockers)
+        {
+            obj.Value.Reset();
+        }
+        var parameterCount = 0;
+        
+        if (parameters == null)
+        {
+            _logger.Error("Failed to receive avatar parameters");
+            return;
+        }
+
+        foreach (var param in parameters.Keys)
+        {
+            if (!param.StartsWith("/avatar/parameters/ShockOsc/"))
+                continue;
+            
+            var paramName = param.Substring(28, param.Length - 28);
+            var lastUnderscoreIndex = paramName.LastIndexOf('_') + 1;
+            var action = string.Empty;
+            if (lastUnderscoreIndex != 0)
+                action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
+            
+            var shockerName = paramName;
+            if (ShockerParams.Contains(action))
+                shockerName = paramName[..(lastUnderscoreIndex - 1)];
+            
+            if (!Shockers.ContainsKey(shockerName))
+            {
+                _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
+                continue;
+            }
+            
+            switch (action)
+            {
+                case "Cooldown":
+                case "Active":
+                case "IsGrabbed":
+                    parameterCount++;
+                    break;
+                case "Intensity":
+                case "Stretch":
+                    parameterCount++;
+                    break;
+                case "":
+                    parameterCount++;
+                    break;
+            }
+        }
+        
+        _logger.Information("Loaded avatar config with {ParamCount} parameters", parameterCount);
     }
 
     private static async Task ReceiverLoopAsync()
@@ -122,7 +186,8 @@ public static class ShockOsc
         {
             case "/avatar/change":
                 var avatarId = received.Arguments.ElementAtOrDefault(0);
-                OscConfigLoader.OnAvatarChange(avatarId?.ToString());
+                _logger.Debug("Avatar changed: {AvatarId}", avatarId);
+                OscQueryServer.GetParameters();
                 return;
             case "/avatar/parameters/AFK":
                 _isAfk = received.Arguments.ElementAtOrDefault(0) is true;
@@ -211,7 +276,7 @@ public static class ShockOsc
         var anyActive = false;
         var anyCooldown = false;
         
-        foreach (var (_, shocker) in Shockers)
+        foreach (var  shocker in Shockers.Values)
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             var isActiveOrOnCooldown =
@@ -226,7 +291,7 @@ public static class ShockOsc
             await shocker.ParamCooldown.SetValue(onCoolDown);
             await shocker.ParamIntensity.SetValue(shocker.LastIntensity);
             
-            if(isActive) anyActive = true;
+            if (isActive) anyActive = true;
             if (onCoolDown) anyCooldown = true;
         }
 
@@ -292,7 +357,7 @@ public static class ShockOsc
                 continue;
             }
 
-            if (_isAfk && Config.ConfigInstance.Behaviour.DisableWhileAfk)
+            if (_isAfk && config.DisableWhileAfk)
             {
                 shocker.TriggerMethod = TriggerMethod.None;
                 _logger.Information("Ignoring shock {Shocker} user is AFK", pos);

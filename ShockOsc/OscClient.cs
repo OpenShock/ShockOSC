@@ -26,8 +26,7 @@ public static class OscClient
     {
         SingleReader = true
     });
-
-
+    
     public static ValueTask SendGameMessage(string address, params object?[]?arguments)
     {
         arguments ??= Array.Empty<object>();
@@ -74,5 +73,4 @@ public static class OscClient
     }
 
     public static Task<OscMessage> ReceiveGameMessage() => GameConnection.ReceiveMessageAsync();
-    
 }
