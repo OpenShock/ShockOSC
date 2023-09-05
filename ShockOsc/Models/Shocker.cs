@@ -14,6 +14,7 @@ public class Shocker
     
     public ChangeTrackedOscParam<bool> ParamActive { get; }
     public ChangeTrackedOscParam<bool> ParamCooldown { get; }
+    public ChangeTrackedOscParam<float> ParamCooldownPercentage { get; }
     public ChangeTrackedOscParam<float> ParamIntensity { get; }
     
     
@@ -28,6 +29,7 @@ public class Shocker
 
         ParamActive = new ChangeTrackedOscParam<bool>(Name, "_Active", false);
         ParamCooldown = new ChangeTrackedOscParam<bool>(Name, "_Cooldown", false);
+        ParamCooldownPercentage = new ChangeTrackedOscParam<float>(Name, "_CooldownPercentage", 0f);
         ParamIntensity = new ChangeTrackedOscParam<float>(Name, "_Intensity", 0f);
     }
 

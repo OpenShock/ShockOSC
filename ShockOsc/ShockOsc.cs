@@ -142,15 +142,12 @@ public static class ShockOsc
             
             switch (action)
             {
+                case "IsGrabbed":
+                case "Stretch":
                 case "Cooldown":
                 case "Active":
-                case "IsGrabbed":
-                    parameterCount++;
-                    break;
                 case "Intensity":
-                case "Stretch":
-                    parameterCount++;
-                    break;
+                case "IntensityPercentage":
                 case "":
                     parameterCount++;
                     break;
@@ -273,10 +270,11 @@ public static class ShockOsc
 
     private static async Task SendParams()
     {
+        // TODO: maybe force resend on avatar change
         var anyActive = false;
         var anyCooldown = false;
         
-        foreach (var  shocker in Shockers.Values)
+        foreach (var shocker in Shockers.Values)
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             var isActiveOrOnCooldown =
@@ -286,9 +284,14 @@ public static class ShockOsc
                 shocker.LastIntensity = 0;
 
             var onCoolDown = !isActive && isActiveOrOnCooldown;
+
+            var cooldownPercentage = 0f;
+            if (onCoolDown)
+                cooldownPercentage = ClampFloat(1 - (float)(DateTime.UtcNow - shocker.LastExecuted.AddMilliseconds(shocker.LastDuration)).TotalMilliseconds / Config.ConfigInstance.Behaviour.CooldownTime);
             
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);
+            await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
             await shocker.ParamIntensity.SetValue(shocker.LastIntensity);
             
             if (isActive) anyActive = true;
