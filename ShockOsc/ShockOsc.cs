@@ -23,14 +23,13 @@ public static class ShockOsc
 
     public static readonly List<string> ShockerParams = new()
     {
+        string.Empty,
         "Stretch",
         "IsGrabbed",
-        "IsPosed",
-        "Angle",
-        "Squish",
         "Cooldown",
         "Active",
-        "Intensity"
+        "Intensity",
+        "CooldownPercentage"
     };
 
     private static async Task Main(string[] args)
@@ -91,12 +90,13 @@ public static class ShockOsc
         OscClient.CreateGameConnection(OscQueryServer.OscPort);
 
         _logger.Information("Connecting UDP Clients...");
-        
+
         // Start tasks
         SlTask.Run(ReceiverLoopAsync);
         SlTask.Run(SenderLoopAsync);
         SlTask.Run(CheckLoop);
 
+        Shockers.TryAdd("#All", new Shocker(Guid.Empty, "#All"));
         foreach (var (shockerName, shockerId) in Config.ConfigInstance.ShockLink.Shockers)
             Shockers.TryAdd(shockerName, new Shocker(shockerId, shockerName));
 
@@ -107,54 +107,51 @@ public static class ShockOsc
 
     private static void OnAvatarChange(Dictionary<string, object?>? parameters)
     {
-        foreach (var obj in Shockers)
+        try
         {
-            obj.Value.Reset();
-        }
-        var parameterCount = 0;
-        
-        if (parameters == null)
-        {
-            _logger.Error("Failed to receive avatar parameters");
-            return;
-        }
+            foreach (var obj in Shockers)
+            {
+                obj.Value.Reset();
+            }
 
-        foreach (var param in parameters.Keys)
-        {
-            if (!param.StartsWith("/avatar/parameters/ShockOsc/"))
-                continue;
-            
-            var paramName = param.Substring(28, param.Length - 28);
-            var lastUnderscoreIndex = paramName.LastIndexOf('_') + 1;
-            var action = string.Empty;
-            if (lastUnderscoreIndex != 0)
-                action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
-            
-            var shockerName = paramName;
-            if (ShockerParams.Contains(action))
-                shockerName = paramName[..(lastUnderscoreIndex - 1)];
-            
-            if (!Shockers.ContainsKey(shockerName))
+            var parameterCount = 0;
+
+            if (parameters == null)
             {
-                _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
-                continue;
+                _logger.Error("Failed to receive avatar parameters");
+                return;
             }
-            
-            switch (action)
+
+            foreach (var param in parameters.Keys)
             {
-                case "IsGrabbed":
-                case "Stretch":
-                case "Cooldown":
-                case "Active":
-                case "Intensity":
-                case "IntensityPercentage":
-                case "":
-                    parameterCount++;
-                    break;
+                if (!param.StartsWith("/avatar/parameters/ShockOsc/"))
+                    continue;
+
+                var paramName = param.Substring(28, param.Length - 28);
+                var lastUnderscoreIndex = paramName.LastIndexOf('_') + 1;
+                var action = string.Empty;
+                var shockerName = paramName;
+                if (lastUnderscoreIndex != 0)
+                {
+                    shockerName = paramName[..(lastUnderscoreIndex - 1)];
+                    action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
+                }
+
+                if (!Shockers.ContainsKey(shockerName) && shockerName != "#Any")
+                {
+                    _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
+                    continue;
+                }
+
+                if (ShockerParams.Contains(action)) parameterCount++;
             }
+
+            _logger.Information("Loaded avatar config with {ParamCount} parameters", parameterCount);
         }
-        
-        _logger.Information("Loaded avatar config with {ParamCount} parameters", parameterCount);
+        catch (Exception e)
+        {
+            _logger.Error(e, "Error on avatar change logic");
+        }
     }
 
     private static async Task ReceiverLoopAsync()
@@ -202,14 +199,16 @@ public static class ShockOsc
         var pos = addr.Substring(28, addr.Length - 28);
         var lastUnderscoreIndex = pos.LastIndexOf('_') + 1;
         var action = string.Empty;
-        if (lastUnderscoreIndex != 0)
-            action = pos.Substring(lastUnderscoreIndex, pos.Length - lastUnderscoreIndex);
-
         var shockerName = pos;
-        if (ShockerParams.Contains(action))
-            shockerName = pos.Substring(0, lastUnderscoreIndex - 1);
+        if (lastUnderscoreIndex != 0)
+        {
+            shockerName = pos[..(lastUnderscoreIndex - 1)];
+            action = pos.Substring(lastUnderscoreIndex, pos.Length - lastUnderscoreIndex);
+        }
 
-        if (!Shockers.ContainsKey(shockerName))
+        if (!ShockerParams.Contains(action)) return;
+
+        if (!Shockers.ContainsKey(shockerName) && shockerName != "#Any")
         {
             _logger.Warning("Unknown shocker {Shocker}", shockerName);
             return;
@@ -265,15 +264,15 @@ public static class ShockOsc
         }
     }
 
-    private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("_Any", "_Active", false);
-    private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("_Any", "_Cooldown", false);
+    private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("#Any", "_Active", false);
+    private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("#Any", "_Cooldown", false);
 
     private static async Task SendParams()
     {
         // TODO: maybe force resend on avatar change
         var anyActive = false;
         var anyCooldown = false;
-        
+
         foreach (var shocker in Shockers.Values)
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
@@ -287,13 +286,16 @@ public static class ShockOsc
 
             var cooldownPercentage = 0f;
             if (onCoolDown)
-                cooldownPercentage = ClampFloat(1 - (float)(DateTime.UtcNow - shocker.LastExecuted.AddMilliseconds(shocker.LastDuration)).TotalMilliseconds / Config.ConfigInstance.Behaviour.CooldownTime);
-            
+                cooldownPercentage = ClampFloat(1 -
+                                                (float)(DateTime.UtcNow -
+                                                        shocker.LastExecuted.AddMilliseconds(shocker.LastDuration))
+                                                .TotalMilliseconds / Config.ConfigInstance.Behaviour.CooldownTime);
+
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);
             await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
             await shocker.ParamIntensity.SetValue(shocker.LastIntensity);
-            
+
             if (isActive) anyActive = true;
             if (onCoolDown) anyCooldown = true;
         }
@@ -337,13 +339,7 @@ public static class ShockOsc
                     vibrationIntensity = 1;
                 _logger.Debug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
                 shocker.LastVibration = DateTime.UtcNow;
-                await UserHubClient.Control(new Control
-                {
-                    Id = shocker.Id,
-                    Intensity = (byte)vibrationIntensity,
-                    Duration = 1000,
-                    Type = ControlType.Vibrate
-                });
+                await ControlShocker(shocker.Id, 1000, (byte)vibrationIntensity, ControlType.Vibrate);
             }
 
             if (shocker.TriggerMethod == TriggerMethod.None)
@@ -420,13 +416,7 @@ public static class ShockOsc
                 "Sending shock to {Shocker} intensity:{Intensity} intensityPercentage:{IntensityPercentage}% length:{Length}s",
                 pos, intensity, intensityPercentage, inSeconds);
 
-            await UserHubClient.Control(new Control
-            {
-                Id = shocker.Id,
-                Intensity = intensity,
-                Duration = duration,
-                Type = ControlType.Shock
-            });
+            await ControlShocker(shocker.Id, duration, intensity, ControlType.Shock);
 
             if (!Config.ConfigInstance.Osc.Chatbox) continue;
             // Chatbox message local
@@ -442,6 +432,26 @@ public static class ShockOsc
             var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(template.Local, dat)}";
             await OscClient.SendChatboxMessage(msg);
         }
+    }
+
+    private static Task ControlShocker(Guid shockerId, uint duration, byte intensity, ControlType type)
+    {
+        if (shockerId == Guid.Empty)
+            return UserHubClient.Control(Shockers.Where(x => x.Value.Id != Guid.Empty).Select(x => new Control
+            {
+                Id = x.Value.Id,
+                Intensity = intensity,
+                Duration = duration,
+                Type = type
+            }).ToArray());
+
+        return UserHubClient.Control(new Control
+        {
+            Id = shockerId,
+            Intensity = intensity,
+            Duration = duration,
+            Type = type
+        });
     }
 
     public static async Task RemoteActivateShocker(ControlLogSender sender, ControlLog log)
@@ -539,13 +549,7 @@ public static class ShockOsc
     private static Task CancelAction(Shocker shocker)
     {
         _logger.Debug("Cancelling action");
-        return UserHubClient.Control(new Control
-        {
-            Id = shocker.Id,
-            Intensity = 0,
-            Duration = 0,
-            Type = ControlType.Stop
-        });
+        return ControlShocker(shocker.Id, 0, 0, ControlType.Stop);
     }
 
     private static float LerpFloat(float min, float max, float t) => min + (max - min) * t;
