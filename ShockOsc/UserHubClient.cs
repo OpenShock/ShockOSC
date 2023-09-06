@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http.Connections;
+﻿using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using ShockLink.ShockOsc.Models;
@@ -21,6 +23,11 @@ public static class UserHubClient
             builder.ClearProviders();
             builder.SetMinimumLevel(LogLevel.Trace);
             builder.AddSerilog();
+        })
+        .AddJsonProtocol(options =>
+        {
+            options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
+            options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: true));
         })
         .Build();
 
