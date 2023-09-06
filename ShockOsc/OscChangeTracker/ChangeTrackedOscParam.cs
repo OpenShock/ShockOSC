@@ -4,7 +4,8 @@ namespace ShockLink.ShockOsc.OscChangeTracker;
 
 public class ChangeTrackedOscParam<T> : IChangeTrackedOscParam
 {
-    private static ILogger _logger = Log.ForContext<ChangeTrackedOscParam<object>>();
+    // ReSharper disable once StaticMemberInGenericType
+    private static readonly ILogger Logger = Log.ForContext(typeof(ChangeTrackedOscParam<>));
     
     public string Address { get; }
     public T Value { get; private set; }
@@ -22,7 +23,7 @@ public class ChangeTrackedOscParam<T> : IChangeTrackedOscParam
 
     public ValueTask Send()
     {
-        _logger.Debug("Sending parameter update for [{ParameterAddress}] with value [{Value}]", Address, Value);
+        Logger.Debug("Sending parameter update for [{ParameterAddress}] with value [{Value}]", Address, Value);
         return OscClient.SendGameMessage(Address, Value);  
     } 
 
