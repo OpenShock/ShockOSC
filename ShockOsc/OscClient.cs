@@ -7,7 +7,7 @@ namespace ShockLink.ShockOsc;
 
 public static class OscClient
 {
-    private static readonly OscDuplex GameConnection = new(new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.ReceivePort), new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.SendPort));
+    private static OscDuplex _gameConnection;
     private static readonly OscSender HoscySenderClient = new(new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.HoscySendPort));
     private static readonly ILogger Logger = Log.ForContext(typeof(OscClient));
 
@@ -15,6 +15,11 @@ public static class OscClient
     {
         Task.Run(GameSenderLoop);
         Task.Run(HoscySenderLoop);
+    }
+
+    public static void CreateGameConnection(ushort receivePort)
+    {
+        _gameConnection = new(new IPEndPoint(IPAddress.Loopback, receivePort), new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.SendPort));
     }
 
     private static readonly Channel<OscMessage> GameSenderChannel = Channel.CreateUnbounded<OscMessage>(new UnboundedChannelOptions()
@@ -47,7 +52,7 @@ public static class OscClient
         {
             try
             {
-                await GameConnection.SendAsync(oscMessage);
+                await _gameConnection.SendAsync(oscMessage);
             }
             catch (Exception e)
             {
@@ -72,5 +77,5 @@ public static class OscClient
         }
     }
 
-    public static Task<OscMessage> ReceiveGameMessage() => GameConnection.ReceiveMessageAsync();
+    public static Task<OscMessage> ReceiveGameMessage() => _gameConnection.ReceiveMessageAsync();
 }

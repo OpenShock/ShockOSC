@@ -14,7 +14,7 @@ public class OscQueryServer
     
     private readonly ushort _httpPort; // TODO: remove when switching httpServer library for proper random port support
     private readonly string _ipAddress;
-    private readonly ushort _oscPort;
+    public static ushort OscPort;
     private const string OscHttpServiceName = "_oscjson._tcp";
     private const string OscUdpServiceName = "_osc._udp";
     private readonly HttpListener _httpListener;
@@ -29,12 +29,12 @@ public class OscQueryServer
     private static event Action<Dictionary<string, object?>>? ParameterUpdate;
     private static readonly Dictionary<string, object?> ParameterList = new();
 
-    public OscQueryServer(string serviceName, string ipAddress, ushort oscPort,
+    public OscQueryServer(string serviceName, string ipAddress,
         Action<Dictionary<string, object?>>? parameterUpdate = null)
     {
         _serviceName = serviceName;
         _ipAddress = ipAddress;
-        _oscPort = oscPort;
+        OscPort = FindAvailableUdpPort();
         _httpPort = FindAvailableTcpPort();
         ParameterUpdate = parameterUpdate;
         SetupJsonObjects();
@@ -67,7 +67,7 @@ public class OscQueryServer
             new ServiceProfile(_serviceName, OscHttpServiceName, _httpPort,
                 new[] { IPAddress.Parse(_ipAddress) });
         var oscProfile =
-            new ServiceProfile(_serviceName, OscUdpServiceName, _oscPort,
+            new ServiceProfile(_serviceName, OscUdpServiceName, OscPort,
                 new[] { IPAddress.Parse(_ipAddress) });
         _serviceDiscovery.Advertise(httpProfile);
         _serviceDiscovery.Advertise(oscProfile);
@@ -208,7 +208,6 @@ public class OscQueryServer
         Logger.Debug("OSCQueryHttp request: {Path}", path);
 
         var json = JsonSerializer.Serialize(request.RawUrl.Contains("HOST_INFO") ? _hostInfo : _queryData);
-        // JsonConvert.SerializeObject(request.RawUrl.Contains("HOST_INFO") ? _hostInfo : _queryData);
         response.Headers.Add("pragma:no-cache");
         response.ContentType = "application/json";
         var buffer = Encoding.UTF8.GetBytes(json);
@@ -228,6 +227,16 @@ public class OscQueryServer
     private ushort FindAvailableTcpPort()
     {
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        socket.Bind(new IPEndPoint(IPAddress.Parse(_ipAddress), port: 0));
+        ushort port = 0;
+        if (socket.LocalEndPoint != null)
+            port = (ushort)((IPEndPoint)socket.LocalEndPoint).Port;
+        return port;
+    }
+    
+    private ushort FindAvailableUdpPort()
+    {
+        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         socket.Bind(new IPEndPoint(IPAddress.Parse(_ipAddress), port: 0));
         ushort port = 0;
         if (socket.LocalEndPoint != null)
@@ -255,7 +264,7 @@ public class OscQueryServer
         _hostInfo = new
         {
             NAME = _serviceName,
-            OSC_PORT = (int)_oscPort,
+            OSC_PORT = (int)OscPort,
             OSC_IP = _ipAddress,
             OSC_TRANSPORT = "UDP",
             EXTENSIONS = new

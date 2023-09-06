@@ -86,9 +86,9 @@ public static class ShockOsc
         _ = new OscQueryServer(
             "ShockOsc", // service name
             "127.0.0.1", // ip address for udp and http server
-            Config.ConfigInstance.Osc.ReceivePort, // osc server port
             OnAvatarChange // optional parameter list callback on vrc discovery
         );
+        OscClient.CreateGameConnection(OscQueryServer.OscPort);
 
         _logger.Information("Connecting UDP Clients...");
         
