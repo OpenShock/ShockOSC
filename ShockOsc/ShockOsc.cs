@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Net.Sockets;
 using System.Reflection;
+using OscQueryLibrary;
 using Serilog;
 using Serilog.Events;
 using ShockLink.ShockOsc.Models;
+using ShockLink.ShockOsc.OscChangeTracker;
 using ShockLink.ShockOsc.Utils;
 using SmartFormat;
 
@@ -81,6 +82,14 @@ public static class ShockOsc
         _logger.Information("Init user hub...");
         await UserHubClient.InitializeAsync();
 
+        _logger.Information("Creating OSC Query Server...");
+        _ = new OscQueryServer(
+            "ShockOsc", // service name
+            "127.0.0.1", // ip address for udp and http server
+            OnAvatarChange // optional parameter list callback on vrc discovery
+        );
+        OscClient.CreateGameConnection(OscQueryServer.OscPort);
+
         _logger.Information("Connecting UDP Clients...");
         
         // Start tasks
@@ -89,11 +98,63 @@ public static class ShockOsc
         SlTask.Run(CheckLoop);
 
         foreach (var (shockerName, shockerId) in Config.ConfigInstance.ShockLink.Shockers)
-            Shockers.TryAdd(shockerName, new Shocker(shockerId));
+            Shockers.TryAdd(shockerName, new Shocker(shockerId, shockerName));
 
         _logger.Information("Ready");
 
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
+    }
+
+    private static void OnAvatarChange(Dictionary<string, object?>? parameters)
+    {
+        foreach (var obj in Shockers)
+        {
+            obj.Value.Reset();
+        }
+        var parameterCount = 0;
+        
+        if (parameters == null)
+        {
+            _logger.Error("Failed to receive avatar parameters");
+            return;
+        }
+
+        foreach (var param in parameters.Keys)
+        {
+            if (!param.StartsWith("/avatar/parameters/ShockOsc/"))
+                continue;
+            
+            var paramName = param.Substring(28, param.Length - 28);
+            var lastUnderscoreIndex = paramName.LastIndexOf('_') + 1;
+            var action = string.Empty;
+            if (lastUnderscoreIndex != 0)
+                action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
+            
+            var shockerName = paramName;
+            if (ShockerParams.Contains(action))
+                shockerName = paramName[..(lastUnderscoreIndex - 1)];
+            
+            if (!Shockers.ContainsKey(shockerName))
+            {
+                _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
+                continue;
+            }
+            
+            switch (action)
+            {
+                case "IsGrabbed":
+                case "Stretch":
+                case "Cooldown":
+                case "Active":
+                case "Intensity":
+                case "IntensityPercentage":
+                case "":
+                    parameterCount++;
+                    break;
+            }
+        }
+        
+        _logger.Information("Loaded avatar config with {ParamCount} parameters", parameterCount);
     }
 
     private static async Task ReceiverLoopAsync()
@@ -122,7 +183,8 @@ public static class ShockOsc
         {
             case "/avatar/change":
                 var avatarId = received.Arguments.ElementAtOrDefault(0);
-                OscConfigLoader.OnAvatarChange(avatarId?.ToString());
+                _logger.Debug("Avatar changed: {AvatarId}", avatarId);
+                OscQueryServer.GetParameters();
                 return;
             case "/avatar/parameters/AFK":
                 _isAfk = received.Arguments.ElementAtOrDefault(0) is true;
@@ -149,13 +211,8 @@ public static class ShockOsc
 
         if (!Shockers.ContainsKey(shockerName))
         {
-            if (!Config.ConfigInstance.ShockLink.Shockers.ContainsKey(shockerName))
-            {
-                _logger.Warning("Unknown shocker {Shocker}", shockerName);
-                return;
-            }
-
-            Shockers.TryAdd(shockerName, new Shocker(Config.ConfigInstance.ShockLink.Shockers[shockerName]));
+            _logger.Warning("Unknown shocker {Shocker}", shockerName);
+            return;
         }
 
         var shocker = Shockers[shockerName];
@@ -208,9 +265,16 @@ public static class ShockOsc
         }
     }
 
+    private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("_Any", "_Active", false);
+    private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("_Any", "_Cooldown", false);
+
     private static async Task SendParams()
     {
-        foreach (var (shockerName, shocker) in Shockers)
+        // TODO: maybe force resend on avatar change
+        var anyActive = false;
+        var anyCooldown = false;
+        
+        foreach (var shocker in Shockers.Values)
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             var isActiveOrOnCooldown =
@@ -219,32 +283,23 @@ public static class ShockOsc
             if (!isActiveOrOnCooldown && shocker.LastIntensity > 0)
                 shocker.LastIntensity = 0;
 
-            if (shocker.HasActiveParam)
-            {
-                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Active", isActive);
+            var onCoolDown = !isActive && isActiveOrOnCooldown;
 
-                if (isActive)
-                    _logger.Debug("Set param: Active: {Active} [{ParamName}]", isActive ? "true" : "false", shockerName);
-            }
-
-            if (shocker.HasCooldownParam)
-            {
-                var onCoolDown = !isActive && isActiveOrOnCooldown;
-
-                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Cooldown", onCoolDown);
-
-                if (onCoolDown)
-                    _logger.Debug("Set param: Cooldown: {Cooldown}", onCoolDown ? "true" : "false");
-            }
-
-            if (shocker.HasIntensityParam)
-            {
-                await OscClient.SendGameMessage($"/avatar/parameters/ShockOsc/{shockerName}_Intensity", shocker.LastIntensity);
-
-                if (shocker.LastIntensity > 0)
-                    _logger.Debug("Set param: Intensity: {Intensity}", shocker.LastIntensity);
-            }
+            var cooldownPercentage = 0f;
+            if (onCoolDown)
+                cooldownPercentage = ClampFloat(1 - (float)(DateTime.UtcNow - shocker.LastExecuted.AddMilliseconds(shocker.LastDuration)).TotalMilliseconds / Config.ConfigInstance.Behaviour.CooldownTime);
+            
+            await shocker.ParamActive.SetValue(isActive);
+            await shocker.ParamCooldown.SetValue(onCoolDown);
+            await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
+            await shocker.ParamIntensity.SetValue(shocker.LastIntensity);
+            
+            if (isActive) anyActive = true;
+            if (onCoolDown) anyCooldown = true;
         }
+
+        await ParamAnyActive.SetValue(anyActive);
+        await ParamAnyCooldown.SetValue(anyCooldown);
     }
 
     private static async Task CheckLoop()
@@ -305,7 +360,7 @@ public static class ShockOsc
                 continue;
             }
 
-            if (_isAfk && Config.ConfigInstance.Behaviour.DisableWhileAfk)
+            if (_isAfk && config.DisableWhileAfk)
             {
                 shocker.TriggerMethod = TriggerMethod.None;
                 _logger.Information("Ignoring shock {Shocker} user is AFK", pos);
@@ -372,7 +427,7 @@ public static class ShockOsc
                 Duration = duration,
                 Type = ControlType.Shock
             });
-            
+
             if (!Config.ConfigInstance.Osc.Chatbox) continue;
             // Chatbox message local
             var dat = new
@@ -422,7 +477,8 @@ public static class ShockOsc
                 CustomName = sender.CustomName
             };
 
-            var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
+            var msg =
+                $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
             await OscClient.SendChatboxMessage(msg);
         }
 
@@ -431,14 +487,13 @@ public static class ShockOsc
             return;
 
         var oneShock = false;
-        
+
         foreach (var pain in shocker)
         {
             switch (log.Type)
             {
                 case ControlType.Shock:
                 {
-                    Console.WriteLine(log.ExecutedAt);
                     var rir = Config.ConfigInstance.Behaviour.IntensityRange;
                     if (pain.LastIntensity == 0) // don't override calculated intensity
                         pain.LastIntensity = ClampFloat((float)log.Intensity / rir.Max);
@@ -468,8 +523,6 @@ public static class ShockOsc
                 SendParams();
             }
         }
-
-
     }
 
     private static async Task ForceUnmute()

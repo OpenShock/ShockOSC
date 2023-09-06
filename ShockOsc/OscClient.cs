@@ -7,7 +7,7 @@ namespace ShockLink.ShockOsc;
 
 public static class OscClient
 {
-    private static readonly OscDuplex GameConnection = new(new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.ReceivePort), new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.SendPort));
+    private static OscDuplex _gameConnection;
     private static readonly OscSender HoscySenderClient = new(new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.HoscySendPort));
     private static readonly ILogger Logger = Log.ForContext(typeof(OscClient));
 
@@ -15,6 +15,11 @@ public static class OscClient
     {
         Task.Run(GameSenderLoop);
         Task.Run(HoscySenderLoop);
+    }
+
+    public static void CreateGameConnection(ushort receivePort)
+    {
+        _gameConnection = new(new IPEndPoint(IPAddress.Loopback, receivePort), new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.SendPort));
     }
 
     private static readonly Channel<OscMessage> GameSenderChannel = Channel.CreateUnbounded<OscMessage>(new UnboundedChannelOptions()
@@ -26,8 +31,7 @@ public static class OscClient
     {
         SingleReader = true
     });
-
-
+    
     public static ValueTask SendGameMessage(string address, params object?[]?arguments)
     {
         arguments ??= Array.Empty<object>();
@@ -36,16 +40,10 @@ public static class OscClient
     
     public static ValueTask SendChatboxMessage(string message)
     {
-        if (Config.ConfigInstance.Osc.Hoscy)
-        {
-            string address = $"/hoscy/{Config.ConfigInstance.Chatbox.HoscyType.ToString().ToLowerInvariant()}";
-            return HoscySenderChannel.Writer.WriteAsync(
-                new OscMessage("/hoscy/message", message));
-        }
+        if (Config.ConfigInstance.Osc.Hoscy) return HoscySenderChannel.Writer.WriteAsync(new OscMessage("/hoscy/message", message));
 
         return GameSenderChannel.Writer.WriteAsync(new OscMessage("/chatbox/input", message, true));
     }
-
 
     private static async Task GameSenderLoop()
     {
@@ -54,7 +52,7 @@ public static class OscClient
         {
             try
             {
-                await GameConnection.SendAsync(oscMessage);
+                await _gameConnection.SendAsync(oscMessage);
             }
             catch (Exception e)
             {
@@ -79,6 +77,5 @@ public static class OscClient
         }
     }
 
-    public static Task<OscMessage> ReceiveGameMessage() => GameConnection.ReceiveMessageAsync();
-    
+    public static Task<OscMessage> ReceiveGameMessage() => _gameConnection.ReceiveMessageAsync();
 }
