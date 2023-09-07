@@ -27,7 +27,7 @@ public static class UserHubClient
         .AddJsonProtocol(options =>
         {
             options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
-            options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: true));
+            options.PayloadSerializerOptions.Converters.Add(new CustomJsonStringEnumConverter());
         })
         .Build();
 
