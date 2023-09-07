@@ -1,5 +1,6 @@
 ﻿namespace ShockLink.ShockOsc.Models;
 
+[EnumAsInteger]
 public enum ControlType
 {
     Stop = 0,
