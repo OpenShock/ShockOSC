@@ -96,7 +96,7 @@ public static class ShockOsc
         SlTask.Run(SenderLoopAsync);
         SlTask.Run(CheckLoop);
 
-        Shockers.TryAdd("#All", new Shocker(Guid.Empty, "#All"));
+        Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
         foreach (var (shockerName, shockerId) in Config.ConfigInstance.ShockLink.Shockers)
             Shockers.TryAdd(shockerName, new Shocker(shockerId, shockerName));
 
@@ -131,15 +131,16 @@ public static class ShockOsc
                 var lastUnderscoreIndex = paramName.LastIndexOf('_') + 1;
                 var action = string.Empty;
                 var shockerName = paramName;
-                if (lastUnderscoreIndex != 0)
+                if (lastUnderscoreIndex > 1)
                 {
                     shockerName = paramName[..(lastUnderscoreIndex - 1)];
                     action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
                 }
 
-                if (!Shockers.ContainsKey(shockerName) && shockerName != "#Any")
+                if (!Shockers.ContainsKey(shockerName) && shockerName != "_Any" && shockerName != "_All")
                 {
                     _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
+                    _logger.Debug("Param: {Param}",param);
                     continue;
                 }
 
@@ -194,13 +195,13 @@ public static class ShockOsc
         }
 
         if (!addr.StartsWith("/avatar/parameters/ShockOsc/"))
-            return;
+            return; 
 
         var pos = addr.Substring(28, addr.Length - 28);
         var lastUnderscoreIndex = pos.LastIndexOf('_') + 1;
         var action = string.Empty;
         var shockerName = pos;
-        if (lastUnderscoreIndex != 0)
+        if (lastUnderscoreIndex > 1)
         {
             shockerName = pos[..(lastUnderscoreIndex - 1)];
             action = pos.Substring(lastUnderscoreIndex, pos.Length - lastUnderscoreIndex);
@@ -208,9 +209,11 @@ public static class ShockOsc
 
         if (!ShockerParams.Contains(action)) return;
 
-        if (!Shockers.ContainsKey(shockerName) && shockerName != "#Any")
+        if (!Shockers.ContainsKey(shockerName))
         {
+            if (shockerName == "_Any") return;
             _logger.Warning("Unknown shocker {Shocker}", shockerName);
+            _logger.Debug("Param: {Param}",pos);
             return;
         }
 
@@ -264,8 +267,8 @@ public static class ShockOsc
         }
     }
 
-    private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("#Any", "_Active", false);
-    private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("#Any", "_Cooldown", false);
+    private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("_Any", "_Active", false);
+    private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("_Any", "_Cooldown", false);
 
     private static async Task SendParams()
     {
