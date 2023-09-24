@@ -123,5 +123,4 @@ Add these parameters to your avatars animator & params file.
 
 ## Credits
 
-[CoreOSC by dastevens](https://github.com/dastevens/CoreOSC)  
 [ShockOsc Contributors](https://github.com/Shock-Link/ShockOsc/graphs/contributors)
