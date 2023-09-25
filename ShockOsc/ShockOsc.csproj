@@ -22,7 +22,7 @@
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.11" />
       <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
       <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
-      <PackageReference Include="SmartFormat.NET" Version="3.2.2" />
+      <PackageReference Include="SmartFormat.NET" Version="3.3.0" />
     </ItemGroup>
     
 </Project>
