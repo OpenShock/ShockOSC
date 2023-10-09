@@ -49,13 +49,16 @@ public static class Config
         var jsonNew = File.ReadAllText(Path);
         _internalConfig = JsonSerializer.Deserialize<Conf>(jsonNew);
         Logger.Information("New configuration file generated! Please configure it!");
+        Logger.Information("Press any key to exit...");
+        Console.ReadKey();
         Environment.Exit(10);
     }
 
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new CustomJsonStringEnumConverter() }
     };
 
     public static void Save()
@@ -98,7 +101,7 @@ public static class Config
             FixedIntensity = 50,
             CooldownTime = 5000,
             HoldTime = 250,
-            VibrateWhileBoneHeld = true,
+            WhileBoneHeld = Conf.BehaviourConf.BoneHeldAction.Vibrate,
             DisableWhileAfk = true,
             ForceUnmute = false
         },
@@ -200,9 +203,16 @@ public static class Config
             public required uint FixedDuration { get; init; }
             public required uint HoldTime { get; init; }
             public required uint CooldownTime { get; init; }
-            public bool VibrateWhileBoneHeld { get; init; } = true;
+            public BoneHeldAction WhileBoneHeld { get; init; } = BoneHeldAction.Vibrate;
             public bool DisableWhileAfk { get; init; } = true;
             public bool ForceUnmute { get; init; } = false;
+            
+            public enum BoneHeldAction
+            {
+                Vibrate = 0,
+                Shock = 1,
+                None = 2
+            }
         }
 
         public class OpenShockConf

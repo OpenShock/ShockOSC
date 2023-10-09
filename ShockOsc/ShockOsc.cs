@@ -140,7 +140,7 @@ public static class ShockOsc
                 if (!Shockers.ContainsKey(shockerName) && shockerName != "_Any" && shockerName != "_All")
                 {
                     _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
-                    _logger.Debug("Param: {Param}",param);
+                    _logger.Debug("Param: {Param}", param);
                     continue;
                 }
 
@@ -195,7 +195,7 @@ public static class ShockOsc
         }
 
         if (!addr.StartsWith("/avatar/parameters/ShockOsc/"))
-            return; 
+            return;
 
         var pos = addr.Substring(28, addr.Length - 28);
         var lastUnderscoreIndex = pos.LastIndexOf('_') + 1;
@@ -213,7 +213,7 @@ public static class ShockOsc
         {
             if (shockerName == "_Any") return;
             _logger.Warning("Unknown shocker {Shocker}", shockerName);
-            _logger.Debug("Param: {Param}",pos);
+            _logger.Debug("Param: {Param}", pos);
             return;
         }
 
@@ -236,7 +236,8 @@ public static class ShockOsc
                         shocker.TriggerMethod = TriggerMethod.PhysBoneRelease;
                         shocker.LastActive = DateTime.UtcNow;
                     }
-                    else if (Config.ConfigInstance.Behaviour.VibrateWhileBoneHeld)
+                    else if (Config.ConfigInstance.Behaviour.WhileBoneHeld !=
+                             Config.Conf.BehaviourConf.BoneHeldAction.None)
                     {
                         await CancelAction(shocker);
                     }
@@ -333,7 +334,9 @@ public static class ShockOsc
                 shocker.LastExecuted.AddMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime)
                     .AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
 
-            if (shocker.TriggerMethod == TriggerMethod.None && config.VibrateWhileBoneHeld && !isActiveOrOnCooldown &&
+            if (shocker.TriggerMethod == TriggerMethod.None &&
+                Config.ConfigInstance.Behaviour.WhileBoneHeld != Config.Conf.BehaviourConf.BoneHeldAction.None &&
+                !isActiveOrOnCooldown &&
                 shocker.IsGrabbed &&
                 shocker.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(300)))
             {
@@ -342,7 +345,10 @@ public static class ShockOsc
                     vibrationIntensity = 1;
                 _logger.Debug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
                 shocker.LastVibration = DateTime.UtcNow;
-                await ControlShocker(shocker.Id, 1000, (byte)vibrationIntensity, ControlType.Vibrate);
+                await ControlShocker(shocker.Id, 1000, (byte)vibrationIntensity,
+                    Config.ConfigInstance.Behaviour.WhileBoneHeld == Config.Conf.BehaviourConf.BoneHeldAction.Shock
+                        ? ControlType.Shock
+                        : ControlType.Vibrate);
             }
 
             if (shocker.TriggerMethod == TriggerMethod.None)
