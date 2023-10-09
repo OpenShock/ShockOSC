@@ -2,7 +2,7 @@
 
 [![Release Version](https://img.shields.io/github/v/release/OpenShock/ShockOsc?style=for-the-badge&color=6451f1)](https://github.com/Shock-Link/ShockOsc/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/OpenShock/ShockOsc/total?style=for-the-badge&color=6451f1)](https://github.com/Shock-Link/ShockOsc/releases/latest)
-[![Discord](https://img.shields.io/discord/1078124408775901204?style=for-the-badge&color=6451f1&label=ShockLink%20Discord&logo=discord)](https://shockl.ink/discord)
+[![Discord](https://img.shields.io/discord/1078124408775901204?style=for-the-badge&color=6451f1&label=OpenShock%20Discord&logo=discord)](https://shockl.ink/discord)
 
 Used as an interface for OpenShock to communicate with applications that support OSC and OscQuery like VRChat.  
 Use at your own risk.
