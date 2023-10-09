@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace ShockLink.ShockOsc.Models;
+namespace OpenShock.ShockOsc.Models;
 
 public class AvatarConfigJson
 {

@@ -1,13 +1,12 @@
-﻿using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http.Connections;
+﻿using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenShock.ShockOsc.Models;
 using Serilog;
-using ShockLink.ShockOsc.Models;
 using ILogger = Serilog.ILogger;
 
-namespace ShockLink.ShockOsc;
+namespace OpenShock.ShockOsc;
 
 public static class UserHubClient
 {
@@ -15,8 +14,8 @@ public static class UserHubClient
     public static string? ConnectionId { get; set; }
     
     private static readonly HubConnection Connection = new HubConnectionBuilder()
-        .WithUrl(Config.ConfigInstance.ShockLink.UserHub, HttpTransportType.WebSockets,
-            options => { options.Headers.Add("ShockLinkToken", Config.ConfigInstance.ShockLink.ApiToken); })
+        .WithUrl(Config.ConfigInstance.OpenShock.UserHub, HttpTransportType.WebSockets,
+            options => { options.Headers.Add("OpenShockToken", Config.ConfigInstance.OpenShock.ApiToken); })
         .WithAutomaticReconnect()
         .ConfigureLogging(builder =>
         {

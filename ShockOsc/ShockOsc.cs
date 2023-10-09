@@ -1,17 +1,17 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
-using OscQueryLibrary;
+using OpenShock.ShockOsc.Models;
+using OpenShock.ShockOsc.OscChangeTracker;
+using OpenShock.ShockOsc.OscQueryLibrary;
+using OpenShock.ShockOsc.Utils;
 using Serilog;
 using Serilog.Events;
-using ShockLink.ShockOsc.Models;
-using ShockLink.ShockOsc.OscChangeTracker;
-using ShockLink.ShockOsc.Utils;
 using SmartFormat;
 
 #pragma warning disable CS4014
 
-namespace ShockLink.ShockOsc;
+namespace OpenShock.ShockOsc;
 
 public static class ShockOsc
 {
@@ -60,7 +60,7 @@ public static class ShockOsc
 
         _logger = Log.ForContext(typeof(ShockOsc));
 
-        _logger.Information("Starting ShockLink.ShockOsc version {Version}",
+        _logger.Information("Starting ShockOsc version {Version}",
             Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "error");
 
         try
@@ -76,7 +76,7 @@ public static class ShockOsc
             _logger.Error(e, "Unknown error in updater");
         }
 
-        _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
+        _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.OpenShock.Shockers.Select(x => x.Key));
 
         _logger.Information("Init user hub...");
         await UserHubClient.InitializeAsync();
@@ -97,7 +97,7 @@ public static class ShockOsc
         SlTask.Run(CheckLoop);
 
         Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
-        foreach (var (shockerName, shockerId) in Config.ConfigInstance.ShockLink.Shockers)
+        foreach (var (shockerName, shockerId) in Config.ConfigInstance.OpenShock.Shockers)
             Shockers.TryAdd(shockerName, new Shocker(shockerId, shockerName));
 
         _logger.Information("Ready");

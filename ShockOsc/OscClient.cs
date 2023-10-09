@@ -3,7 +3,7 @@ using System.Threading.Channels;
 using LucHeart.CoreOSC;
 using Serilog;
 
-namespace ShockLink.ShockOsc;
+namespace OpenShock.ShockOsc;
 
 public static class OscClient
 {

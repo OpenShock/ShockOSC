@@ -6,7 +6,7 @@ using MeaMod.DNS.Model;
 using MeaMod.DNS.Multicast;
 using Serilog;
 
-namespace OscQueryLibrary;
+namespace OpenShock.ShockOsc.OscQueryLibrary;
 
 public class OscQueryServer
 {

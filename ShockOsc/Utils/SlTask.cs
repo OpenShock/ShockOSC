@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Serilog;
 
-namespace ShockLink.ShockOsc.Utils;
+namespace OpenShock.ShockOsc.Utils;
 
 public static class SlTask
 {

@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using OpenShock.ShockOsc.Models;
 using Serilog;
-using ShockLink.ShockOsc.Models;
 
-namespace ShockLink.ShockOsc;
+namespace OpenShock.ShockOsc;
 
 public static class Config
 {
@@ -102,11 +102,11 @@ public static class Config
             DisableWhileAfk = true,
             ForceUnmute = false
         },
-        ShockLink = new Conf.ShockLinkConf
+        OpenShock = new Conf.OpenShockConf
         {
             Shockers = new Dictionary<string, Guid>(),
             UserHub = null!,
-            ApiToken = "SET THIS TO YOUR SHOCKLINK API TOKEN",
+            ApiToken = "SET THIS TO YOUR OPENSHOCK API TOKEN",
         }
     };
 
@@ -114,7 +114,7 @@ public static class Config
     {
         public required OscConf Osc { get; set; }
         public required BehaviourConf Behaviour { get; set; }
-        public required ShockLinkConf ShockLink { get; set; }
+        public required OpenShockConf OpenShock { get; set; }
         public ChatboxConf Chatbox { get; set; } = new();
         public Version? LastIgnoredVersion { get; set; }
 
@@ -205,7 +205,7 @@ public static class Config
             public bool ForceUnmute { get; init; } = false;
         }
 
-        public class ShockLinkConf
+        public class OpenShockConf
         {
             public Uri UserHub { get; init; } = new("https://api.shocklink.net/1/hubs/user");
             public required string ApiToken { get; init; }

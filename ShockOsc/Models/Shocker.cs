@@ -1,6 +1,6 @@
-using ShockLink.ShockOsc.OscChangeTracker;
+using OpenShock.ShockOsc.OscChangeTracker;
 
-namespace ShockLink.ShockOsc.Models;
+namespace OpenShock.ShockOsc.Models;
 
 public class Shocker
 {

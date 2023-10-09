@@ -1,4 +1,4 @@
-namespace OscQueryLibrary;
+namespace OpenShock.ShockOsc.OscQueryLibrary;
 
 public class OscQueryModels
 {

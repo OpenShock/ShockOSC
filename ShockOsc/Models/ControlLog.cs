@@ -1,4 +1,4 @@
-﻿namespace ShockLink.ShockOsc.Models;
+﻿namespace OpenShock.ShockOsc.Models;
 
 public class ControlLog
 {

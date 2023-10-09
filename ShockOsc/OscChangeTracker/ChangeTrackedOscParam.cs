@@ -1,6 +1,6 @@
 ﻿using Serilog;
 
-namespace ShockLink.ShockOsc.OscChangeTracker;
+namespace OpenShock.ShockOsc.OscChangeTracker;
 
 public class ChangeTrackedOscParam<T> : IChangeTrackedOscParam
 {
