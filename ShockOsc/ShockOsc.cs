@@ -92,9 +92,9 @@ public static class ShockOsc
         _logger.Information("Connecting UDP Clients...");
 
         // Start tasks
-        SlTask.Run(ReceiverLoopAsync);
-        SlTask.Run(SenderLoopAsync);
-        SlTask.Run(CheckLoop);
+        OsTask.Run(ReceiverLoopAsync);
+        OsTask.Run(SenderLoopAsync);
+        OsTask.Run(CheckLoop);
 
         Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
         foreach (var (shockerName, shockerId) in Config.ConfigInstance.OpenShock.Shockers)
@@ -137,7 +137,7 @@ public static class ShockOsc
                     action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
                 }
 
-                if (!Shockers.ContainsKey(shockerName) && shockerName != "_Any" && shockerName != "_All")
+                if (!Shockers.ContainsKey(shockerName) && !shockerName.StartsWith("_"))
                 {
                     _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
                     _logger.Debug("Param: {Param}", param);
@@ -182,7 +182,8 @@ public static class ShockOsc
             case "/avatar/change":
                 var avatarId = received.Arguments.ElementAtOrDefault(0);
                 _logger.Debug("Avatar changed: {AvatarId}", avatarId);
-                OscQueryServer.GetParameters();
+                OsTask.Run(OscQueryServer.GetParameters);
+                OsTask.Run(UnderscoreConfig.SendUpdateForAll);
                 return;
             case "/avatar/parameters/AFK":
                 _isAfk = received.Arguments.ElementAtOrDefault(0) is true;
@@ -198,6 +199,14 @@ public static class ShockOsc
             return;
 
         var pos = addr.Substring(28, addr.Length - 28);
+        
+        // Check if _Config
+        if (pos.StartsWith("_Config/"))
+        {
+            UnderscoreConfig.HandleCommand(pos, received.Arguments);
+            return;
+        }
+        
         var lastUnderscoreIndex = pos.LastIndexOf('_') + 1;
         var action = string.Empty;
         var shockerName = pos;
@@ -334,6 +343,8 @@ public static class ShockOsc
                 shocker.LastExecuted.AddMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime)
                     .AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
 
+            if(UnderscoreConfig.KillSwitch) return;
+            
             if (shocker.TriggerMethod == TriggerMethod.None &&
                 Config.ConfigInstance.Behaviour.WhileBoneHeld != Config.Conf.BehaviourConf.BoneHeldAction.None &&
                 !isActiveOrOnCooldown &&

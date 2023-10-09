@@ -3,9 +3,9 @@ using Serilog;
 
 namespace OpenShock.ShockOsc.Utils;
 
-public static class SlTask
+public static class OsTask
 {
-    private static readonly ILogger Logger = Log.ForContext(typeof(SlTask));
+    private static readonly ILogger Logger = Log.ForContext(typeof(OsTask));
     
     public static Task Run(Func<Task?> function, CancellationToken token = default, [CallerFilePath] string file = "",
         [CallerMemberName] string member = "", [CallerLineNumber] int line = -1) => Task.Run(function, token).ContinueWith(
