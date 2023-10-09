@@ -1,10 +1,10 @@
 # ShockOsc
 
-[![Release Version](https://img.shields.io/github/v/release/Shock-Link/ShockOsc?style=for-the-badge&color=6451f1)](https://github.com/Shock-Link/ShockOsc/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/Shock-Link/ShockOsc/total?style=for-the-badge&color=6451f1)](https://github.com/Shock-Link/ShockOsc/releases/latest)
+[![Release Version](https://img.shields.io/github/v/release/OpenShock/ShockOsc?style=for-the-badge&color=6451f1)](https://github.com/Shock-Link/ShockOsc/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/OpenShock/ShockOsc/total?style=for-the-badge&color=6451f1)](https://github.com/Shock-Link/ShockOsc/releases/latest)
 [![Discord](https://img.shields.io/discord/1078124408775901204?style=for-the-badge&color=6451f1&label=ShockLink%20Discord&logo=discord)](https://shockl.ink/discord)
 
-Used as an interface for ShockLink to communicate with applications that support OSC like ChilloutVR and VRChat.  
+Used as an interface for OpenShock to communicate with applications that support OSC and OscQuery like VRChat.  
 Use at your own risk.
 
 ## Setup
@@ -44,6 +44,19 @@ Add these parameters to your avatars animator & params file.
 - **float** `ShockOsc/{ShockerName}_CooldownPercentage` 0f = shocker isn't on cooldown, 1f = shocker on cooldown (0f while shocker is active)
 - **float** `ShockOsc/{ShockerName}_Intensity` 0..1f percentage value that represents how close the shock was to maximum intensity from `IntensityRange` (except for FixedIntensity)
 
+#### Virtual Shockers
+
+You can use the virtual, or pseudo, shockers with the name `_Any` and `_All` for some limited actions. Read more below.
+
+##### `_Any`
+- `ShockOsc/_Any_Active` is true whenever there is any shocker currently **shocking**
+- `ShockOsc/_Any_Cooldown` is true whenever there is any shocker currently **on cooldown**
+
+##### `_All`
+This one can be used to make all shockers configured go off at the same time or with the same trigger.  
+This virtual shocker behaves just like another configured shockers, except it relays its actions to all others.
+
+
 ## Config input parameters
 
 ## Details about the configuration file
@@ -53,7 +66,6 @@ Add these parameters to your avatars animator & params file.
   "Osc": {
     "Chatbox": true, # Display chatbox messages on shocks
     "Hoscy": false, # Use HOSCY for chatbox
-    "ReceivePort": 9001, # Where OSC events are coming in, VRChat defalt is 9001. If you wanna use HOSCY create a HOSCY route and enter the port here.
     "SendPort": 9000, # Where to send osc messages to, VRChat default is 9000. This can be left like it is for HOSCY, seem next item.
     "HoscySendPort": 9001 # Used to send chatbox message via hoscy is 'Hoscy' is to true.
   },
@@ -73,7 +85,7 @@ Add these parameters to your avatars animator & params file.
     "FixedDuration": 2, # If RandomDuration is false
     "HoldTime": 250, # Defines how long the parameter needs to be true in milliseconds for the shock to be triggered
     "CooldownTime": 5000, # Cooldown in milliseconds between shocks **per shocker**,
-    "VibrateWhileBoneHeld": true, # Vibrate while physbone is grabbed
+    "WhileBoneHeld": "Vibrate", # `Vibrate`, `Shock`, `None` - defines what happens when a physbone is held in hand
     "DisableWhileAfk": true, # Disable shocks when AFK (VRChats AFK Detection needs to be turned on for this)
     "ForceUnmute": false # Force unmute when shock is triggered
   },
@@ -110,7 +122,7 @@ Add these parameters to your avatars animator & params file.
   },
   "ShockLink": {
     "UserHub": "https://api.shocklink.net/1/hubs/user",
-    "ApiToken": "SET THIS TO YOUR SHOCKLINK API TOKEN",
+    "ApiToken": "SET THIS TO YOUR OPENSHOCK API TOKEN",
     "ChatboxRemoteControls": true, # Weither to display Shocks via some other source (e.g. Website) in the Chatbox
     "Shockers": { # Key = ShockerName, Value = ShockerId
       "Leg": "d9267ca6-d69b-4b7a-b482-c455f75a4408" # Example with a name you can freely choose, e.g. Leg and a ShockerId
@@ -122,4 +134,4 @@ Add these parameters to your avatars animator & params file.
 
 ## Credits
 
-[ShockOsc Contributors](https://github.com/Shock-Link/ShockOsc/graphs/contributors)
+[ShockOsc Contributors](https://github.com/OpenShock/ShockOsc/graphs/contributors)
