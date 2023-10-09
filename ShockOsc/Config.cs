@@ -31,7 +31,7 @@ public static class Config
                 Logger.Verbose("Config file is not empty");
                 try
                 {
-                    _internalConfig = JsonSerializer.Deserialize<Conf>(json);
+                    _internalConfig = JsonSerializer.Deserialize<Conf>(json, Options);
                     Logger.Information("Successfully loaded config");
                 }
                 catch (JsonException e)
@@ -47,7 +47,7 @@ public static class Config
         _internalConfig = GetDefaultConfig();
         Save();
         var jsonNew = File.ReadAllText(Path);
-        _internalConfig = JsonSerializer.Deserialize<Conf>(jsonNew);
+        _internalConfig = JsonSerializer.Deserialize<Conf>(jsonNew, Options);
         Logger.Information("New configuration file generated! Please configure it!");
         Logger.Information("Press any key to exit...");
         Console.ReadKey();
@@ -58,7 +58,7 @@ public static class Config
     {
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Converters = { new CustomJsonStringEnumConverter() }
+        Converters = { new JsonStringEnumConverter() }
     };
 
     public static void Save()
