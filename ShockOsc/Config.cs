@@ -105,7 +105,7 @@ public static class Config
             DisableWhileAfk = true,
             ForceUnmute = false
         },
-        OpenShock = new Conf.OpenShockConf
+        ShockLink = new Conf.OpenShockConf
         {
             Shockers = new Dictionary<string, Guid>(),
             UserHub = null!,
@@ -117,7 +117,7 @@ public static class Config
     {
         public required OscConf Osc { get; set; }
         public required BehaviourConf Behaviour { get; set; }
-        public required OpenShockConf OpenShock { get; set; }
+        public required OpenShockConf ShockLink { get; set; }
         public ChatboxConf Chatbox { get; set; } = new();
         public Version? LastIgnoredVersion { get; set; }
 

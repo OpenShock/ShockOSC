@@ -76,7 +76,7 @@ public static class ShockOsc
             _logger.Error(e, "Unknown error in updater");
         }
 
-        _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.OpenShock.Shockers.Select(x => x.Key));
+        _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
 
         _logger.Information("Init user hub...");
         await UserHubClient.InitializeAsync();
@@ -97,7 +97,7 @@ public static class ShockOsc
         OsTask.Run(CheckLoop);
 
         Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
-        foreach (var (shockerName, shockerId) in Config.ConfigInstance.OpenShock.Shockers)
+        foreach (var (shockerName, shockerId) in Config.ConfigInstance.ShockLink.Shockers)
             Shockers.TryAdd(shockerName, new Shocker(shockerId, shockerName));
 
         _logger.Information("Ready");

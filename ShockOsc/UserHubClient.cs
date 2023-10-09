@@ -14,8 +14,8 @@ public static class UserHubClient
     public static string? ConnectionId { get; set; }
     
     private static readonly HubConnection Connection = new HubConnectionBuilder()
-        .WithUrl(Config.ConfigInstance.OpenShock.UserHub, HttpTransportType.WebSockets,
-            options => { options.Headers.Add("OpenShockToken", Config.ConfigInstance.OpenShock.ApiToken); })
+        .WithUrl(Config.ConfigInstance.ShockLink.UserHub, HttpTransportType.WebSockets,
+            options => { options.Headers.Add("OpenShockToken", Config.ConfigInstance.ShockLink.ApiToken); })
         .WithAutomaticReconnect()
         .ConfigureLogging(builder =>
         {
