@@ -10,7 +10,7 @@
         <Company>OpenShock</Company>
         <AssemblyVersion>1.8.0</AssemblyVersion>
         <FileVersion>1.8.0</FileVersion>
-        <ApplicationIcon>Resources\shocklink-logo-only.ico</ApplicationIcon>
+        <ApplicationIcon>Resources\openshock-icon.ico</ApplicationIcon>
         <SelfContained>true</SelfContained>
         <PublishSingleFile>true</PublishSingleFile>
         <Product>ShockOsc</Product>
