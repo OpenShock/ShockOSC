@@ -38,8 +38,8 @@ public static class Updater
     
     private static async Task<(Version, GithubReleaseResponse.Asset)?> GetLatestRelease()
     {
-        TryDeleteFile(Path.Combine(Environment.CurrentDirectory, "ShockLink.ShockOsc.exe"));
-        TryDeleteFile(Path.Combine(Environment.CurrentDirectory, "ShockLink.ShockOsc.old.exe"));
+        //TryDeleteFile(Path.Combine(Environment.CurrentDirectory, "ShockLink.ShockOsc.exe"));
+        //TryDeleteFile(Path.Combine(Environment.CurrentDirectory, "ShockLink.ShockOsc.old.exe"));
         TryDeleteFile(OldFilePath);
         
         Logger.Information("Checking GitHub for updates...");
@@ -64,7 +64,7 @@ public static class Updater
             return null;
         }
 
-        var asset = json.Assets.FirstOrDefault(x => x.Name == "ShockLink.ShockOsc.exe");
+        var asset = json.Assets.FirstOrDefault(x => x.Name == "OpenShock.ShockOsc.exe");
         if (asset == null)
         {
             Logger.Warning("Could not find asset with ShockLink.ShockOsc.exe. Assets found: {@Assets}", json.Assets);
