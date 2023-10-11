@@ -230,11 +230,12 @@ public static class ShockOsc
         var shocker = Shockers[shockerName];
 
         var value = received.Arguments.ElementAtOrDefault(0);
+        _logger.Debug("Received shocker parameter update for [{ShockerName}] state [{State}]", shocker.Name, value is true);
         switch (action)
         {
             case "IShock":
                 // TODO: check Cooldowns
-                if (value is true) OsTask.Run(() => InstantShock(shocker, GetDuration(), GetIntensity()));
+                if (value is true && !UnderscoreConfig.KillSwitch) OsTask.Run(() => InstantShock(shocker, GetDuration(), GetIntensity()));
                 return;
             case "Stretch":
                 if (value is float stretch)
@@ -260,7 +261,7 @@ public static class ShockOsc
                 shocker.IsGrabbed = isGrabbed;
                 return;
         }
-
+        
         if (value is true)
         {
             shocker.TriggerMethod = TriggerMethod.Manual;
