@@ -8,7 +8,7 @@ public class Shocker
     public DateTime LastExecuted { get; set; }
     public DateTime LastVibration { get; set; }
     public uint LastDuration { get; set; }
-    public float LastIntensity { get; set; }
+    public byte LastIntensity { get; set; }
     public float LastStretchValue { get; set; }
     public bool IsGrabbed { get; set; }
     

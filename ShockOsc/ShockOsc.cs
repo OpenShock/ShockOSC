@@ -29,7 +29,8 @@ public static class ShockOsc
         "Cooldown",
         "Active",
         "Intensity",
-        "CooldownPercentage"
+        "CooldownPercentage",
+        "IShock"
     };
 
     private static async Task Main(string[] args)
@@ -231,6 +232,10 @@ public static class ShockOsc
         var value = received.Arguments.ElementAtOrDefault(0);
         switch (action)
         {
+            case "IShock":
+                // TODO: check Cooldowns
+                if (value is true) OsTask.Run(() => InstantShock(shocker, GetDuration(), GetIntensity()));
+                return;
             case "Stretch":
                 if (value is float stretch)
                     shocker.LastStretchValue = stretch;
@@ -254,10 +259,6 @@ public static class ShockOsc
 
                 shocker.IsGrabbed = isGrabbed;
                 return;
-            case "":
-                break;
-            default:
-                return;
         }
 
         if (value is true)
@@ -280,6 +281,46 @@ public static class ShockOsc
     private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("_Any", "_Active", false);
     private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("_Any", "_Cooldown", false);
 
+    private static async Task InstantShock(Shocker shocker, uint duration, byte intensity)
+    {
+        shocker.LastExecuted = DateTime.UtcNow;
+        shocker.LastDuration = duration;
+        var intensityPercentage = Math.Round(GetFloatScaled(intensity) * 100f);
+        shocker.LastIntensity = intensity;
+
+        ForceUnmute();
+        SendParams();
+
+        shocker.TriggerMethod = TriggerMethod.None;
+        var inSeconds = ((float)duration / 1000).ToString(CultureInfo.InvariantCulture);
+        _logger.Information(
+            "Sending shock to {Shocker} Intensity: {Intensity} IntensityPercentage: {IntensityPercentage}% Length:{Length}s",
+            shocker.Name, intensity, intensityPercentage, inSeconds);
+
+        await ControlShocker(shocker.Id, duration, intensity, ControlType.Shock);
+        
+        if (!Config.ConfigInstance.Osc.Chatbox) return;
+        // Chatbox message local
+        var dat = new
+        {
+            ShockerName = shocker.Name,
+            Intensity = intensity,
+            IntensityPercentage = intensityPercentage,
+            Duration = duration,
+            DurationSeconds = inSeconds
+        };
+        var template = Config.ConfigInstance.Chatbox.Types[ControlType.Shock];
+        var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(template.Local, dat)}";
+        await OscClient.SendChatboxMessage(msg);
+    }
+
+    /// <summary>
+    /// Coverts to a 0-1 float and scale it to the max intensity
+    /// </summary>
+    /// <param name="intensity"></param>
+    /// <returns></returns>
+    private static float GetFloatScaled(byte intensity) => ClampFloat((float)intensity / Config.ConfigInstance.Behaviour.IntensityRange.Max);
+    
     private static async Task SendParams()
     {
         // TODO: maybe force resend on avatar change
@@ -307,7 +348,7 @@ public static class ShockOsc
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);
             await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
-            await shocker.ParamIntensity.SetValue(shocker.LastIntensity);
+            await shocker.ParamIntensity.SetValue(GetFloatScaled(shocker.LastIntensity));
 
             if (isActive) anyActive = true;
             if (onCoolDown) anyCooldown = true;
@@ -332,6 +373,16 @@ public static class ShockOsc
 
             await Task.Delay(20);
         }
+    }
+
+    private static byte GetIntensity()
+    {
+        var config = Config.ConfigInstance.Behaviour;
+
+        if (!config.RandomIntensity) return config.FixedIntensity;
+        var rir = config.IntensityRange;
+        var intensityValue = Random.Next((int)rir.Min, (int)rir.Max);
+        return (byte)intensityValue;
     }
 
     private static async Task CheckLogic()
@@ -383,75 +434,26 @@ public static class ShockOsc
                 continue;
             }
 
-            shocker.LastExecuted = DateTime.UtcNow;
-
-            byte intensity = 0;
-            float intensityFloat = 0;
-            uint duration;
-
-            if (config.RandomDuration)
+            byte intensity;
+            
+            if(shocker.TriggerMethod == TriggerMethod.PhysBoneRelease)
             {
-                var rdr = config.DurationRange;
-                duration = (uint)(Random.Next((int)(rdr.Min / config.RandomDurationStep),
-                    (int)(rdr.Max / config.RandomDurationStep)) * config.RandomDurationStep);
-            }
-            else duration = config.FixedDuration;
-
-            if (shocker.TriggerMethod == TriggerMethod.Manual)
-            {
-                if (config.RandomIntensity)
-                {
-                    var rir = config.IntensityRange;
-                    var intensityValue = Random.Next((int)rir.Min, (int)rir.Max);
-                    intensity = (byte)intensityValue;
-                    intensityFloat = ClampFloat((float)intensityValue / rir.Max);
-                }
-                else
-                {
-                    intensity = config.FixedIntensity;
-                    intensityFloat = ClampFloat((float)intensity / 100);
-                }
-            }
-
-            if (shocker.TriggerMethod == TriggerMethod.PhysBoneRelease)
-            {
-                var rir = config.IntensityRange;
-                intensity = (byte)LerpFloat(rir.Min, rir.Max, shocker.LastStretchValue);
-                intensityFloat = ClampFloat(shocker.LastStretchValue);
-                if (intensityFloat < 0.01f)
-                    intensityFloat = 0.01f;
+                intensity = (byte)LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, shocker.LastStretchValue);
                 shocker.LastStretchValue = 0;
-            }
-
-            shocker.LastDuration = duration;
-            var intensityPercentage = Math.Round(intensityFloat * 100f);
-            shocker.LastIntensity = intensityFloat;
-
-            ForceUnmute();
-            SendParams();
-
-            shocker.TriggerMethod = TriggerMethod.None;
-            var inSeconds = ((float)duration / 1000).ToString(CultureInfo.InvariantCulture);
-            _logger.Information(
-                "Sending shock to {Shocker} intensity:{Intensity} intensityPercentage:{IntensityPercentage}% length:{Length}s",
-                pos, intensity, intensityPercentage, inSeconds);
-
-            await ControlShocker(shocker.Id, duration, intensity, ControlType.Shock);
-
-            if (!Config.ConfigInstance.Osc.Chatbox) continue;
-            // Chatbox message local
-            var dat = new
-            {
-                ShockerName = pos,
-                Intensity = intensity,
-                IntensityPercentage = intensityPercentage,
-                Duration = duration,
-                DurationSeconds = inSeconds
-            };
-            var template = Config.ConfigInstance.Chatbox.Types[ControlType.Shock];
-            var msg = $"{Config.ConfigInstance.Chatbox.Prefix}{Smart.Format(template.Local, dat)}";
-            await OscClient.SendChatboxMessage(msg);
+            } else intensity = GetIntensity();
+            
+            InstantShock(shocker, GetDuration(), intensity);
         }
+    }
+
+    private static uint GetDuration()
+    {
+        var config = Config.ConfigInstance.Behaviour;
+
+        if (!config.RandomDuration) return config.FixedDuration;
+        var rdr = config.DurationRange;
+        return (uint)(Random.Next((int)(rdr.Min / config.RandomDurationStep),
+            (int)(rdr.Max / config.RandomDurationStep)) * config.RandomDurationStep);
     }
 
     private static Task ControlShocker(Guid shockerId, uint duration, byte intensity, ControlType type)
@@ -524,9 +526,7 @@ public static class ShockOsc
             {
                 case ControlType.Shock:
                 {
-                    var rir = Config.ConfigInstance.Behaviour.IntensityRange;
-                    if (pain.LastIntensity == 0) // don't override calculated intensity
-                        pain.LastIntensity = ClampFloat((float)log.Intensity / rir.Max);
+                    pain.LastIntensity = log.Intensity;
                     pain.LastDuration = log.Duration;
                     pain.LastExecuted = log.ExecutedAt;
 
