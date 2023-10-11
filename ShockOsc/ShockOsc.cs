@@ -260,6 +260,12 @@ public static class ShockOsc
 
                 shocker.IsGrabbed = isGrabbed;
                 return;
+            // Normal shocker actions
+            case "":
+                break;
+            // Ignore all other actions
+            default:
+                return;
         }
         
         if (value is true)

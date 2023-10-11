@@ -67,7 +67,7 @@ public static class Updater
         var asset = json.Assets.FirstOrDefault(x => x.Name == "OpenShock.ShockOsc.exe");
         if (asset == null)
         {
-            Logger.Warning("Could not find asset with ShockLink.ShockOsc.exe. Assets found: {@Assets}", json.Assets);
+            Logger.Warning("Could not find asset with OpenShock.ShockOsc.exe. Assets found: {@Assets}", json.Assets);
             return null;
         }
 
