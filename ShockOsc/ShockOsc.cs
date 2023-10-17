@@ -21,7 +21,8 @@ public static class ShockOsc
     private static readonly Random Random = new();
     public static readonly ConcurrentDictionary<string, Shocker> Shockers = new();
 
-    public static readonly string[] ShockerParams = {
+    public static readonly string[] ShockerParams =
+    {
         string.Empty,
         "Stretch",
         "IsGrabbed",
@@ -200,14 +201,14 @@ public static class ShockOsc
             return;
 
         var pos = addr.Substring(28, addr.Length - 28);
-        
+
         // Check if _Config
         if (pos.StartsWith("_Config/"))
         {
             UnderscoreConfig.HandleCommand(pos, received.Arguments);
             return;
         }
-        
+
         var lastUnderscoreIndex = pos.LastIndexOf('_') + 1;
         var action = string.Empty;
         var shockerName = pos;
@@ -230,7 +231,8 @@ public static class ShockOsc
         var shocker = Shockers[shockerName];
 
         var value = received.Arguments.ElementAtOrDefault(0);
-        _logger.Debug("Received shocker parameter update for [{ShockerName}] state [{State}]", shocker.Name, value is true);
+        _logger.Debug("Received shocker parameter update for [{ShockerName}] state [{State}]", shocker.Name,
+            value is true);
         switch (action)
         {
             case "IShock":
@@ -239,17 +241,14 @@ public static class ShockOsc
                 if (UnderscoreConfig.KillSwitch)
                 {
                     shocker.TriggerMethod = TriggerMethod.None;
-                    _logger.Information("Ignoring shock, kill switch is active");
-                    await OscClient.SendChatboxMessage(
-                        $"{Config.ConfigInstance.Chatbox.Prefix}Ignoring Shock, kill switch is active");
+                    await LogIgnoredKillSwitchActive();
                     return;
                 }
-                
+
                 if (_isAfk && Config.ConfigInstance.Behaviour.DisableWhileAfk)
                 {
                     shocker.TriggerMethod = TriggerMethod.None;
-                    _logger.Information("Ignoring shock, user is AFK", pos);
-                    await OscClient.SendChatboxMessage($"{Config.ConfigInstance.Chatbox.Prefix}Ignoring Shock, user is AFK");
+                    await LogIgnoredAfk();
                     return;
                 }
 
@@ -286,13 +285,31 @@ public static class ShockOsc
             default:
                 return;
         }
-        
+
         if (value is true)
         {
             shocker.TriggerMethod = TriggerMethod.Manual;
             shocker.LastActive = DateTime.UtcNow;
         }
         else shocker.TriggerMethod = TriggerMethod.None;
+    }
+
+    private static ValueTask LogIgnoredKillSwitchActive()
+    {
+        _logger.Information("Ignoring shock, kill switch is active");
+        if (string.IsNullOrEmpty(Config.ConfigInstance.Chatbox.IgnoredKillSwitchActive)) return ValueTask.CompletedTask;
+
+        return OscClient.SendChatboxMessage(
+            $"{Config.ConfigInstance.Chatbox.Prefix}{Config.ConfigInstance.Chatbox.IgnoredKillSwitchActive}");
+    }
+
+    private static ValueTask LogIgnoredAfk()
+    {
+        _logger.Information("Ignoring shock, user is AFK");
+        if (string.IsNullOrEmpty(Config.ConfigInstance.Chatbox.IgnoredAfk)) return ValueTask.CompletedTask;
+
+        return OscClient.SendChatboxMessage(
+            $"{Config.ConfigInstance.Chatbox.Prefix}{Config.ConfigInstance.Chatbox.IgnoredAfk}");
     }
 
     private static async Task SenderLoopAsync()
@@ -324,7 +341,7 @@ public static class ShockOsc
             shocker.Name, intensity, intensityPercentage, inSeconds);
 
         await ControlShocker(shocker.Id, duration, intensity, ControlType.Shock);
-        
+
         if (!Config.ConfigInstance.Osc.Chatbox) return;
         // Chatbox message local
         var dat = new
@@ -345,8 +362,9 @@ public static class ShockOsc
     /// </summary>
     /// <param name="intensity"></param>
     /// <returns></returns>
-    private static float GetFloatScaled(byte intensity) => ClampFloat((float)intensity / Config.ConfigInstance.Behaviour.IntensityRange.Max);
-    
+    private static float GetFloatScaled(byte intensity) =>
+        ClampFloat((float)intensity / Config.ConfigInstance.Behaviour.IntensityRange.Max);
+
     private static async Task SendParams()
     {
         // TODO: maybe force resend on avatar change
@@ -419,7 +437,7 @@ public static class ShockOsc
             var isActiveOrOnCooldown =
                 shocker.LastExecuted.AddMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime)
                     .AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
-            
+
             if (shocker.TriggerMethod == TriggerMethod.None &&
                 Config.ConfigInstance.Behaviour.WhileBoneHeld != Config.Conf.BehaviourConf.BoneHeldAction.None &&
                 !isActiveOrOnCooldown &&
@@ -430,7 +448,7 @@ public static class ShockOsc
                 if (vibrationIntensity < 1)
                     vibrationIntensity = 1;
                 shocker.LastVibration = DateTime.UtcNow;
-                
+
                 _logger.Debug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
                 await ControlShocker(shocker.Id, 1000, (byte)vibrationIntensity,
                     Config.ConfigInstance.Behaviour.WhileBoneHeld == Config.Conf.BehaviourConf.BoneHeldAction.Shock
@@ -455,27 +473,27 @@ public static class ShockOsc
             if (UnderscoreConfig.KillSwitch)
             {
                 shocker.TriggerMethod = TriggerMethod.None;
-                _logger.Information("Ignoring shock, kill switch is active");
-                await OscClient.SendChatboxMessage($"{Config.ConfigInstance.Chatbox.Prefix}Ignoring Shock, kill switch is active");
+                await LogIgnoredKillSwitchActive();
                 continue;
             }
 
             if (_isAfk && config.DisableWhileAfk)
             {
                 shocker.TriggerMethod = TriggerMethod.None;
-                _logger.Information("Ignoring shock {Shocker} user is AFK", pos);
-                await OscClient.SendChatboxMessage($"{Config.ConfigInstance.Chatbox.Prefix}Ignoring Shock, user is AFK");
+                await LogIgnoredAfk();
                 continue;
             }
 
             byte intensity;
-            
-            if(shocker.TriggerMethod == TriggerMethod.PhysBoneRelease)
+
+            if (shocker.TriggerMethod == TriggerMethod.PhysBoneRelease)
             {
-                intensity = (byte)LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, shocker.LastStretchValue);
+                intensity = (byte)LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max,
+                    shocker.LastStretchValue);
                 shocker.LastStretchValue = 0;
-            } else intensity = GetIntensity();
-            
+            }
+            else intensity = GetIntensity();
+
             InstantShock(shocker, GetDuration(), intensity);
         }
     }
