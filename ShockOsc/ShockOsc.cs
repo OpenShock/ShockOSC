@@ -21,8 +21,7 @@ public static class ShockOsc
     private static readonly Random Random = new();
     public static readonly ConcurrentDictionary<string, Shocker> Shockers = new();
 
-    public static readonly List<string> ShockerParams = new()
-    {
+    public static readonly string[] ShockerParams = {
         string.Empty,
         "Stretch",
         "IsGrabbed",
@@ -103,6 +102,7 @@ public static class ShockOsc
 
         _logger.Information("Ready");
 
+        OsTask.Run(UnderscoreConfig.SendUpdateForAll);
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
     }
 
@@ -235,7 +235,26 @@ public static class ShockOsc
         {
             case "IShock":
                 // TODO: check Cooldowns
-                if (value is true && !UnderscoreConfig.KillSwitch) OsTask.Run(() => InstantShock(shocker, GetDuration(), GetIntensity()));
+                if (value is not true) return;
+                if (UnderscoreConfig.KillSwitch)
+                {
+                    shocker.TriggerMethod = TriggerMethod.None;
+                    _logger.Information("Ignoring shock, kill switch is active");
+                    await OscClient.SendChatboxMessage(
+                        $"{Config.ConfigInstance.Chatbox.Prefix}Ignoring Shock, kill switch is active");
+                    return;
+                }
+                
+                if (_isAfk && Config.ConfigInstance.Behaviour.DisableWhileAfk)
+                {
+                    shocker.TriggerMethod = TriggerMethod.None;
+                    _logger.Information("Ignoring shock, user is AFK", pos);
+                    await OscClient.SendChatboxMessage($"{Config.ConfigInstance.Chatbox.Prefix}Ignoring Shock, user is AFK");
+                    return;
+                }
+
+                OsTask.Run(() => InstantShock(shocker, GetDuration(), GetIntensity()));
+
                 return;
             case "Stretch":
                 if (value is float stretch)
@@ -400,8 +419,6 @@ public static class ShockOsc
             var isActiveOrOnCooldown =
                 shocker.LastExecuted.AddMilliseconds(Config.ConfigInstance.Behaviour.CooldownTime)
                     .AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
-
-            if(UnderscoreConfig.KillSwitch) return;
             
             if (shocker.TriggerMethod == TriggerMethod.None &&
                 Config.ConfigInstance.Behaviour.WhileBoneHeld != Config.Conf.BehaviourConf.BoneHeldAction.None &&
@@ -412,8 +429,9 @@ public static class ShockOsc
                 var vibrationIntensity = shocker.LastStretchValue * 100f;
                 if (vibrationIntensity < 1)
                     vibrationIntensity = 1;
-                _logger.Debug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
                 shocker.LastVibration = DateTime.UtcNow;
+                
+                _logger.Debug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
                 await ControlShocker(shocker.Id, 1000, (byte)vibrationIntensity,
                     Config.ConfigInstance.Behaviour.WhileBoneHeld == Config.Conf.BehaviourConf.BoneHeldAction.Shock
                         ? ControlType.Shock
@@ -434,10 +452,19 @@ public static class ShockOsc
                 continue;
             }
 
+            if (UnderscoreConfig.KillSwitch)
+            {
+                shocker.TriggerMethod = TriggerMethod.None;
+                _logger.Information("Ignoring shock, kill switch is active");
+                await OscClient.SendChatboxMessage($"{Config.ConfigInstance.Chatbox.Prefix}Ignoring Shock, kill switch is active");
+                continue;
+            }
+
             if (_isAfk && config.DisableWhileAfk)
             {
                 shocker.TriggerMethod = TriggerMethod.None;
                 _logger.Information("Ignoring shock {Shocker} user is AFK", pos);
+                await OscClient.SendChatboxMessage($"{Config.ConfigInstance.Chatbox.Prefix}Ignoring Shock, user is AFK");
                 continue;
             }
 

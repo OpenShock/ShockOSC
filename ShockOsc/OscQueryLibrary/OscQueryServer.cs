@@ -8,7 +8,7 @@ using Serilog;
 
 namespace OpenShock.ShockOsc.OscQueryLibrary;
 
-public class OscQueryServer
+public class OscQueryServer : IDisposable
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(OscQueryServer));
     
@@ -278,8 +278,9 @@ public class OscQueryServer
         };
     }
 
-    private void Dispose()
+    public void Dispose()
     {
+        GC.SuppressFinalize(this);
         _multicastService.Dispose();
         _serviceDiscovery.Dispose();
         _httpListener.Stop();
