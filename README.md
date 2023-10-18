@@ -56,6 +56,11 @@ You can use the virtual, or pseudo, shockers with the name `_Any` and `_All` for
 This one can be used to make all shockers configured go off at the same time or with the same trigger.  
 This virtual shocker behaves just like another configured shockers, except it relays its actions to all others.
 
+#### Instant Shocker Action
+You may append `_IShock` to a shocker parameter if u want a shock to trigger **instantly** when this bool parameter jumps to true.
+This is useful when working with an animator setup or have contact receivers trigger imeediatly.
+
+E.g. `ShockOsc/_All_IShock`
 
 ## Config input parameters
 
@@ -93,6 +98,8 @@ This virtual shocker behaves just like another configured shockers, except it re
     "Prefix": "[ShockOsc] ", # Prefix shown on all messages
     "DisplayRemoteControl": true, # Display commands from outside of ShockOsc in the chatbox?
     "HoscyType": "Message", # Send as Message or Notification type in hosy?
+    "IgnoredKillSwitchActive": "Ignoring Shock, kill switch is active", # Set to empty or null when you want to disable this message,
+    "IgnoredAfk": "Ignoring Shock, user is afk", # Set to empty or null when you want to disable this message,
     "Types": { ## If you chose to specify any of those, you need to specify all, all or nothing :)
       "Stop": {
         "Enabled": true, # Weither to show this type as a message at all or not
