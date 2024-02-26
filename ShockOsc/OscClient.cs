@@ -7,7 +7,7 @@ namespace OpenShock.ShockOsc;
 
 public static class OscClient
 {
-    private static OscDuplex _gameConnection;
+    private static OscDuplex? _gameConnection;
     private static readonly OscSender HoscySenderClient = new(new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.HoscySendPort));
     private static readonly ILogger Logger = Log.ForContext(typeof(OscClient));
 
@@ -17,9 +17,12 @@ public static class OscClient
         Task.Run(HoscySenderLoop);
     }
 
-    public static void CreateGameConnection(ushort receivePort)
+    public static void CreateGameConnection(ushort receivePort, ushort sendPort)
     {
-        _gameConnection = new(new IPEndPoint(IPAddress.Loopback, receivePort), new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.SendPort));
+        _gameConnection?.Dispose();
+        _gameConnection = null;
+        Logger.Debug("Creating game connection with receive port {ReceivePort} and send port {SendPort}", receivePort, sendPort);
+        _gameConnection = new(new IPEndPoint(IPAddress.Loopback, receivePort), new IPEndPoint(IPAddress.Loopback, sendPort));
     }
 
     private static readonly Channel<OscMessage> GameSenderChannel = Channel.CreateUnbounded<OscMessage>(new UnboundedChannelOptions()
@@ -50,6 +53,7 @@ public static class OscClient
         Logger.Debug("Starting game sender loop");
         await foreach (var oscMessage in GameSenderChannel.Reader.ReadAllAsync())
         {
+            if (_gameConnection == null) continue;
             try
             {
                 await _gameConnection.SendAsync(oscMessage);
@@ -77,5 +81,8 @@ public static class OscClient
         }
     }
 
-    public static Task<OscMessage> ReceiveGameMessage() => _gameConnection.ReceiveMessageAsync();
+    public static Task<OscMessage>? ReceiveGameMessage()
+    {
+        return _gameConnection?.ReceiveMessageAsync();
+    }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
+using LucHeart.CoreOSC;
 using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.OscChangeTracker;
 using OpenShock.ShockOsc.OscQueryLibrary;
@@ -16,6 +17,7 @@ namespace OpenShock.ShockOsc;
 public static class ShockOsc
 {
     private static ILogger _logger = null!;
+    private static bool _oscServerActive;
     private static bool _isAfk;
     private static bool _isMuted;
     private static readonly Random Random = new();
@@ -86,25 +88,36 @@ public static class ShockOsc
         _ = new OscQueryServer(
             "ShockOsc", // service name
             "127.0.0.1", // ip address for udp and http server
+            FoundVrcClient, // optional callback on vrc discovery
             OnAvatarChange // optional parameter list callback on vrc discovery
         );
-        OscClient.CreateGameConnection(OscQueryServer.OscPort);
 
+        await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
+    }
+    
+    private static void FoundVrcClient()
+    {
+        _logger.Information("Found VRC client");
+        // stop tasks
+        _oscServerActive = false;
+        Task.Delay(1000).Wait(); // wait for tasks to stop
+
+        OscClient.CreateGameConnection(OscQueryServer.OscReceivePort, OscQueryServer.OscSendPort);
         _logger.Information("Connecting UDP Clients...");
 
         // Start tasks
+        _oscServerActive = true;
         OsTask.Run(ReceiverLoopAsync);
         OsTask.Run(SenderLoopAsync);
         OsTask.Run(CheckLoop);
 
+        Shockers.Clear();
         Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
         foreach (var (shockerName, shockerId) in Config.ConfigInstance.ShockLink.Shockers)
             Shockers.TryAdd(shockerName, new Shocker(shockerId, shockerName));
 
         _logger.Information("Ready");
-
         OsTask.Run(UnderscoreConfig.SendUpdateForAll);
-        await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
     }
 
     private static void OnAvatarChange(Dictionary<string, object?>? parameters)
@@ -159,7 +172,7 @@ public static class ShockOsc
 
     private static async Task ReceiverLoopAsync()
     {
-        while (true)
+        while (_oscServerActive)
         {
             try
             {
@@ -175,7 +188,17 @@ public static class ShockOsc
 
     private static async Task ReceiveLogic()
     {
-        var received = await OscClient.ReceiveGameMessage();
+        OscMessage received;
+        try
+        {
+            received = await OscClient.ReceiveGameMessage()!;
+        }
+        catch (Exception e)
+        {
+            _logger.Verbose(e, "Error receiving message");
+            return;
+        }
+
         var addr = received.Address;
         _logger.Verbose("Received message: {Addr}", addr);
 
@@ -314,7 +337,7 @@ public static class ShockOsc
 
     private static async Task SenderLoopAsync()
     {
-        while (true)
+        while (_oscServerActive)
         {
             await SendParams();
             await Task.Delay(300);
@@ -404,7 +427,7 @@ public static class ShockOsc
 
     private static async Task CheckLoop()
     {
-        while (true)
+        while (_oscServerActive)
         {
             try
             {
