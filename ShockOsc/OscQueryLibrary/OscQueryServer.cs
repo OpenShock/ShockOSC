@@ -5,20 +5,22 @@ using System.Text.Json;
 using MeaMod.DNS.Model;
 using MeaMod.DNS.Multicast;
 using Serilog;
+using EmbedIO;
+using EmbedIO.Actions;
 
 namespace OpenShock.ShockOsc.OscQueryLibrary;
 
 public class OscQueryServer : IDisposable
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(OscQueryServer));
-    
-    private readonly ushort _httpPort; // TODO: remove when switching httpServer library for proper random port support
+
+    private readonly ushort _httpPort;
     private readonly string _ipAddress;
+    public static string OscIpAddress;
     public static ushort OscReceivePort;
     public static ushort OscSendPort;
     private const string OscHttpServiceName = "_oscjson._tcp";
     private const string OscUdpServiceName = "_osc._udp";
-    private readonly HttpListener _httpListener;
     private readonly MulticastService _multicastService;
     private readonly ServiceDiscovery _serviceDiscovery;
     private readonly string _serviceName;
@@ -35,6 +37,8 @@ public class OscQueryServer : IDisposable
         Action? foundVrcClient = null,
         Action<Dictionary<string, object?>>? parameterUpdate = null)
     {
+        Swan.Logging.Logger.NoLogging();
+
         _serviceName = serviceName;
         _ipAddress = ipAddress;
         OscReceivePort = FindAvailableUdpPort();
@@ -46,12 +50,18 @@ public class OscQueryServer : IDisposable
         FoundServices.Add($"{_serviceName.ToLower()}.{OscHttpServiceName}.local:{_httpPort}");
 
         // HTTP Server
-        _httpListener = new HttpListener();
-        var prefix = $"http://{_ipAddress}:{_httpPort}/";
-        _httpListener.Prefixes.Add(prefix);
-        _httpListener.Start();
-        _httpListener.BeginGetContext(OnHttpRequest, null);
-        Logger.Debug("OSCQueryHttpServer: Listening at {Prefix}", prefix);
+        var url = $"http://{_ipAddress}:{_httpPort}/";
+        var server = new WebServer(o => o
+                .WithUrlPrefix(url)
+                .WithMode(HttpListenerMode.EmbedIO))
+            .WithModule(new ActionModule("/", HttpVerbs.Get,
+                ctx => ctx.SendStringAsync(
+                    ctx.Request.RawUrl.Contains("HOST_INFO")
+                        ? JsonSerializer.Serialize(_hostInfo)
+                        : JsonSerializer.Serialize(_queryData), "application/json", Encoding.UTF8)));
+
+        server.RunAsync();
+        Logger.Debug("OSCQueryHttpServer: Listening at {Prefix}", url);
 
         // mDNS
         _multicastService = new MulticastService
@@ -156,6 +166,7 @@ public class OscQueryServer : IDisposable
             }
             
             OscSendPort = (ushort)rootNode.OSC_PORT;
+            OscIpAddress = rootNode.OSC_IP;
         }
         catch (HttpRequestException ex)
         {
@@ -183,7 +194,7 @@ public class OscQueryServer : IDisposable
             var rootNode = JsonSerializer.Deserialize<OscQueryModels.RootNode>(response);
             if (rootNode?.CONTENTS?.avatar?.CONTENTS?.parameters?.CONTENTS == null)
             {
-                Logger.Error("OSCQueryHttpClient: Error no parameters found");
+                Logger.Debug("OSCQueryHttpClient: Error no parameters found");
                 return;
             }
 
@@ -224,35 +235,6 @@ public class OscQueryServer : IDisposable
         {
             RecursiveParameterLookup(subNode);
         }
-    }
-
-    private async void OnHttpRequest(IAsyncResult result)
-    {
-        var context = _httpListener.EndGetContext(result);
-        _httpListener.BeginGetContext(OnHttpRequest, null);
-        var request = context.Request;
-        var response = context.Response;
-        var path = request.Url?.AbsolutePath;
-        if (path == null || request.RawUrl == null)
-            return;
-
-        if (!request.RawUrl.Contains("HOST_INFO") && path != "/")
-        {
-            response.StatusCode = 404;
-            response.StatusDescription = "Not Found";
-            response.Close();
-            return;
-        }
-
-        Logger.Debug("OSCQueryHttp request: {Path}", path);
-
-        var json = JsonSerializer.Serialize(request.RawUrl.Contains("HOST_INFO") ? _hostInfo : _queryData);
-        response.Headers.Add("pragma:no-cache");
-        response.ContentType = "application/json";
-        var buffer = Encoding.UTF8.GetBytes(json);
-        response.ContentLength64 = buffer.Length;
-        await response.OutputStream.WriteAsync(buffer);
-        response.OutputStream.Close();
     }
 
     public static async Task GetParameters()
@@ -322,8 +304,6 @@ public class OscQueryServer : IDisposable
         GC.SuppressFinalize(this);
         _multicastService.Dispose();
         _serviceDiscovery.Dispose();
-        _httpListener.Stop();
-        _httpListener.Close();
     }
 
     ~OscQueryServer()

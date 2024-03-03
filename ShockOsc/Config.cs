@@ -80,7 +80,8 @@ public static class Config
         {
             Chatbox = true,
             Hoscy = false,
-            HoscySendPort = 9001
+            HoscySendPort = 9001,
+            QuestSupport = false
         },
         Chatbox = new Conf.ChatboxConf
         {
@@ -197,6 +198,7 @@ public static class Config
             public required bool Chatbox { get; init; }
             public required bool Hoscy { get; init; }
             public ushort HoscySendPort { get; init; } = 9001;
+            public required bool QuestSupport { get; init; }
         }
 
         public class BehaviourConf

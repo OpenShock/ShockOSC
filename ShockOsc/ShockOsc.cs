@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Net;
 using System.Reflection;
 using LucHeart.CoreOSC;
 using OpenShock.ShockOsc.Models;
@@ -91,6 +92,25 @@ public static class ShockOsc
             FoundVrcClient, // optional callback on vrc discovery
             OnAvatarChange // optional parameter list callback on vrc discovery
         );
+        
+        // listen for VRC on every network interface
+        if (Config.ConfigInstance.Osc.QuestSupport)
+        {
+            var host = await Dns.GetHostEntryAsync(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+                    continue;
+
+                var ipAddress = ip.ToString();
+                _ = new OscQueryServer(
+                    "ShockOsc", // service name
+                    ipAddress, // ip address for udp and http server
+                    FoundVrcClient, // optional callback on vrc discovery
+                    OnAvatarChange // parameter list callback on vrc discovery
+                );
+            }
+        }
 
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
     }
@@ -102,7 +122,7 @@ public static class ShockOsc
         _oscServerActive = false;
         Task.Delay(1000).Wait(); // wait for tasks to stop
 
-        OscClient.CreateGameConnection(OscQueryServer.OscReceivePort, OscQueryServer.OscSendPort);
+        OscClient.CreateGameConnection(IPAddress.Parse(OscQueryServer.OscIpAddress), OscQueryServer.OscReceivePort, OscQueryServer.OscSendPort);
         _logger.Information("Connecting UDP Clients...");
 
         // Start tasks

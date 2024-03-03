@@ -17,12 +17,12 @@ public static class OscClient
         Task.Run(HoscySenderLoop);
     }
 
-    public static void CreateGameConnection(ushort receivePort, ushort sendPort)
+    public static void CreateGameConnection(IPAddress ipAddress, ushort receivePort, ushort sendPort)
     {
         _gameConnection?.Dispose();
         _gameConnection = null;
         Logger.Debug("Creating game connection with receive port {ReceivePort} and send port {SendPort}", receivePort, sendPort);
-        _gameConnection = new(new IPEndPoint(IPAddress.Loopback, receivePort), new IPEndPoint(IPAddress.Loopback, sendPort));
+        _gameConnection = new(new IPEndPoint(ipAddress, receivePort), new IPEndPoint(ipAddress, sendPort));
     }
 
     private static readonly Channel<OscMessage> GameSenderChannel = Channel.CreateUnbounded<OscMessage>(new UnboundedChannelOptions()
