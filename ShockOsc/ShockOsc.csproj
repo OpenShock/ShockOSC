@@ -1,10 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
+        <!-- <TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst</TargetFrameworks> -->
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0</TargetFrameworks>
+        <UseMaui>true</UseMaui>
+        <SingleProject>true</SingleProject>
         <ImplicitUsings>enable</ImplicitUsings>
+        <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
+        <ApplicationTitle>ShockOsc</ApplicationTitle>
+        <ApplicationId>com.companyname.shockosc</ApplicationId>
+        <ApplicationIdGuid>2C147618-324E-4C37-B4B6-C50C8A9BD5ED</ApplicationIdGuid>
+        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <ApplicationVersion>1</ApplicationVersion>
         <AssemblyName>OpenShock.ShockOsc</AssemblyName>
         <RootNamespace>OpenShock.ShockOsc</RootNamespace>
         <Company>OpenShock</Company>
@@ -12,12 +21,34 @@
         <FileVersion>1.8.3</FileVersion>
         <ApplicationIcon>Resources\openshock-icon.ico</ApplicationIcon>
         <SelfContained>true</SelfContained>
-        <PublishSingleFile>true</PublishSingleFile>
         <Product>ShockOsc</Product>
-        <LangVersion>12</LangVersion>
+
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+        <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
     </PropertyGroup>
 
     <ItemGroup>
+      <None Include="wwwroot\app.css" />
+      <None Include="wwwroot\fonts\poppins-latin-400-normal.405055dd..woff2" />
+      <None Include="wwwroot\fonts\poppins-latin-400-normal.cda9c93f..woff" />
+      <None Include="wwwroot\images\Icon.svg" />
+      <None Include="wwwroot\images\Icon512.png" />
+      <None Include="wwwroot\images\Icon64.png" />
+      <None Include="wwwroot\images\IconLoadingSpin.svg" />
+      <None Include="wwwroot\images\Logo512.png" />
+      <None Include="wwwroot\index.html" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+      <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
+      <PackageReference Include="MudBlazor" Version="6.16.0" />
       <PackageReference Include="EmbedIO" Version="3.5.2" />
       <PackageReference Include="LucHeart.CoreOSC" Version="1.2.1" />
       <PackageReference Include="MeaMod.DNS" Version="1.0.70" />
@@ -25,7 +56,17 @@
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.11" />
       <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
       <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+      <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
       <PackageReference Include="SmartFormat.NET" Version="3.3.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Resources\Icon512.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\Logo512.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
     
 </Project>

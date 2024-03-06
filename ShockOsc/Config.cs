@@ -9,7 +9,7 @@ public static class Config
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(Config));
     private static Conf? _internalConfig;
-    private static readonly string Path = Directory.GetCurrentDirectory() + "/config.json";
+    private static readonly string Path = AppDomain.CurrentDomain.BaseDirectory + "config.json";
 
     public static Conf ConfigInstance => _internalConfig!;
 
@@ -50,7 +50,6 @@ public static class Config
         _internalConfig = JsonSerializer.Deserialize<Conf>(jsonNew, Options);
         Logger.Information("New configuration file generated! Please configure it!");
         Logger.Information("Press any key to exit...");
-        Console.ReadKey();
         Environment.Exit(10);
     }
 
@@ -195,26 +194,26 @@ public static class Config
 
         public class OscConf
         {
-            public required bool Chatbox { get; init; }
-            public required bool Hoscy { get; init; }
-            public ushort HoscySendPort { get; init; } = 9001;
-            public required bool QuestSupport { get; init; }
+            public required bool Chatbox { get; set; }
+            public required bool Hoscy { get; set; }
+            public ushort HoscySendPort { get; set; } = 9001;
+            public required bool QuestSupport { get; set; }
         }
 
         public class BehaviourConf
         {
-            public required bool RandomIntensity { get; init; }
-            public required bool RandomDuration { get; init; }
-            public required uint RandomDurationStep { get; init; } = 1000;
-            public required JsonRange DurationRange { get; init; }
-            public required JsonRange IntensityRange { get; init; }
-            public required byte FixedIntensity { get; init; }
-            public required uint FixedDuration { get; init; }
-            public required uint HoldTime { get; init; }
-            public required uint CooldownTime { get; init; }
-            public BoneHeldAction WhileBoneHeld { get; init; } = BoneHeldAction.Vibrate;
-            public bool DisableWhileAfk { get; init; } = true;
-            public bool ForceUnmute { get; init; } = false;
+            public required bool RandomIntensity { get; set; }
+            public required bool RandomDuration { get; set; }
+            public required uint RandomDurationStep { get; set; } = 1000;
+            public required JsonRange DurationRange { get; set; }
+            public required JsonRange IntensityRange { get; set; }
+            public required byte FixedIntensity { get; set; }
+            public required uint FixedDuration { get; set; }
+            public required uint HoldTime { get; set; }
+            public required uint CooldownTime { get; set; }
+            public BoneHeldAction WhileBoneHeld { get; set; } = BoneHeldAction.Vibrate;
+            public bool DisableWhileAfk { get; set; } = true;
+            public bool ForceUnmute { get; set; } = false;
 
             public enum BoneHeldAction
             {
@@ -226,9 +225,9 @@ public static class Config
 
         public class OpenShockConf
         {
-            public Uri UserHub { get; init; } = new("https://api.shocklink.net/1/hubs/user");
-            public required string ApiToken { get; init; }
-            public required IReadOnlyDictionary<string, Guid> Shockers { get; init; }
+            public Uri UserHub { get; set; } = new("https://api.shocklink.net/1/hubs/user");
+            public required string ApiToken { get; set; }
+            public required IReadOnlyDictionary<string, Guid> Shockers { get; set; }
         }
     }
 }

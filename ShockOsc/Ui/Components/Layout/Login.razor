@@ -1,0 +1,12 @@
+@code {
+    public string? ApiKeyField { get; set; }
+}
+
+<MudContainer Class="align-content-center" MaxWidth="MaxWidth.Small" Style="padding-top: 30px"> 
+    <MudText Typo="Typo.h2">Login</MudText> 
+    <br/> 
+    <MudTextField @bind-Value="ApiKeyField" Label="API Key" Variant="Variant.Outlined"></MudTextField> 
+    <br/> 
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton> 
+    <br/> 
+</MudContainer> 

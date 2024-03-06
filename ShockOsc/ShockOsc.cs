@@ -36,13 +36,17 @@ public static class ShockOsc
         "IShock"
     };
 
-    private static async Task Main(string[] args)
+    public static Dictionary<string, object?> ParamsInUse = new();
+
+    public static Action? OnParamsChange;
+
+    public static async Task StartMain(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
             .Filter.ByExcluding(ev =>
                 ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides"))
-            .WriteTo.Console(LogEventLevel.Information,
-                "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.MySink(LogEventLevel.Information,
+                "[{SourceContext}] {Message:lj} {NewLine}{Exception}")
             .CreateLogger();
 
         // ReSharper disable once RedundantAssignment
@@ -57,8 +61,8 @@ public static class ShockOsc
                 .MinimumLevel.Debug()
                 .Filter.ByExcluding(ev =>
                     ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides"))
-                .WriteTo.Console(LogEventLevel.Debug,
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.MySink(LogEventLevel.Debug,
+                    "[{SourceContext}] {Message:lj} {NewLine}{Exception}")
                 .CreateLogger();
         }
 
@@ -83,7 +87,7 @@ public static class ShockOsc
         _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
 
         _logger.Information("Init user hub...");
-        await UserHubClient.InitializeAsync();
+        // await UserHubClient.InitializeAsync();
 
         _logger.Information("Creating OSC Query Server...");
         _ = new OscQueryServer(
@@ -92,7 +96,7 @@ public static class ShockOsc
             FoundVrcClient, // optional callback on vrc discovery
             OnAvatarChange // optional parameter list callback on vrc discovery
         );
-        
+
         // listen for VRC on every network interface
         if (Config.ConfigInstance.Osc.QuestSupport)
         {
@@ -114,7 +118,7 @@ public static class ShockOsc
 
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
     }
-    
+
     private static void FoundVrcClient()
     {
         _logger.Information("Found VRC client");
@@ -157,6 +161,8 @@ public static class ShockOsc
                 return;
             }
 
+            ParamsInUse.Clear();
+
             foreach (var param in parameters.Keys)
             {
                 if (!param.StartsWith("/avatar/parameters/ShockOsc/"))
@@ -179,7 +185,11 @@ public static class ShockOsc
                     continue;
                 }
 
-                if (ShockerParams.Contains(action)) parameterCount++;
+                if (ShockerParams.Contains(action))
+                {
+                    parameterCount++;
+                    ParamsInUse.TryAdd(paramName, parameters[param]);
+                }
             }
 
             _logger.Information("Loaded avatar config with {ParamCount} parameters", parameterCount);
@@ -270,6 +280,14 @@ public static class ShockOsc
             _logger.Debug("Param: {Param}", pos);
             return;
         }
+        
+        if (ParamsInUse.ContainsKey(pos))
+        {
+            ParamsInUse[pos] = received.Arguments[0];
+            OnParamsChange();
+        }
+        else
+            ParamsInUse.TryAdd(pos, received.Arguments[0]);
 
         var shocker = Shockers[shockerName];
 
@@ -313,7 +331,7 @@ public static class ShockOsc
                         shocker.LastActive = DateTime.UtcNow;
                     }
                     else if (Config.ConfigInstance.Behaviour.WhileBoneHeld !=
-                             Config.Conf.BehaviourConf.BoneHeldAction.None)
+                                Config.Conf.BehaviourConf.BoneHeldAction.None)
                     {
                         await CancelAction(shocker);
                     }
@@ -620,14 +638,14 @@ public static class ShockOsc
             switch (log.Type)
             {
                 case ControlType.Shock:
-                {
-                    pain.LastIntensity = log.Intensity;
-                    pain.LastDuration = log.Duration;
-                    pain.LastExecuted = log.ExecutedAt;
+                    {
+                        pain.LastIntensity = log.Intensity;
+                        pain.LastDuration = log.Duration;
+                        pain.LastExecuted = log.ExecutedAt;
 
-                    oneShock = true;
-                    break;
-                }
+                        oneShock = true;
+                        break;
+                    }
                 case ControlType.Vibrate:
                     pain.LastVibration = log.ExecutedAt;
                     break;
