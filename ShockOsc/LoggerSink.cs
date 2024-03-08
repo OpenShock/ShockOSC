@@ -4,6 +4,7 @@ using Serilog.Events;
 using Serilog.Formatting.Display;
 using Serilog.Formatting;
 using System.Diagnostics;
+using MudBlazor;
 
 namespace Serilog;
 
@@ -33,7 +34,7 @@ public class MySink : ILogEventSink
 {
     private TextWriter _textWriter;
     private readonly ITextFormatter _formatProvider;
-    // public Action<string>? EmitAction { get; set; }
+    public static Action<string, Severity>? NotificationAction { get; set; }
 
     public MySink(ITextFormatter formatProvider)
     {
@@ -46,9 +47,16 @@ public class MySink : ILogEventSink
         _textWriter = new StringWriter();
         _formatProvider.Format(logEvent, _textWriter);
         // var logMessage = logEvent.RenderMessage(_formatProvider);
-        Debug.WriteLine(_textWriter);
-        // EmitAction?.Invoke(_textWriter.ToString());
-        LogStore.AddLog(_textWriter.ToString());
+        var logMessage = _textWriter.ToString();
+        if (logMessage == null) return;
+        if (logMessage.StartsWith("[Microsoft.AspNetCore.Http.Connections.Client.Internal.LoggingHttpMessageHandler] "))
+        {
+            OpenShock.ShockOsc.ShockOsc.SetAuthLoading?.Invoke(false, false);
+            NotificationAction?.Invoke(logMessage[82..], Severity.Error);
+        }
+
+        Debug.WriteLine(logMessage);
+        LogStore.AddLog(logMessage);
         _textWriter.Flush();
     }
 }

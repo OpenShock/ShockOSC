@@ -1,7 +1,9 @@
 ﻿@using System.Text.Json.Serialization
 @using System.Diagnostics
 @using OpenShock.ShockOsc.Ui.Components.Layout
+@using OpenShock.ShockOsc.Models;
 @using Serilog
+@inject ISnackbar Snackbar
 @inherits LayoutComponentBase
 
 <MudThemeProvider Theme="_myCustomTheme" />
@@ -10,9 +12,6 @@
 
 @code {
     private static readonly ILogger Logger = Log.ForContext(typeof(MainLayout));
-
-    public string? ApiKeyField { get; set; }
-    public int? intValue { get; set; }
     
     readonly MudTheme _myCustomTheme = new()
     {
@@ -43,97 +42,165 @@
 <MudLayout>
     <MudPaper Class="rounded-lg" Style="min-height: calc(100vh - 40px); padding-bottom: 60px;">
         <Logo/>
+
+@*         <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_loading" Label="Loading" />
+        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_authenticated" Label="Authed" /> *@
         
-        @* <Login/> *@
-        
-        @* main app *@
-        <MudContainer>
-            <MudTabs ActivePanelIndex="activePageIndex" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="rounded-lg">
-                <MudTabPanel Text="Config">
-                    <MudPaper Class="rounded-lg" Style="padding: 10px; margin: 10px 0;">
-                        <MudText>Chatbox Options</MudText>
-                        <MudDivider />
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Osc.Chatbox" Label="Chatbox" @bind-Value:after="OnSettingsValueChange" />
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Chatbox.DisplayRemoteControl" Label="Display Remote Control" @bind-Value:after="OnSettingsValueChange" />
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Osc.Hoscy" Label="Hoscy" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Osc.HoscySendPort" Label="Hoscy Send Port" @bind-Value:after="OnSettingsValueChange" />
-                        <MudPaper Style="display: inline-block; width: 200px;">
-                            <MudSelect Class="option-width" @bind-Value="_config.Chatbox.HoscyType" Label="Hoscy Type" @bind-Value:after="OnSettingsValueChange">
-                                @foreach (Config.Conf.ChatboxConf.HoscyMessageType hoscyMessageType in Enum.GetValues(typeof(Config.Conf.ChatboxConf.HoscyMessageType)))
-                                {
-                                    <MudSelectItem Value="@hoscyMessageType">@hoscyMessageType</MudSelectItem>
-                                }
-                            </MudSelect>
+        @if (!_authenticated)
+        {
+            <Login Loading="@_loading" />
+        }
+        else
+        {
+            <MudContainer>
+                <MudTabs @bind-ActivePanelIndex="activePageIndex" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="rounded-lg">
+                    <MudTabPanel Text="Config">
+                        <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+                            <MudText>Chatbox Options</MudText>
+                            <MudDivider />
+                            <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Osc.Chatbox" Label="Chatbox" @bind-Value:after="OnSettingsValueChange" />
+                            <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Chatbox.DisplayRemoteControl" Label="Display Remote Control" @bind-Value:after="OnSettingsValueChange" />
+                            <br/>
+                            <br />
+                            <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Osc.Hoscy" Label="Hoscy" @bind-Value:after="OnSettingsValueChange" />
+                            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Osc.HoscySendPort" Label="Hoscy Send Port" @bind-Value:after="OnSettingsValueChange" />
+                            <MudPaper Style="display: inline-block; width: 200px; padding-top: 8px;">
+                                <MudSelect Class="option-width" @bind-Value="_config.Chatbox.HoscyType" Label="Hoscy Type" @bind-Value:after="OnSettingsValueChange">
+                                    @foreach (Config.Conf.ChatboxConf.HoscyMessageType hoscyMessageType in Enum.GetValues(typeof(Config.Conf.ChatboxConf.HoscyMessageType)))
+                                    {
+                                        <MudSelectItem Value="@hoscyMessageType">@hoscyMessageType</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudPaper>
+                            <br />
+                            <br />  
+                            <MudStack Spacing="0">
+                                <MudButton OnClick="OnAdvancedSettingsClick">@(_AdvancedSettingsExpanded ? "Advanced Settings" : "Advanced Settings")</MudButton>
+                                <MudDivider />
+                                <MudCollapse Expanded="_AdvancedSettingsExpanded">
+                                    <MudTextField Variant="Variant.Filled" @bind-Value="_config.Chatbox.Prefix" Label="Prefix Text" @bind-Value:after="OnSettingsValueChange" />
+                                    <MudTextField Variant="Variant.Filled" @bind-Value="_config.Chatbox.IgnoredKillSwitchActive" Label="Ignored Kill Switch Text" @bind-Value:after="OnSettingsValueChange" />
+                                    <MudTextField Variant="Variant.Filled" @bind-Value="_config.Chatbox.IgnoredAfk" Label="Ignored Afk Text" @bind-Value:after="OnSettingsValueChange" />
+                                    <br />
+                                    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="rounded-lg">
+                                        @foreach (ControlType controlType in Enum.GetValues(typeof(ControlType)))
+                                        {
+                                            <MudTabPanel Text="@controlType.ToString()">
+                                                <MudCheckBox Class="option-checkbox-height" @bind-Value="_config.Chatbox.Types[controlType].Enabled" Label="Enabled" @bind-Value:after="OnSettingsValueChange" />
+                                                <MudTextField Variant="Variant.Filled" @bind-Value="_config.Chatbox.Types[controlType].Local" Label="Local" @bind-Value:after="OnSettingsValueChange" />
+                                                <MudTextField Variant="Variant.Filled" @bind-Value="_config.Chatbox.Types[controlType].Remote" Label="Remote" @bind-Value:after="OnSettingsValueChange" />
+                                                <MudTextField Variant="Variant.Filled" @bind-Value="_config.Chatbox.Types[controlType].RemoteWithCustomName" Label="Remote With Custom Name" @bind-Value:after="OnSettingsValueChange" />
+                                            </MudTabPanel>
+                                        }
+                                    </MudTabs>
+                                </MudCollapse>
+                            </MudStack>
                         </MudPaper>
-                    </MudPaper>
                     
-                    <MudPaper Class="rounded-lg" Style="padding: 10px; margin: 10px 0;">
-                        <MudText>Shocker Options</MudText>
-                        <MudDivider />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.FixedIntensity" Label="Fixed Intensity" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.FixedDuration" Label="Fixed Duration" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.HoldTime" Label="Hold Time" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.RandomDurationStep" Label="Random Duration Step" @bind-Value:after="OnSettingsValueChange" />
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Behaviour.RandomDuration" Label="Random Duration" @bind-Value:after="OnSettingsValueChange" />
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Behaviour.RandomIntensity" Label="Random Intensity" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.DurationRange.Min" Label="Duration Range Min" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.DurationRange.Max" Label="Duration Range Max" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.IntensityRange.Min" Label="Intensity Range Min" @bind-Value:after="OnSettingsValueChange" />
-                        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.IntensityRange.Max" Label="Intensity Range Max" @bind-Value:after="OnSettingsValueChange" />
-                    </MudPaper>
-
-                    <MudPaper Class="rounded-lg" Style="padding: 10px; margin: 10px 0;">
-                        <MudText>Other Options</MudText>
-                        <MudDivider />
-                        <MudPaper Style="display: inline-block; width: 200px;">
-                            <MudSelect Class="option-width" @bind-Value="_config.Behaviour.WhileBoneHeld" Label="While PhysBone Held" @bind-Value:after="OnSettingsValueChange">
-                                @foreach (Config.Conf.BehaviourConf.BoneHeldAction boneHeldAction in Enum.GetValues(typeof(Config.Conf.BehaviourConf.BoneHeldAction)))
-                                {
-                                    <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
-                                }
-                            </MudSelect>
+                        <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+                            <MudText>Shocker Options</MudText>
+                            <MudDivider />
+                            <MudPaper Style="display: inline-block; width: 200px; padding-top: 8px;">
+                                <MudSelect Class="option-width" @bind-Value="_config.Behaviour.WhileBoneHeld" Label="While PhysBone Held" @bind-Value:after="OnSettingsValueChange">
+                                    @foreach (Config.Conf.BehaviourConf.BoneHeldAction boneHeldAction in Enum.GetValues(typeof(Config.Conf.BehaviourConf.BoneHeldAction)))
+                                    {
+                                        <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudPaper>
+                            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnSettingsValueChange" />
+                            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.HoldTime" Label="Contact Hold Time" @bind-Value:after="OnSettingsValueChange" />
+                            <br/>
+                            <MudToggleGroup T="string" @bind-Value="intensity" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChange">
+                                <MudToggleItem Value="@("Fixed Intensity")"  />
+                                <MudToggleItem Value="@("Random Intensity")" />
+                            </MudToggleGroup>
+                            <br />
+                            @if (intensity == "Fixed Intensity")
+                            {
+                                <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="_config.Behaviour.FixedIntensity" @bind-Value:after="OnSettingsValueChange">Intensity: @_config.Behaviour.FixedIntensity.ToString()%</MudSlider>
+                            }
+                            else
+                            {
+                                <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="_config.Behaviour.IntensityRange.Min" @bind-Value:after="OnSettingsValueChange">Intensity Min: @_config.Behaviour.IntensityRange.Min.ToString()%</MudSlider>
+                                <br/>
+                                <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="_config.Behaviour.IntensityRange.Max" @bind-Value:after="OnSettingsValueChange">Intensity Max: @_config.Behaviour.IntensityRange.Max.ToString()%</MudSlider>
+                            }
+                            <MudToggleGroup T="string" @bind-Value="duration" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChange">
+                                <MudToggleItem Value="@("Fixed Duration")" />
+                                <MudToggleItem Value="@("Random Duration")" />
+                            </MudToggleGroup>
+                            <br />
+                            @if (duration == "Fixed Duration")
+                            {
+                                <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.FixedDuration" Label="Duration" @bind-Value:after="OnSettingsValueChange" />
+                            }
+                            else
+                            {
+                                <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.DurationRange.Min" Label="Duration Min" @bind-Value:after="OnSettingsValueChange" />
+                                <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.DurationRange.Max" Label="Duration Max" @bind-Value:after="OnSettingsValueChange" />
+                                <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_config.Behaviour.RandomDurationStep" Label="Random Duration Step" @bind-Value:after="OnSettingsValueChange" />
+                            }
+                            <br />
+                            <br />
                         </MudPaper>
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Behaviour.DisableWhileAfk" Label="Disable While Afk" @bind-Value:after="OnSettingsValueChange" />
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChange" />
-                    </MudPaper>
 
-                </MudTabPanel>
-                <MudTabPanel Text="Shockers">
-                    <MudField Variant="Variant.Text">Shocker name 1</MudField>
-                    @* <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add</MudButton> *@
-                </MudTabPanel>
-                <MudTabPanel Text="Debug">
-                    <MudText>List of ShockOSC prefixed parameters and their states</MudText>
-                    <MudDivider />
-                    <br/>
-                    @foreach (var param in ShockOsc.ParamsInUse)
-                    {
-                        <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly />
-                    }
-                </MudTabPanel>
-                <MudTabPanel Text="Logs">
-                    @foreach (var log in Serilog.LogStore.Logs)
-                    {
-                        <MudField Label="@log.Time.ToString("HH:mm:ss")" Variant="Variant.Filled">@log.Message</MudField>
-                    }
-                </MudTabPanel>
-            </MudTabs>
-        </MudContainer>
+                        <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+                            <MudText>Other Options</MudText>
+                            <MudDivider />
+                            <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="UnderscoreConfig.KillSwitch" Label="Kill Switch" />
+                            <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Behaviour.DisableWhileAfk" Label="Disable While Afk" @bind-Value:after="OnSettingsValueChange" />
+                            <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChange" />
+                            <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Osc.QuestSupport" Label="Quest Support" @bind-Value:after="OnSettingsValueChange" />
+                        </MudPaper>
+
+                    </MudTabPanel>
+                    <MudTabPanel Text="Shockers">
+                        <MudField Variant="Variant.Text">Shocker name 1</MudField>
+                        @* <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add</MudButton> *@
+                    </MudTabPanel>
+                    <MudTabPanel Text="Debug">
+                        <MudText>List of ShockOSC prefixed parameters and their states</MudText>
+                        <MudDivider />
+                        <br/>
+                        @foreach (var param in ShockOsc.ParamsInUse)
+                        {
+                            <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly />
+                        }
+                    </MudTabPanel>
+                    <MudTabPanel Text="Logs">
+                        @{int i = 0;}
+                        @foreach (var log in Serilog.LogStore.Logs)
+                        {
+                            if (i > 1000)
+                                break;
+                            i++;
+                            <MudField Label="@log.Time.ToString("HH:mm:ss")" Variant="Variant.Filled">@log.Message</MudField>
+                        }
+                    </MudTabPanel>
+                </MudTabs>
+            </MudContainer>
+        }
     </MudPaper>
 </MudLayout>
 
 @code {
     private int activePageIndex = 0;
-
-    private Task OnSettingsValueChange()
-    {
-        Logger.Information("setting changed");
-        Debug.WriteLine("changed");
-        return Task.CompletedTask;
-    }
-
+    private bool _AdvancedSettingsExpanded = false;
     private Config.Conf _config;
+
+    private string intensity = "Fixed Intensity";
+    private string duration = "Fixed Duration";
+
+    private bool _loading = false;
+    private bool _authenticated = false;
+
+
+
+    private void OnAdvancedSettingsClick()
+    {
+        _AdvancedSettingsExpanded = !_AdvancedSettingsExpanded;
+    }
 
     private void OnParamsChange()
     {
@@ -142,11 +209,45 @@
             InvokeAsync(StateHasChanged);
     }
 
-    protected override async Task OnInitializedAsync()
+    private void MsgNoty(string msg, Severity severity)
     {
-        ShockOsc.OnParamsChange = () => OnParamsChange();
-        
-        _config = Config.ConfigInstance;
+        Snackbar.Add(msg, severity);
     }
 
+    private Task OnSettingsValueChange()
+    {
+        _config.Behaviour.RandomIntensity = intensity == "Random Intensity";
+        _config.Behaviour.RandomDuration = duration == "Random Duration";
+        ValidateSettings();
+
+        Logger.Information("settings changed");
+        Config.Save();
+        return Task.CompletedTask;
+    }
+
+    private void ValidateSettings()
+    {
+        if (_config.Behaviour.IntensityRange.Min > _config.Behaviour.IntensityRange.Max)
+        {
+            _config.Behaviour.IntensityRange.Max = _config.Behaviour.IntensityRange.Min;
+        }
+    }
+
+    private void SetAuthLoading(bool auth, bool loading)
+    {
+        _authenticated = auth;
+        _loading = loading;
+        InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ShockOsc.SetAuthLoading = SetAuthLoading;
+        ShockOsc.OnParamsChange = OnParamsChange;
+        MySink.NotificationAction = MsgNoty;
+        
+        _config = Config.ConfigInstance;
+        intensity = _config.Behaviour.RandomIntensity ? "Random Intensity" : "Fixed Intensity";
+        duration = _config.Behaviour.RandomDuration ? "Random Duration" : "Fixed Duration";
+    }
 }

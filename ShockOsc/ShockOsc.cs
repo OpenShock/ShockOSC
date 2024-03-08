@@ -39,8 +39,9 @@ public static class ShockOsc
     public static Dictionary<string, object?> ParamsInUse = new();
 
     public static Action? OnParamsChange;
+    public static Action<bool, bool>? SetAuthLoading;
 
-    public static async Task StartMain(string[] args)
+    public static async Task StartMain()
     {
         Log.Logger = new LoggerConfiguration()
             .Filter.ByExcluding(ev =>
@@ -54,7 +55,7 @@ public static class ShockOsc
 #if DEBUG
         isDebug = true;
 #endif
-        if ((args.Length > 0 && args[0] == "--debug") || isDebug)
+        if (isDebug)
         {
             Log.Information("Debug logging enabled");
             Log.Logger = new LoggerConfiguration()
@@ -87,7 +88,12 @@ public static class ShockOsc
         _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
 
         _logger.Information("Init user hub...");
-        // await UserHubClient.InitializeAsync();
+        SetAuthLoading?.Invoke(false, false);
+        if (!string.IsNullOrEmpty(Config.ConfigInstance.ShockLink.ApiToken))
+        {
+            SetAuthLoading?.Invoke(false, true);
+            UserHubClient.InitializeAsync();
+        }
 
         _logger.Information("Creating OSC Query Server...");
         _ = new OscQueryServer(
@@ -117,6 +123,14 @@ public static class ShockOsc
         }
 
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
+    }
+
+    public static void ClickLogin()
+    {
+        Config.Save();
+        _logger.Information("Clicking login");
+        SetAuthLoading?.Invoke(false, true);
+        UserHubClient.InitializeAsync();
     }
 
     private static void FoundVrcClient()

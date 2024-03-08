@@ -1,12 +1,22 @@
 @code {
-    public string? ApiKeyField { get; set; }
+    [Parameter]
+    public bool Loading { get; set; }
 }
 
-<MudContainer Class="align-content-center" MaxWidth="MaxWidth.Small" Style="padding-top: 30px"> 
-    <MudText Typo="Typo.h2">Login</MudText> 
-    <br/> 
-    <MudTextField @bind-Value="ApiKeyField" Label="API Key" Variant="Variant.Outlined"></MudTextField> 
-    <br/> 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton> 
-    <br/> 
+<MudContainer Class="align-content-center" MaxWidth="MaxWidth.Small" Style="padding-top: 30px">
+    <MudPaper Elevation="0" Style="padding: 20px; text-align: center;">
+        <MudText Typo="Typo.h2">Login</MudText>
+        <br/>
+        @if (!Loading)
+        {
+            <MudTextField @bind-Value="Config.ConfigInstance.ShockLink.ApiToken" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+            <br />
+            <MudButton OnClick="ShockOsc.ClickLogin" Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton>
+            <br />
+        }
+        else
+        {
+            <MudProgressCircular Color="Color.Primary" Style="height:125px;width:125px;" Indeterminate="true" />
+        }
+    </MudPaper>
 </MudContainer> 

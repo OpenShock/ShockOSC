@@ -12,39 +12,46 @@ public static class UserHubClient
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(UserHubClient));
     public static string? ConnectionId { get; set; }
-    
-    private static readonly HubConnection Connection = new HubConnectionBuilder()
-        .WithUrl(Config.ConfigInstance.ShockLink.UserHub, HttpTransportType.WebSockets,
-            options => { options.Headers.Add("OpenShockToken", Config.ConfigInstance.ShockLink.ApiToken); })
-        .WithAutomaticReconnect()
-        .ConfigureLogging(builder =>
-        {
-            builder.ClearProviders();
-            builder.SetMinimumLevel(LogLevel.Trace);
-            builder.AddSerilog();
-        })
-        .AddJsonProtocol(options =>
-        {
-            options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
-            options.PayloadSerializerOptions.Converters.Add(new CustomJsonStringEnumConverter());
-        })
-        .Build();
 
-    static UserHubClient()
+    private static HubConnection? Connection;
+
+    public static Task InitializeAsync()
     {
+        Connection?.DisposeAsync();
+        Connection = new HubConnectionBuilder()
+            .WithUrl(Config.ConfigInstance.ShockLink.UserHub, HttpTransportType.WebSockets,
+                options => { options.Headers.Add("OpenShockToken", Config.ConfigInstance.ShockLink.ApiToken); })
+            .WithAutomaticReconnect()
+            .ConfigureLogging(builder =>
+            {
+                builder.ClearProviders();
+                builder.SetMinimumLevel(LogLevel.Trace);
+                builder.AddSerilog();
+            })
+            .AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.PayloadSerializerOptions.Converters.Add(new CustomJsonStringEnumConverter());
+            })
+            .Build();
         Connection.On<ControlLogSender, ICollection<ControlLog>>("Log", LogReceive);
         Connection.On<string>("Welcome", WelcomeReceive);
+        Connection.Closed += async exception =>
+        {
+            ShockOsc.SetAuthLoading?.Invoke(false, true);
+        };
+        Connection.StartAsync();
+        return Task.CompletedTask;
     }
-
-    public static Task InitializeAsync() => Connection.StartAsync();
     
-    public static Task Control(params Control[] data) => Connection.SendAsync("ControlV2", data, "ShockOsc");
+    public static Task? Control(params Control[] data) => Connection?.SendAsync("ControlV2", data, "ShockOsc");
 
     #region Handlers
 
     private static Task WelcomeReceive(string connectionId)
     {
         ConnectionId = connectionId;
+        ShockOsc.SetAuthLoading?.Invoke(true, false);
         return Task.CompletedTask;
     }
     

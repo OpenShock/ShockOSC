@@ -9,6 +9,7 @@
 
 html, body {
     font-family: 'Poppins', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-user-select: none;
 }
 
 body {
@@ -27,7 +28,7 @@ body {
 
 .option-width {
     display: inline-flex !important;
-    padding: 0 10px !important;
+    padding: 0 10px 0 0 !important;
 }
 
 .option-checkbox-height {

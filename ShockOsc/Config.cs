@@ -49,8 +49,6 @@ public static class Config
         var jsonNew = File.ReadAllText(Path);
         _internalConfig = JsonSerializer.Deserialize<Conf>(jsonNew, Options);
         Logger.Information("New configuration file generated! Please configure it!");
-        Logger.Information("Press any key to exit...");
-        Environment.Exit(10);
     }
 
     private static readonly JsonSerializerOptions Options = new()
@@ -93,8 +91,8 @@ public static class Config
         },
         Behaviour = new Conf.BehaviourConf
         {
-            RandomDuration = true,
-            RandomIntensity = true,
+            RandomDuration = false,
+            RandomIntensity = false,
             RandomDurationStep = 1000,
             DurationRange = new JsonRange { Min = 1000, Max = 5000 },
             IntensityRange = new JsonRange { Min = 1, Max = 30 },
@@ -110,7 +108,7 @@ public static class Config
         {
             Shockers = new Dictionary<string, Guid>(),
             UserHub = null!,
-            ApiToken = "SET THIS TO YOUR OPENSHOCK API TOKEN",
+            ApiToken = "",
         }
     };
 
