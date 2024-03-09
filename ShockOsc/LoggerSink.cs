@@ -48,7 +48,7 @@ public class MySink : ILogEventSink
         _formatProvider.Format(logEvent, _textWriter);
         // var logMessage = logEvent.RenderMessage(_formatProvider);
         var logMessage = _textWriter.ToString();
-        if (logMessage == null) return;
+        if (string.IsNullOrEmpty(logMessage)) return;
         if (logMessage.StartsWith("[Microsoft.AspNetCore.Http.Connections.Client.Internal.LoggingHttpMessageHandler] "))
         {
             OpenShock.ShockOsc.ShockOsc.SetAuthLoading?.Invoke(false, false);

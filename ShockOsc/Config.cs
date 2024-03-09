@@ -9,7 +9,7 @@ public static class Config
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(Config));
     private static Conf? _internalConfig;
-    private static readonly string Path = AppDomain.CurrentDomain.BaseDirectory + "config.json";
+    private static readonly string Path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ShockOSC\config.json";
 
     public static Conf ConfigInstance => _internalConfig!;
 
@@ -63,6 +63,10 @@ public static class Config
         Logger.Information("Saving config");
         try
         {
+            var directory = System.IO.Path.GetDirectoryName(Path);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
             File.WriteAllText(Path, JsonSerializer.Serialize(_internalConfig, Options));
         }
         catch (Exception e)
