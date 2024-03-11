@@ -18,12 +18,16 @@ body {
     min-width: 600px;
 }
 
+#login-background {
+    background-color: #272727;
+}
+
 .mud-tabs-toolbar {
-    background-color: #272727 !important;
+    background-color: #1f1f1f !important;
 }
 
 .mud-tabs-panels {
-    background-color: #2f2f2f !important;
+    background-color: #272727 !important;
 }
 
 .option-width {

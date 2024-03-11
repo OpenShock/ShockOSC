@@ -30,12 +30,12 @@ public class OscQueryServer : IDisposable
     private static readonly HashSet<string> FoundServices = new();
     private static IPEndPoint? _lastVrcHttpServer;
     private static event Action? FoundVrcClient;
-    private static event Action<Dictionary<string, object?>>? ParameterUpdate;
+    private static event Action<Dictionary<string, object?>, string>? ParameterUpdate;
     private static readonly Dictionary<string, object?> ParameterList = new();
 
     public OscQueryServer(string serviceName, string ipAddress,
         Action? foundVrcClient = null,
-        Action<Dictionary<string, object?>>? parameterUpdate = null)
+        Action<Dictionary<string, object?>, string>? parameterUpdate = null)
     {
         Swan.Logging.Logger.NoLogging();
 
@@ -187,6 +187,7 @@ public class OscQueryServer : IDisposable
         var url = $"http://{ipAddress}:{port}/";
         Logger.Debug("OSCQueryHttpClient: Fetching new parameters from {Url}", url);
         var response = string.Empty;
+        var avatarId = string.Empty;
         var client = new HttpClient();
         try
         {
@@ -204,13 +205,14 @@ public class OscQueryServer : IDisposable
                 RecursiveParameterLookup(node);
             }
 
-            ParameterUpdate?.Invoke(ParameterList);
+            avatarId = rootNode.CONTENTS.avatar.CONTENTS.change.VALUE?[0]?.ToString() ?? string.Empty;
+            ParameterUpdate?.Invoke(ParameterList, avatarId);
         }
         catch (HttpRequestException ex)
         {
             _lastVrcHttpServer = null;
             ParameterList.Clear();
-            ParameterUpdate?.Invoke(ParameterList);
+            ParameterUpdate?.Invoke(ParameterList, avatarId);
             Logger.Error("OSCQueryHttpClient: Error {ExMessage}", ex.Message);
         }
         catch (Exception ex)

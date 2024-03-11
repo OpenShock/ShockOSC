@@ -111,7 +111,7 @@ public static class Config
         ShockLink = new Conf.OpenShockConf
         {
             Shockers = new Dictionary<string, Guid>(),
-            UserHub = null!,
+            OpenShockApi = null!,
             ApiToken = "",
         }
     };
@@ -227,7 +227,7 @@ public static class Config
 
         public class OpenShockConf
         {
-            public Uri UserHub { get; set; } = new("https://api.shocklink.net/1/hubs/user");
+            public Uri OpenShockApi { get; set; } = new("https://api.shocklink.net/1");
             public required string ApiToken { get; set; }
             public required IReadOnlyDictionary<string, Guid> Shockers { get; set; }
         }

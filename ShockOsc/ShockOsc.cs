@@ -21,6 +21,7 @@ public static class ShockOsc
     private static bool _oscServerActive;
     private static bool _isAfk;
     private static bool _isMuted;
+    public static string AvatarId = string.Empty;
     private static readonly Random Random = new();
     public static readonly ConcurrentDictionary<string, Shocker> Shockers = new();
 
@@ -37,8 +38,9 @@ public static class ShockOsc
     };
 
     public static Dictionary<string, object?> ParamsInUse = new();
+    public static Dictionary<string, object?> AllAvatarParams = new();
 
-    public static Action? OnParamsChange;
+    public static Action<bool>? OnParamsChange;
     public static Action<bool, bool>? SetAuthLoading;
 
     public static async Task StartMain()
@@ -87,13 +89,7 @@ public static class ShockOsc
 
         _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
 
-        _logger.Information("Init user hub...");
-        SetAuthLoading?.Invoke(false, false);
-        if (!string.IsNullOrEmpty(Config.ConfigInstance.ShockLink.ApiToken))
-        {
-            SetAuthLoading?.Invoke(false, true);
-            UserHubClient.InitializeAsync();
-        }
+        ConnectToHub();
 
         _logger.Information("Creating OSC Query Server...");
         _ = new OscQueryServer(
@@ -125,12 +121,40 @@ public static class ShockOsc
         await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
     }
 
+    private static void ConnectToHub()
+    {
+        _logger.Information("Init user hub...");
+        SetAuthLoading?.Invoke(false, false);
+        if (string.IsNullOrEmpty(Config.ConfigInstance.ShockLink.ApiToken))
+            return;
+        
+        SetAuthLoading?.Invoke(false, true);
+        UserHubClient.InitializeAsync().ContinueWith(task =>
+        {
+            if (task.IsFaulted)
+                SetAuthLoading?.Invoke(false, false);
+
+            if (task.IsCompletedSuccessfully)
+            {
+                ShockLinkApi.GetShockers();
+                SetAuthLoading?.Invoke(true, false);
+            }
+        });
+    }
+
     public static void ClickLogin()
     {
         Config.Save();
         _logger.Information("Clicking login");
-        SetAuthLoading?.Invoke(false, true);
-        UserHubClient.InitializeAsync();
+        ConnectToHub();
+    }
+
+    private static void OnParamChange(bool shockOscParam)
+    {
+        if (OnParamsChange == null)
+            return;
+
+        OnParamsChange.Invoke(shockOscParam);
     }
 
     private static void FoundVrcClient()
@@ -158,8 +182,9 @@ public static class ShockOsc
         OsTask.Run(UnderscoreConfig.SendUpdateForAll);
     }
 
-    private static void OnAvatarChange(Dictionary<string, object?>? parameters)
+    private static void OnAvatarChange(Dictionary<string, object?>? parameters, string avatarId)
     {
+        AvatarId = avatarId;
         try
         {
             foreach (var obj in Shockers)
@@ -176,13 +201,17 @@ public static class ShockOsc
             }
 
             ParamsInUse.Clear();
+            AllAvatarParams.Clear();
 
             foreach (var param in parameters.Keys)
             {
+                if (param.StartsWith("/avatar/parameters/"))
+                    AllAvatarParams.TryAdd(param[19..], parameters[param]);
+
                 if (!param.StartsWith("/avatar/parameters/ShockOsc/"))
                     continue;
 
-                var paramName = param.Substring(28, param.Length - 28);
+                var paramName = param[28..];
                 var lastUnderscoreIndex = paramName.LastIndexOf('_') + 1;
                 var action = string.Empty;
                 var shockerName = paramName;
@@ -192,17 +221,16 @@ public static class ShockOsc
                     action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
                 }
 
-                if (!Shockers.ContainsKey(shockerName) && !shockerName.StartsWith("_"))
-                {
-                    _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
-                    _logger.Debug("Param: {Param}", param);
-                    continue;
-                }
-
                 if (ShockerParams.Contains(action))
                 {
                     parameterCount++;
                     ParamsInUse.TryAdd(paramName, parameters[param]);
+                }
+
+                if (!Shockers.ContainsKey(shockerName) && !shockerName.StartsWith("_"))
+                {
+                    _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
+                    _logger.Debug("Param: {Param}", param);
                 }
             }
 
@@ -212,6 +240,7 @@ public static class ShockOsc
         {
             _logger.Error(e, "Error on avatar change logic");
         }
+        OnParamChange(true);
     }
 
     private static async Task ReceiverLoopAsync()
@@ -245,6 +274,18 @@ public static class ShockOsc
 
         var addr = received.Address;
         _logger.Verbose("Received message: {Addr}", addr);
+
+        if (addr.StartsWith("/avatar/parameters/"))
+        {
+            var fullName = addr[19..];
+            if (AllAvatarParams.ContainsKey(fullName))
+            {
+                AllAvatarParams[fullName] = received.Arguments[0];
+                OnParamChange(false);
+            }
+            else
+                AllAvatarParams.TryAdd(fullName, received.Arguments[0]);
+        }
 
         switch (addr)
         {
@@ -285,6 +326,14 @@ public static class ShockOsc
             action = pos.Substring(lastUnderscoreIndex, pos.Length - lastUnderscoreIndex);
         }
 
+        if (ParamsInUse.ContainsKey(pos))
+        {
+            ParamsInUse[pos] = received.Arguments[0];
+            OnParamChange(true);
+        }
+        else
+            ParamsInUse.TryAdd(pos, received.Arguments[0]);
+
         if (!ShockerParams.Contains(action)) return;
 
         if (!Shockers.ContainsKey(shockerName))
@@ -294,14 +343,6 @@ public static class ShockOsc
             _logger.Debug("Param: {Param}", pos);
             return;
         }
-        
-        if (ParamsInUse.ContainsKey(pos))
-        {
-            ParamsInUse[pos] = received.Arguments[0];
-            OnParamsChange();
-        }
-        else
-            ParamsInUse.TryAdd(pos, received.Arguments[0]);
 
         var shocker = Shockers[shockerName];
 

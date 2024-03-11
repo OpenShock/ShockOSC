@@ -11,16 +11,20 @@ namespace Serilog;
 public class LogStore
 {
     public static List<LogEntry> Logs = new();
+    public static Action? OnLogAdded;
 
     public static void AddLog(string log)
     {
         if (Logs.Count == 0)
         {
             Logs.Add(new LogEntry { Time = DateTime.Now, Message = log });
-            return;
         }
-        // add to start of list
-        Logs.Insert(0, new LogEntry { Time = DateTime.Now, Message = log });
+        else
+        {
+            // add to start of list
+            Logs.Insert(0, new LogEntry { Time = DateTime.Now, Message = log });
+        }
+        OnLogAdded?.Invoke();
     }
 
     public class LogEntry
@@ -44,20 +48,27 @@ public class MySink : ILogEventSink
 
     public void Emit(LogEvent logEvent)
     {
-        _textWriter = new StringWriter();
-        _formatProvider.Format(logEvent, _textWriter);
-        // var logMessage = logEvent.RenderMessage(_formatProvider);
-        var logMessage = _textWriter.ToString();
-        if (string.IsNullOrEmpty(logMessage)) return;
-        if (logMessage.StartsWith("[Microsoft.AspNetCore.Http.Connections.Client.Internal.LoggingHttpMessageHandler] "))
+        try
         {
-            OpenShock.ShockOsc.ShockOsc.SetAuthLoading?.Invoke(false, false);
-            NotificationAction?.Invoke(logMessage[82..], Severity.Error);
-        }
+            _textWriter = new StringWriter();
+            _formatProvider.Format(logEvent, _textWriter);
+            // var logMessage = logEvent.RenderMessage(_formatProvider);
+            var logMessage = _textWriter.ToString();
+            if (string.IsNullOrEmpty(logMessage)) return;
+            if (logMessage.StartsWith("[Microsoft.AspNetCore.Http.Connections.Client.Internal.LoggingHttpMessageHandler] "))
+            {
+                OpenShock.ShockOsc.ShockOsc.SetAuthLoading?.Invoke(false, false);
+                NotificationAction?.Invoke(logMessage[82..], Severity.Error);
+            }
 
-        Debug.WriteLine(logMessage);
-        LogStore.AddLog(logMessage);
-        _textWriter.Flush();
+            Debug.WriteLine(logMessage);
+            LogStore.AddLog(logMessage);
+            _textWriter.Flush();
+        }
+        catch (Exception)
+        {
+            // this kinda sucks
+        }
     }
 }
 

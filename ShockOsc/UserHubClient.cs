@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenShock.ShockOsc.Models;
 using Serilog;
@@ -15,11 +14,11 @@ public static class UserHubClient
 
     private static HubConnection? Connection;
 
-    public static Task InitializeAsync()
+    public static async Task InitializeAsync()
     {
         Connection?.DisposeAsync();
         Connection = new HubConnectionBuilder()
-            .WithUrl(Config.ConfigInstance.ShockLink.UserHub, HttpTransportType.WebSockets,
+            .WithUrl($"{Config.ConfigInstance.ShockLink.OpenShockApi}/hubs/user", HttpTransportType.WebSockets,
                 options => { options.Headers.Add("OpenShockToken", Config.ConfigInstance.ShockLink.ApiToken); })
             .WithAutomaticReconnect()
             .ConfigureLogging(builder =>
@@ -40,8 +39,7 @@ public static class UserHubClient
         {
             ShockOsc.SetAuthLoading?.Invoke(false, true);
         };
-        Connection.StartAsync();
-        return Task.CompletedTask;
+        await Connection.StartAsync();
     }
     
     public static Task? Control(params Control[] data) => Connection?.SendAsync("ControlV2", data, "ShockOsc");
