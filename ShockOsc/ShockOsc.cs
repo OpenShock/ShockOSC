@@ -37,11 +37,19 @@ public static class ShockOsc
         "IShock"
     };
 
+    public enum AuthState
+    {
+        NotAuthenticated,
+        Authenticating,
+        Authenticated
+    }
+
     public static Dictionary<string, object?> ParamsInUse = new();
     public static Dictionary<string, object?> AllAvatarParams = new();
 
     public static Action<bool>? OnParamsChange;
-    public static Action<bool, bool>? SetAuthLoading;
+    public static Action<AuthState>? SetAuthLoading;
+    public static AuthState CurrentAuthState = AuthState.NotAuthenticated;
 
     public static async Task StartMain()
     {
@@ -124,20 +132,20 @@ public static class ShockOsc
     private static void ConnectToHub()
     {
         _logger.Information("Init user hub...");
-        SetAuthLoading?.Invoke(false, false);
+        SetAuthSate(AuthState.NotAuthenticated);
         if (string.IsNullOrEmpty(Config.ConfigInstance.ShockLink.ApiToken))
             return;
-        
-        SetAuthLoading?.Invoke(false, true);
+
+        SetAuthSate(AuthState.Authenticating);
         UserHubClient.InitializeAsync().ContinueWith(task =>
         {
             if (task.IsFaulted)
-                SetAuthLoading?.Invoke(false, false);
+                SetAuthSate(AuthState.NotAuthenticated);
 
             if (task.IsCompletedSuccessfully)
             {
                 ShockLinkApi.GetShockers();
-                SetAuthLoading?.Invoke(true, false);
+                SetAuthSate(AuthState.Authenticated);
             }
         });
     }
@@ -147,6 +155,12 @@ public static class ShockOsc
         Config.Save();
         _logger.Information("Clicking login");
         ConnectToHub();
+    }
+
+    public static void SetAuthSate(AuthState state)
+    {
+        CurrentAuthState = state;
+        SetAuthLoading?.Invoke(state);
     }
 
     private static void OnParamChange(bool shockOscParam)

@@ -35,9 +35,9 @@ public static class UserHubClient
             .Build();
         Connection.On<ControlLogSender, ICollection<ControlLog>>("Log", LogReceive);
         Connection.On<string>("Welcome", WelcomeReceive);
-        Connection.Closed += async exception =>
-        {
-            ShockOsc.SetAuthLoading?.Invoke(false, true);
+        Connection.Closed += exception => {
+            ShockOsc.SetAuthSate(ShockOsc.AuthState.NotAuthenticated);
+            return Task.CompletedTask;
         };
         await Connection.StartAsync();
     }
@@ -49,7 +49,7 @@ public static class UserHubClient
     private static Task WelcomeReceive(string connectionId)
     {
         ConnectionId = connectionId;
-        ShockOsc.SetAuthLoading?.Invoke(true, false);
+        ShockOsc.SetAuthSate(ShockOsc.AuthState.Authenticated);
         return Task.CompletedTask;
     }
     

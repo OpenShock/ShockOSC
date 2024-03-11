@@ -56,10 +56,7 @@ public class MySink : ILogEventSink
             var logMessage = _textWriter.ToString();
             if (string.IsNullOrEmpty(logMessage)) return;
             if (logMessage.StartsWith("[Microsoft.AspNetCore.Http.Connections.Client.Internal.LoggingHttpMessageHandler] "))
-            {
-                OpenShock.ShockOsc.ShockOsc.SetAuthLoading?.Invoke(false, false);
                 NotificationAction?.Invoke(logMessage[82..], Severity.Error);
-            }
 
             Debug.WriteLine(logMessage);
             LogStore.AddLog(logMessage);

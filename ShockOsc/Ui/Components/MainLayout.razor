@@ -266,10 +266,10 @@
         }
     }
 
-    private void SetAuthLoading(bool auth, bool loading)
+    private void SetAuthLoading(ShockOsc.AuthState authState)
     {
-        _authenticated = auth;
-        _loading = loading;
+        _authenticated = authState == ShockOsc.AuthState.Authenticated;
+        _loading = authState == ShockOsc.AuthState.Authenticating;
         InvokeAsync(StateHasChanged);
     }
 
@@ -280,6 +280,7 @@
         MySink.NotificationAction = MsgNoty;
         LogStore.OnLogAdded = OnLogAdded;
 
+        SetAuthLoading(ShockOsc.CurrentAuthState);
         _config = Config.ConfigInstance;
         intensity = _config.Behaviour.RandomIntensity ? "Random Intensity" : "Fixed Intensity";
         duration = _config.Behaviour.RandomDuration ? "Random Duration" : "Fixed Duration";
