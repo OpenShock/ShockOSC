@@ -11,11 +11,13 @@ public static class Updater
     private static readonly ILogger Logger = Log.ForContext(typeof(Updater));
     private static readonly HttpClient HttpClient = new();
     private const string GithubLatest = "https://api.github.com/repos/OpenShock/ShockOsc/releases/latest";
-    private const string CurrentFileName = "OpenShock.ShockOsc.exe";
-    private const string OldFileName = "OpenShock.ShockOsc.old.exe";
-    private static readonly string OldFilePath = Path.Combine(Environment.CurrentDirectory, OldFileName);
-    private static readonly string CurrentFilePath = Path.Combine(Environment.CurrentDirectory, CurrentFileName);
+    private const string SetupFileName = "ShockOSC_Setup.exe"; // OpenShock.ShockOsc.exe
+    private static readonly string SetupFilePath = Path.Combine(Environment.CurrentDirectory, SetupFileName);
     private static readonly Version CurrentVersion = Assembly.GetEntryAssembly()?.GetName().Version ?? throw new Exception("Could not determine ShockOsc version");
+
+    public static bool UpdateAvailable { get; private set; }
+    public static Version LatestVersion { get; private set; }
+    public static Uri LatestDownloadUrl { get; private set; }
 
     static Updater()
     {
@@ -38,40 +40,44 @@ public static class Updater
     
     private static async Task<(Version, GithubReleaseResponse.Asset)?> GetLatestRelease()
     {
-        //TryDeleteFile(Path.Combine(Environment.CurrentDirectory, "ShockLink.ShockOsc.exe"));
-        //TryDeleteFile(Path.Combine(Environment.CurrentDirectory, "ShockLink.ShockOsc.old.exe"));
-        TryDeleteFile(OldFilePath);
-        
         Logger.Information("Checking GitHub for updates...");
 
-        var res = await HttpClient.GetAsync(GithubLatest);
-        if (!res.IsSuccessStatusCode)
+        try
         {
-            Logger.Warning("Failed to get latest version information from GitHub. {StatusCode}", res.StatusCode);
-            return null;
-        }
-        
-        var json = await JsonSerializer.DeserializeAsync<GithubReleaseResponse>(await res.Content.ReadAsStreamAsync());
-        if (json == null)
-        {
-            Logger.Warning("Could not deserialize json");
-            return null;
-        }
+            var res = await HttpClient.GetAsync(GithubLatest);
+            if (!res.IsSuccessStatusCode)
+            {
+                Logger.Warning("Failed to get latest version information from GitHub. {StatusCode}", res.StatusCode);
+                return null;
+            }
 
-        if (!Version.TryParse(json.TagName[1..], out var version))
+            var json = await JsonSerializer.DeserializeAsync<GithubReleaseResponse>(await res.Content.ReadAsStreamAsync());
+            if (json == null)
+            {
+                Logger.Warning("Could not deserialize json");
+                return null;
+            }
+
+            if (!Version.TryParse(json.TagName[1..], out var version))
+            {
+                Logger.Warning("Failed to parse version. Value: {Version}", json.TagName);
+                return null;
+            }
+
+            var asset = json.Assets.FirstOrDefault(x => x.Name == SetupFileName);
+            if (asset == null)
+            {
+                Logger.Warning("Could not find asset with {@SetupName}. Assets found: {@Assets}", SetupFileName, json.Assets);
+                return null;
+            }
+
+            return (version, asset);
+        }
+        catch (Exception e)
         {
-            Logger.Warning("Failed to parse version. Value: {Version}", json.TagName);
+            Logger.Warning(e, "Failed to get latest version information from GitHub");
             return null;
         }
-
-        var asset = json.Assets.FirstOrDefault(x => x.Name == "OpenShock.ShockOsc.exe");
-        if (asset == null)
-        {
-            Logger.Warning("Could not find asset with OpenShock.ShockOsc.exe. Assets found: {@Assets}", json.Assets);
-            return null;
-        }
-
-        return (version, asset);
     }
 
     public static async Task<bool> CheckUpdate()
@@ -81,9 +87,13 @@ public static class Updater
         if (latestVersion.Value.Item1 <= CurrentVersion)
         {
             Logger.Information("ShockOsc is up to date ([{Version}] >= [{LatestVersion}])", CurrentVersion, latestVersion.Value.Item1);
+            UpdateAvailable = false;
             return false;
         }
 
+        UpdateAvailable = true;
+        LatestVersion = latestVersion.Value.Item1;
+        LatestDownloadUrl = latestVersion.Value.Item2.BrowserDownloadUrl;
         if (Config.ConfigInstance.LastIgnoredVersion != null &&
             Config.ConfigInstance.LastIgnoredVersion >= latestVersion.Value.Item1)
         {
@@ -92,50 +102,28 @@ public static class Updater
         }
         
         Logger.Warning(
-            "ShockOsc is not up to date. Newest version is [{NewVersion}] but you are on [{CurrentVersion}]!\nDo you wish to update it?\n[Y]es, [N]o, [D]ont ask (Yes)",
+            "ShockOsc is not up to date. Newest version is [{NewVersion}] but you are on [{CurrentVersion}]!",
             latestVersion.Value.Item1, CurrentVersion);
 
-        var input = Console.ReadLine()?.ToLowerInvariant();
-        var inputChar = 'y';
-        if (input?.Length > 0) inputChar = input[0];
-
-        switch (inputChar)
-        {
-            case 'y':
-                return await DoUpdate(latestVersion.Value.Item2.BrowserDownloadUrl);
-            case 'd':
-                Config.ConfigInstance.LastIgnoredVersion = latestVersion.Value.Item1;
-                Config.Save();
-                Logger.Information("Postponed update and turned off asking until next version");
-                break;
-            case 'n':
-                Logger.Information("Postponed update");
-                break;
-        }
-
-        return false;
+        return true;
     }
 
-    private static async Task<bool> DoUpdate(Uri downloadUri)
+    public static async Task DoUpdate()
     {
         Logger.Information("Starting update...");
-
-
-        try
+        if (LatestVersion == null || LatestDownloadUrl == null)
         {
-            Logger.Debug("Moving current file to old");
-            File.Move(CurrentFilePath, OldFilePath, true);
+            Logger.Error("LatestVersion or LatestDownloadUrl is null. Cannot update");
+            return;
         }
-        catch (Exception e)
-        {
-            Logger.Warning(e, "Failed to move file, probably doesnt exist, proceeding like normal...");
-        }
+
+        TryDeleteFile(SetupFilePath);
 
         Logger.Debug("Downloading new release...");
         var sp = Stopwatch.StartNew();
-        await using (var stream = await HttpClient.GetStreamAsync(downloadUri))
+        await using (var stream = await HttpClient.GetStreamAsync(LatestDownloadUrl))
         {
-            await using var fStream = new FileStream(CurrentFilePath, FileMode.OpenOrCreate);
+            await using var fStream = new FileStream(SetupFilePath, FileMode.OpenOrCreate);
             await stream.CopyToAsync(fStream);
         }
 
@@ -144,11 +132,10 @@ public static class Updater
         await Task.Delay(1000);
         var startInfo = new ProcessStartInfo
         {
-            FileName = CurrentFilePath,
+            FileName = SetupFilePath,
             UseShellExecute = true
         };
         Process.Start(startInfo);
         Environment.Exit(0);
-        return true;
     }
 }

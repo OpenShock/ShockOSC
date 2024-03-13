@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using System.Net;
+using System.Reflection;
 using System.Text;
 
 namespace OpenShock.ShockOsc;
@@ -8,6 +9,7 @@ public static class WebRequestApi
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(WebRequestApi));
     private static readonly HttpClient client;
+    private static readonly Version currentVersion = Assembly.GetEntryAssembly()?.GetName().Version ?? throw new Exception("Could not determine ShockOsc version");
 
     static WebRequestApi()
     {
@@ -17,7 +19,12 @@ public static class WebRequestApi
         var handler = new HttpClientHandler();
         client = new HttpClient(handler)
         {
-            BaseAddress = Config.ConfigInstance.ShockLink.OpenShockApi
+            BaseAddress = Config.ConfigInstance.ShockLink.OpenShockApi,
+            DefaultRequestHeaders =
+            {
+                {"User-Agent", $"ShockOsc/{currentVersion}"},
+                {"OpenShockToken", Config.ConfigInstance.ShockLink.ApiToken}
+            }
         };
     }
 
@@ -32,8 +39,6 @@ public static class WebRequestApi
     public static async Task<(HttpStatusCode, string)> DoRequest(RequestData requestData)
     {
         var request = new HttpRequestMessage(requestData.method, requestData.url);
-        request.Headers.Add("User-Agent", "ShockOSC");
-        request.Headers.Add("OpenShockToken", Config.ConfigInstance.ShockLink.ApiToken);
         if (requestData.headers != null)
         {
             foreach (var header in requestData.headers)

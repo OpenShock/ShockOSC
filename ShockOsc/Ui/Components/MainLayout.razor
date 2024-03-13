@@ -40,6 +40,7 @@
 }
 
 <MudLayout>
+    <UpdateLogout Authenticated="@_authenticated"/>
     <Logo/>
 
 @*  <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_loading" Label="Loading" />
@@ -47,7 +48,7 @@
         
     @if (!_authenticated)
     {
-        <Login Loading="@_loading" />
+        <Login Loading="@_loading"/>
     }
     else
     {
@@ -74,7 +75,14 @@
                         <br />
                         <br />  
                         <MudStack Spacing="0">
-                            <MudButton OnClick="OnAdvancedSettingsClick">@(_advancedSettingsExpanded ? "Advanced Settings" : "Advanced Settings")</MudButton>
+                            @if (_advancedSettingsExpanded)
+                            {
+                                <MudButton OnClick="OnAdvancedSettingsClick" EndIcon="@Icons.Material.Filled.KeyboardArrowUp">Advanced Settings</MudButton>
+                            }
+                            else
+                            {
+                                <MudButton OnClick="OnAdvancedSettingsClick" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">Advanced Settings</MudButton>
+                            }
                             <MudDivider />
                             <MudCollapse Expanded="_advancedSettingsExpanded">
                                 <MudTextField Variant="Variant.Filled" @bind-Value="_config.Chatbox.Prefix" Label="Prefix Text" @bind-Value:after="OnSettingsValueChange" />
@@ -214,7 +222,6 @@
 
     private bool _loading = false;
     private bool _authenticated = false;
-
 
 
     private void OnAdvancedSettingsClick()

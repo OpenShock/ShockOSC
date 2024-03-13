@@ -1,0 +1,41 @@
+@inject IDialogService Dialog
+@inject IDialogService DialogService
+
+@code {
+    [Parameter]
+    public bool Authenticated { get; set; }
+
+    private DialogOptions dialogOptions = new DialogOptions() { NoHeader = true, DisableBackdropClick = true };
+
+    private void OpenUpdateDialog()
+    {
+        DialogService.Show<UpdateDialog>("Update", dialogOptions);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await Updater.CheckUpdate())
+        {
+            OpenUpdateDialog();
+        }
+    }
+}
+
+<MudPaper Style="position: absolute; right: 0">
+    @if (Updater.UpdateAvailable)
+    {
+        <MudTooltip Text="Update">
+            <MudButton Color="Color.Primary" @onclick="OpenUpdateDialog" Size="Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
+                <MudIcon Icon="@Icons.Material.Filled.Update" />
+            </MudButton>
+        </MudTooltip>
+    }
+    @if (Authenticated)
+    {
+        <MudTooltip Text="Logout">
+            <MudButton Color="Color.Primary" @onclick="ShockOsc.Logout" Size=" Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
+                <MudIcon Icon="@Icons.Material.Filled.Logout" />
+            </MudButton>
+        </MudTooltip>
+    }
+</MudPaper>

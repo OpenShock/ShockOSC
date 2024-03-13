@@ -1,0 +1,45 @@
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    private bool _isDownloading = false;
+
+    private void Skip()
+    {
+        Config.ConfigInstance.LastIgnoredVersion = Updater.LatestVersion;
+        Config.Save();
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void DownloadUpdate()
+    {
+        _isDownloading = true;
+        Updater.DoUpdate();
+    }
+}
+
+<MudDialog>
+    <DialogContent>
+        @if (!_isDownloading)
+        {
+            <MudText Typo="Typo.h3">Update Available</MudText>
+            <br />
+            <MudText Typo="Typo.body1">A new version of ShockOSC is available. Would you like to update?</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h3">Downloading Update</MudText>
+            <br />
+            <MudText Typo="Typo.body1">Please wait while the update is downloaded.</MudText>
+            <br />
+            <MudProgressCircular Color="Color.Primary" Style="height:60px;width:60px;" Indeterminate="true" />
+        }
+    </DialogContent>
+    <DialogActions>
+    @if (!_isDownloading)
+    {
+        <MudButton Color="Color.Primary" OnClick="Skip">Skip</MudButton>
+        <MudButton Color="Color.Primary" OnClick="DownloadUpdate">Update</MudButton>
+    }
+    </DialogActions>
+</MudDialog>

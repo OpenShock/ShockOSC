@@ -44,6 +44,8 @@ public static class UserHubClient
     
     public static Task? Control(params Control[] data) => Connection?.SendAsync("ControlV2", data, "ShockOsc");
 
+    public static void Disconnect() => Connection?.DisposeAsync();
+
     #region Handlers
 
     private static Task WelcomeReceive(string connectionId)
