@@ -17,6 +17,8 @@ public partial class App : Application
         if (window != null)
         {
             window.Title = "ShockOSC";
+            window.MinimumHeight = 600;
+            window.MinimumWidth = 1000;
         }
 
         return window;
