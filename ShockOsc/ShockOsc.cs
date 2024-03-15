@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Net;
 using System.Reflection;
 using LucHeart.CoreOSC;
+using OpenShock.ShockOsc.Logging;
 using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.OscChangeTracker;
 using OpenShock.ShockOsc.OscQueryLibrary;
@@ -56,8 +57,7 @@ public static class ShockOsc
         Log.Logger = new LoggerConfiguration()
             .Filter.ByExcluding(ev =>
                 ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides"))
-            .WriteTo.MySink(LogEventLevel.Information,
-                "[{SourceContext}] {Message:lj} {NewLine}{Exception}")
+            .WriteTo.UiLogSink(LogEventLevel.Information)
             .CreateLogger();
 
         // ReSharper disable once RedundantAssignment
@@ -72,13 +72,12 @@ public static class ShockOsc
                 .MinimumLevel.Debug()
                 .Filter.ByExcluding(ev =>
                     ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides"))
-                .WriteTo.MySink(LogEventLevel.Debug,
-                    "[{SourceContext}] {Message:lj} {NewLine}{Exception}")
+                .WriteTo.UiLogSink(LogEventLevel.Debug)
                 .CreateLogger();
         }
 
         _logger = Log.ForContext(typeof(ShockOsc));
-
+        
         _logger.Information("Starting ShockOsc version {Version}",
             Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "error");
 
@@ -356,8 +355,6 @@ public static class ShockOsc
         var shocker = Shockers[shockerName];
 
         var value = received.Arguments.ElementAtOrDefault(0);
-        _logger.Debug("Received shocker parameter update for [{ShockerName}] state [{State}]", shocker.Name,
-            value is true);
         switch (action)
         {
             case "IShock":
