@@ -1,6 +1,4 @@
-﻿@using System.Text.Json.Serialization
-@using System.Diagnostics
-@using OpenShock.ShockOsc.Logging
+﻿@using OpenShock.ShockOsc.Logging
 @using OpenShock.ShockOsc.Ui.Components.Layout
 @using OpenShock.ShockOsc.Models;
 @using OpenShock.ShockOsc.Utils
@@ -45,10 +43,10 @@
 
 <style>
     .log.fatal {
-background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,9,9,0) 58%, rgba(255,0,0,0.4247899843531162) 100%);
+        background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,9,9,0) 58%, rgba(255,0,0,0.4247899843531162) 100%);
     }
     .log.error {
-background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,19,9,0) 58%, rgba(255,44,0,0.4247899843531162) 100%);
+        background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,19,9,0) 58%, rgba(255,44,0,0.4247899843531162) 100%);
     }
     .log.warning {
         background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(118,121,9,0) 58%, rgba(255,254,0,0.42) 100%);
@@ -61,8 +59,6 @@ background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,19,9,0) 58%, rgb
     .expanded:hover {
             background: rgba(0,0,0,0.4) !important;
     }
-   
-    
 </style>
 
 <MudLayout>
@@ -189,15 +185,43 @@ background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,19,9,0) 58%, rgb
 
                 </MudTabPanel>
                 <MudTabPanel Text="Shockers">
-                    <MudButton OnClick="ShockLinkApi.GetShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary">Refresh</MudButton>
-                    @foreach (var shocker in _config.ShockLink.Shockers)
+                    <MudButton OnClick="ShockLinkApi.GetShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Style="margin-right: 10px;">Refresh</MudButton>
+                    @if (_editShockers)
                     {
-                        // side by side flex
-                        <MudContainer Class="d-flex align-content-center" Style="padding: 0;">
-                            <MudField Variant="Variant.Text">@shocker.Key</MudField>
-                            <MudField Variant="Variant.Text">@shocker.Value</MudField>
-                        </MudContainer>
+                        <MudButton OnClick="() => { _editShockers = false; ShockOsc.SaveShockers(); }" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Primary">Save</MudButton>
                     }
+                    else
+                    {
+                        <MudButton OnClick="() => _editShockers = !_editShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit" Color="Color.Primary">Rename</MudButton>
+                    }
+                    <br />
+                    <br />
+                    <MudTable Items="_config.ShockLink.Shockers" Height="58vh">
+                        <HeaderContent>
+                            <MudTh>Name</MudTh>
+                            <MudTh>Guid</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                @if (_editShockers)
+                                {
+                                    <MudTextField Variant="Variant.Filled" Label="@context.Key" @bind-Value="@context.Value.NickName" />
+                                }
+                                else
+                                {
+                                    @if (string.IsNullOrEmpty(@context.Value.NickName))
+                                    {
+                                        @context.Key
+                                    }
+                                    else
+                                    {
+                                        @context.Value.NickName
+                                    }
+                                }
+                            </MudTd>
+                            <MudTd>@context.Value.Id</MudTd>
+                        </RowTemplate>
+                    </MudTable>
                 </MudTabPanel>
                 <MudTabPanel Text="Debug">
                     <MudText>List of ShockOSC prefixed parameters and their states</MudText>
@@ -268,6 +292,7 @@ background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,19,9,0) 58%, rgb
 @code {
     private int activePageIndex = 0;
     private bool _advancedSettingsExpanded = false;
+    private bool _editShockers = false;
     private bool _showAllAvatarParams = false;
 
     private Config.Conf _config;

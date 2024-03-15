@@ -16,8 +16,8 @@ public static class Updater
     private static readonly Version CurrentVersion = Assembly.GetEntryAssembly()?.GetName().Version ?? throw new Exception("Could not determine ShockOsc version");
 
     public static bool UpdateAvailable { get; private set; }
-    public static Version LatestVersion { get; private set; }
-    public static Uri LatestDownloadUrl { get; private set; }
+    public static Version? LatestVersion { get; private set; }
+    public static Uri? LatestDownloadUrl { get; private set; }
 
     static Updater()
     {

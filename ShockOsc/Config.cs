@@ -16,6 +16,7 @@ public static class Config
     static Config()
     {
         TryLoad();
+        ShockOsc.RefreshShockers();
     }
 
     private static void TryLoad()
@@ -110,7 +111,7 @@ public static class Config
         },
         ShockLink = new Conf.OpenShockConf
         {
-            Shockers = new Dictionary<string, Guid>(),
+            Shockers = new Dictionary<string, Conf.ShockerConf>(),
             OpenShockApi = null!,
             ApiToken = "",
         }
@@ -229,7 +230,13 @@ public static class Config
         {
             public Uri OpenShockApi { get; set; } = new("https://api.shocklink.net/1");
             public required string ApiToken { get; set; }
-            public required IReadOnlyDictionary<string, Guid> Shockers { get; set; }
+            public required IReadOnlyDictionary<string, ShockerConf> Shockers { get; set; }
+        }
+        
+        public class ShockerConf
+        {
+            public required string NickName { get; set; }
+            public required Guid Id { get; set; }
         }
     }
 }

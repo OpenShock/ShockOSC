@@ -81,7 +81,14 @@ public static class ShockOsc
         _logger.Information("Starting ShockOsc version {Version}",
             Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "error");
 
-        _logger.Information("Found shockers: {Shockers}", Config.ConfigInstance.ShockLink.Shockers.Select(x => x.Key));
+        var shockerList = "";
+        foreach (var shocker in Config.ConfigInstance.ShockLink.Shockers)
+        {
+            shockerList += string.IsNullOrEmpty(shocker.Value.NickName)
+                ? $"{shocker.Key}, "
+                : $"{shocker.Value.NickName}, ";
+        }
+        _logger.Information("Found shockers: {Shockers}", shockerList);
 
         ConnectToHub();
 
@@ -159,10 +166,7 @@ public static class ShockOsc
 
     private static void OnParamChange(bool shockOscParam)
     {
-        if (OnParamsChange == null)
-            return;
-
-        OnParamsChange.Invoke(shockOscParam);
+        OnParamsChange?.Invoke(shockOscParam);
     }
 
     private static void FoundVrcClient()
@@ -181,13 +185,27 @@ public static class ShockOsc
         OsTask.Run(SenderLoopAsync);
         OsTask.Run(CheckLoop);
 
-        Shockers.Clear();
-        Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
-        foreach (var (shockerName, shockerId) in Config.ConfigInstance.ShockLink.Shockers)
-            Shockers.TryAdd(shockerName, new Shocker(shockerId, shockerName));
-
         _logger.Information("Ready");
         OsTask.Run(UnderscoreConfig.SendUpdateForAll);
+    }
+    
+    public static void RefreshShockers()
+    {
+        Shockers.Clear();
+        Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
+        foreach (var (shockerName, shocker) in Config.ConfigInstance.ShockLink.Shockers)
+        {
+            if (string.IsNullOrEmpty(shocker.NickName))
+                Shockers.TryAdd(shockerName, new Shocker(shocker.Id, shockerName));
+            else
+                Shockers.TryAdd(shocker.NickName, new Shocker(shocker.Id, shocker.NickName));
+        }
+    }
+
+    public static void SaveShockers()
+    {
+        RefreshShockers();
+        Config.Save();
     }
 
     private static void OnAvatarChange(Dictionary<string, object?>? parameters, string avatarId)

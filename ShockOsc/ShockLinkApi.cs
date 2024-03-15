@@ -39,13 +39,23 @@ public class ShockLinkApi
             }
 
             // populate config
-            var shockerList = new Dictionary<string, Guid>();
+            var shockerList = new Dictionary<string, Config.Conf.ShockerConf>();
             foreach (var shocker in Shockers)
             {
-                shockerList.Add(shocker.Name, shocker.Id);
+                // get nickname from config
+                var nickName = string.Empty;
+                if (Config.ConfigInstance.ShockLink.Shockers.TryGetValue(shocker.Name, out var confShocker))
+                    nickName = confShocker.NickName;
+
+                shockerList.Add(shocker.Name, new Config.Conf.ShockerConf
+                {
+                    NickName = nickName,
+                    Id = shocker.Id,
+                });
             }
             Config.ConfigInstance.ShockLink.Shockers = shockerList;
             Config.Save();
+            ShockOsc.RefreshShockers();
         }
         else
         {
