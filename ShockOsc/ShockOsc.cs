@@ -198,6 +198,8 @@ public static class ShockOsc
         Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
         foreach (var (shockerName, shocker) in Config.ConfigInstance.ShockLink.Shockers)
         {
+            if(!shocker.Enabled) continue;
+            
             if (string.IsNullOrEmpty(shocker.NickName))
                 Shockers.TryAdd(shockerName, new Shocker(shocker.Id, shockerName));
             else

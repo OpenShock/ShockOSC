@@ -198,14 +198,18 @@
                     <br />
                     <MudTable Items="_config.ShockLink.Shockers" Height="58vh">
                         <HeaderContent>
+                            <MudTh>Enabled</MudTh>
                             <MudTh>Name</MudTh>
                             <MudTh>Guid</MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd>
+                                <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="@context.Value.Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
+                            </MudTd>
+                            <MudTd>
                                 @if (_editShockers)
                                 {
-                                    <MudTextField Variant="Variant.Filled" Label="@context.Key" @bind-Value="@context.Value.NickName" />
+                                    <MudTextField Variant="Variant.Filled" Label="@context.Key" @bind-Value="@context.Value.NickName" @bind-Value:after="OnShockerConfigUpdate"/>
                                 }
                                 else
                                 {
@@ -340,6 +344,12 @@
     private void MsgNoty(string msg, Severity severity)
     {
         Snackbar.Add(msg, severity);
+    }
+
+    private Task OnShockerConfigUpdate()
+    {
+        ShockOsc.RefreshShockers();
+        return Task.CompletedTask;
     }
 
     private Task OnSettingsValueChange()

@@ -44,13 +44,19 @@ public class ShockLinkApi
             {
                 // get nickname from config
                 var nickName = string.Empty;
+                var enabled = true;
+                
                 if (Config.ConfigInstance.ShockLink.Shockers.TryGetValue(shocker.Name, out var confShocker))
+                {
                     nickName = confShocker.NickName;
+                    enabled = confShocker.Enabled;
+                }
 
                 shockerList.Add(shocker.Name, new Config.Conf.ShockerConf
                 {
                     NickName = nickName,
                     Id = shocker.Id,
+                    Enabled = enabled
                 });
             }
             Config.ConfigInstance.ShockLink.Shockers = shockerList;

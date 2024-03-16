@@ -237,6 +237,7 @@ public static class Config
         {
             public required string NickName { get; set; }
             public required Guid Id { get; set; }
+            public required bool Enabled { get; set; } = true;
         }
     }
 }
