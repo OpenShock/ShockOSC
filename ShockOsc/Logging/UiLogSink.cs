@@ -64,10 +64,9 @@ public static class UiLogSinkExtensions
 {
 
     public static LoggerConfiguration UiLogSink(
-        this LoggerSinkConfiguration sinkConfiguration,
-        LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum)
+        this LoggerSinkConfiguration sinkConfiguration)
     {
         var sink = new UiLogSink();
-        return sinkConfiguration.Sink(sink, restrictedToMinimumLevel);
+        return sinkConfiguration.Sink(sink);
     }
 }

@@ -1,14 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:local="clr-namespace:ShockOsc"
-             xmlns:ui1="using:OpenShock.ShockOsc.Ui"
-             x:Class="ShockOsc.MainPage"
+             xmlns:ui="using:OpenShock.ShockOsc.Ui"
+             x:Class="OpenShock.ShockOsc.Ui.MainPage"
              BackgroundColor="{DynamicResource PageBackgroundColor}">
 
     <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
         <BlazorWebView.RootComponents>
-            <RootComponent Selector="#app" ComponentType="{x:Type ui1:Main}" />
+            <RootComponent Selector="#app" ComponentType="{x:Type ui:Main}" />
         </BlazorWebView.RootComponents>
     </BlazorWebView>
 

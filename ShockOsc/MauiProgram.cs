@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
+using OpenShock.ShockOsc.Ui;
 
-namespace ShockOsc;
+namespace OpenShock.ShockOsc;
 
 public static class MauiProgram
 {

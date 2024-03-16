@@ -55,9 +55,11 @@ public static class ShockOsc
     public static async Task StartMain()
     {
         Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
             .Filter.ByExcluding(ev =>
-                ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides"))
-            .WriteTo.UiLogSink(LogEventLevel.Information)
+                ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides")).Filter.ByExcluding(x => x.MessageTemplate.Text.StartsWith("Failed to find handler for"))
+            .WriteTo.UiLogSink()
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
         // ReSharper disable once RedundantAssignment
@@ -71,8 +73,9 @@ public static class ShockOsc
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Filter.ByExcluding(ev =>
-                    ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides"))
-                .WriteTo.UiLogSink(LogEventLevel.Debug)
+                    ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides")).Filter.ByExcluding(x => x.MessageTemplate.Text.StartsWith("Failed to find handler for"))
+                .WriteTo.UiLogSink()
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
         }
 

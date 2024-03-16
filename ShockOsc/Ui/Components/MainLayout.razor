@@ -326,8 +326,8 @@
         // only redraw page when needed
         if (!_showAllAvatarParams && !shockOscParam)
             return;
-
-        InvokeAsync(StateHasChanged);
+        
+        _updateQueued = true;
     }
 
     private void OnLogAdded()
@@ -383,5 +383,25 @@
 
     private string RowClassFunc(LogStore.LogEntry? log, int arg2) => log == null ? string.Empty : GetLogClass(log.Level) + (log.IsExpanded ? " expanded" : "");
 
+    private bool _updateQueued = true;
+
+    protected override void OnInitialized()
+    {
+        OsTask.Run(UpdateParams);
+    }
+
+    private async Task UpdateParams()
+    {
+        while (true)
+        {
+            await Task.Delay(250);
+            
+            if (!_updateQueued)
+                continue;
+            _updateQueued = false;
+            
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
 }

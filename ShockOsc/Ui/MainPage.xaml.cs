@@ -1,4 +1,4 @@
-﻿namespace ShockOsc;
+﻿namespace OpenShock.ShockOsc.Ui;
 
 public partial class MainPage : ContentPage
 {
