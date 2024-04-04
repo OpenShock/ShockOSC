@@ -1,0 +1,106 @@
+﻿@using System.Text.RegularExpressions
+@using Swan
+
+@code {
+
+    public Guid? Group { get; set; } = null;
+
+    public void AddGroup()
+    {
+        var groupId = Guid.NewGuid();
+        Config.ConfigInstance.Groups.Add(groupId, new Config.Conf.Group { Name = "New Group" });
+        Group = groupId;
+
+        InvokeAsync(StateHasChanged);
+        Config.Save();
+    }
+
+    public void DeleteGroup()
+    {
+        if (Group == null) return;
+        
+        Config.ConfigInstance.Groups.Remove(Group.Value);
+        Group = null;
+        InvokeAsync(StateHasChanged);
+        Config.Save();
+    }
+
+    private Task OnSettingsValueChange()
+    {
+        Config.Save();
+        return Task.CompletedTask;
+    }
+
+    private Task OnGroupSelect()
+    {
+        if (CurrentGroup != null) _selectedShockers = [..CurrentGroup.Shockers];
+        
+        InvokeAsync(StateHasChanged);
+        return Task.CompletedTask;
+    }
+
+    private Task OnSelectedShockersUpdate()
+    {
+        if (CurrentGroup != null)
+        {
+            CurrentGroup.Shockers = _selectedShockers.ToList();
+            Config.Save();
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private Config.Conf.Group? CurrentGroup => Group == null ? null : Config.ConfigInstance.Groups.TryGetValue(Group.Value, out var group) ? group : null;
+
+    private static Regex _nameRegex = new Regex(@"^[a-zA-Z0-9\/\\ -]+$", RegexOptions.Compiled);
+
+    private string NameValidation(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "Name cannot be empty";
+        if (name.Length > 30) return "Name cannot be longer than 30 characters";
+        if (!_nameRegex.IsMatch(name)) return "Can only contain letters, numbers, and /\\- characters, this is due to unity animator parameters restrictions";
+        return string.Empty;
+    }
+
+    private HashSet<Guid> _selectedShockers = [];
+}
+
+<MudButton OnClick="AddGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Placeholder="Select Group to Edit" Color="Color.Primary">Add New Group</MudButton>
+<MudButton OnClick="DeleteGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Placeholder="Select Group to Edit" Color="Color.Error">Delete Group</MudButton>
+<br/> <br/>
+<MudSelect Variant="Variant.Outlined" T="Guid?" Label="Select Group" Dense="true" Margin="Margin.Dense" @bind-Value="Group" @bind-Value:after="OnGroupSelect" Clearable>
+    @foreach (var group in Config.ConfigInstance.Groups)
+    {
+        <MudSelectItem T="Guid?" Value="@group.Key">@group.Value.Name</MudSelectItem>
+    }
+</MudSelect>
+
+@if (CurrentGroup != null)
+{
+    <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+        <MudText>Group Settings</MudText>
+        <MudDivider/>
+        <br/>
+
+        <MudTextField Label="Group Name" Validation="@(new Func<string, string>(NameValidation))" DebounceInterval="250" @bind-Value="@CurrentGroup.Name" @bind-Value:after="OnSettingsValueChange"/>
+    </MudPaper>
+
+    <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+        <MudText>Shockers in Group</MudText>
+        <MudDivider/>
+        <br/>
+
+        <MudTable Height="300px" Items="OpenShockApi.Shockers.Select(x => x.Id)" MultiSelection="true" Hover="true" @bind-SelectedItems="@_selectedShockers" @bind-SelectedItems:after="OnSelectedShockersUpdate">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@OpenShockApi.Shockers.First(x => x.Id == context).Name</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+}
+else
+{
+    <MudText Typo="Typo.h6">Please select a group to edit</MudText>
+}

@@ -1,9 +1,11 @@
 ﻿@using OpenShock.ShockOsc.Logging
 @using OpenShock.ShockOsc.Ui.Components.Layout
+@using OpenShock.ShockOsc.Ui.Components.Tabs
 @using OpenShock.ShockOsc.Models;
 @using OpenShock.ShockOsc.Utils
 @using Serilog
 @using Serilog.Events
+@using OpenShock.SDK.CSharp.Models
 @inject ISnackbar Snackbar
 @inherits LayoutComponentBase
 
@@ -74,8 +76,12 @@
     }
     else
     {
+        
         <MudContainer>
             <MudTabs @bind-ActivePanelIndex="activePageIndex" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="rounded-lg">
+                <MudTabPanel Text="Groups">
+                    <GroupsTab/>
+                </MudTabPanel>
                 <MudTabPanel Text="Config">
                     <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
                         <MudText>Chatbox Options</MudText>
@@ -185,7 +191,7 @@
 
                 </MudTabPanel>
                 <MudTabPanel Text="Shockers">
-                    <MudButton OnClick="ShockLinkApi.GetShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Style="margin-right: 10px;">Refresh</MudButton>
+                    <MudButton OnClick="OpenShockApi.GetShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Style="margin-right: 10px;">Refresh</MudButton>
                     @if (_editShockers)
                     {
                         <MudButton OnClick="() => { _editShockers = false; ShockOsc.SaveShockers(); }" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Primary">Save</MudButton>
@@ -194,9 +200,9 @@
                     {
                         <MudButton OnClick="() => _editShockers = !_editShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit" Color="Color.Primary">Rename</MudButton>
                     }
-                    <br />
-                    <br />
-                    <MudTable Items="_config.ShockLink.Shockers" Height="58vh">
+                    <br/>
+                    <br/>
+                    <MudTable Items="OpenShockApi.Shockers" Height="58vh">
                         <HeaderContent>
                             <MudTh>Enabled</MudTh>
                             <MudTh>Name</MudTh>
@@ -204,26 +210,10 @@
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd>
-                                <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="@context.Value.Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
+                                <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="@_config.OpenShock.Shockers[context.Id].Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
                             </MudTd>
-                            <MudTd>
-                                @if (_editShockers)
-                                {
-                                    <MudTextField Variant="Variant.Filled" Label="@context.Key" @bind-Value="@context.Value.NickName" @bind-Value:after="OnShockerConfigUpdate"/>
-                                }
-                                else
-                                {
-                                    @if (string.IsNullOrEmpty(@context.Value.NickName))
-                                    {
-                                        @context.Key
-                                    }
-                                    else
-                                    {
-                                        @context.Value.NickName
-                                    }
-                                }
-                            </MudTd>
-                            <MudTd>@context.Value.Id</MudTd>
+                            <MudTd>@context.Name</MudTd>
+                            <MudTd>@context.Id</MudTd>
                         </RowTemplate>
                     </MudTable>
                 </MudTabPanel>

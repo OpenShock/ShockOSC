@@ -3,6 +3,8 @@ using System.Globalization;
 using System.Net;
 using System.Reflection;
 using LucHeart.CoreOSC;
+using OpenShock.SDK.CSharp.Live.Models;
+using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOsc.Logging;
 using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.OscChangeTracker;
@@ -54,44 +56,11 @@ public static class ShockOsc
 
     public static async Task StartMain()
     {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .Filter.ByExcluding(ev =>
-                ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides")).Filter.ByExcluding(x => x.MessageTemplate.Text.StartsWith("Failed to find handler for"))
-            .WriteTo.UiLogSink()
-            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
-
-        // ReSharper disable once RedundantAssignment
-        var isDebug = false;
-#if DEBUG
-        isDebug = true;
-#endif
-        if (isDebug)
-        {
-            Log.Information("Debug logging enabled");
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .Filter.ByExcluding(ev =>
-                    ev.Exception is InvalidDataException a && a.Message.StartsWith("Invocation provides")).Filter.ByExcluding(x => x.MessageTemplate.Text.StartsWith("Failed to find handler for"))
-                .WriteTo.UiLogSink()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-                .CreateLogger();
-        }
-
+        
         _logger = Log.ForContext(typeof(ShockOsc));
         
         _logger.Information("Starting ShockOsc version {Version}",
             Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "error");
-
-        var shockerList = "";
-        foreach (var shocker in Config.ConfigInstance.ShockLink.Shockers)
-        {
-            shockerList += string.IsNullOrEmpty(shocker.Value.NickName)
-                ? $"{shocker.Key}, "
-                : $"{shocker.Value.NickName}, ";
-        }
-        _logger.Information("Found shockers: {Shockers}", shockerList);
 
         ConnectToHub();
 
@@ -129,18 +98,18 @@ public static class ShockOsc
     {
         _logger.Information("Init user hub...");
         SetAuthSate(AuthState.NotAuthenticated);
-        if (string.IsNullOrEmpty(Config.ConfigInstance.ShockLink.ApiToken))
+        if (string.IsNullOrEmpty(Config.ConfigInstance.OpenShock.Token))
             return;
 
         SetAuthSate(AuthState.Authenticating);
-        UserHubClient.InitializeAsync().ContinueWith(task =>
+        UserHubClient.SetupLiveClient().ContinueWith(task =>
         {
             if (task.IsFaulted)
                 SetAuthSate(AuthState.NotAuthenticated);
 
             if (task.IsCompletedSuccessfully)
             {
-                ShockLinkApi.GetShockers();
+                OpenShockApi.GetShockers();
                 SetAuthSate(AuthState.Authenticated);
             }
         });
@@ -148,7 +117,7 @@ public static class ShockOsc
 
     public static void Logout()
     {
-        Config.ConfigInstance.ShockLink.ApiToken = string.Empty;
+        Config.ConfigInstance.OpenShock.Token = string.Empty;
         Config.Save();
         UserHubClient.Disconnect();
         SetAuthSate(AuthState.NotAuthenticated);
@@ -196,15 +165,15 @@ public static class ShockOsc
     {
         Shockers.Clear();
         Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
-        foreach (var (shockerName, shocker) in Config.ConfigInstance.ShockLink.Shockers)
-        {
-            if(!shocker.Enabled) continue;
-            
-            if (string.IsNullOrEmpty(shocker.NickName))
-                Shockers.TryAdd(shockerName, new Shocker(shocker.Id, shockerName));
-            else
-                Shockers.TryAdd(shocker.NickName, new Shocker(shocker.Id, shocker.NickName));
-        }
+        // foreach (var (shockerName, shocker) in Config.ConfigInstance.OpenShock.Shockers)
+        // {
+        //     if(!shocker.Enabled) continue;
+        //     
+        //     if (string.IsNullOrEmpty(shocker.NickName))
+        //         Shockers.TryAdd(shockerName, new Shocker(shocker.Id, shockerName));
+        //     else
+        //         Shockers.TryAdd(shocker.NickName, new Shocker(shocker.Id, shocker.NickName));
+        // }
     }
 
     public static void SaveShockers()

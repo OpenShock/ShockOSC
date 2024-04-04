@@ -5,9 +5,7 @@ public partial class App : Application
     public App()
     {
         _ = OpenShock.ShockOsc.ShockOsc.StartMain();
-
         InitializeComponent();
-
         MainPage = new MainPage();
     }
 

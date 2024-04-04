@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOsc.Models;
 using Serilog;
 
@@ -109,21 +110,32 @@ public static class Config
             DisableWhileAfk = true,
             ForceUnmute = false
         },
-        ShockLink = new Conf.OpenShockConf
+        OpenShock = new Conf.OpenShockConf
         {
-            Shockers = new Dictionary<string, Conf.ShockerConf>(),
-            OpenShockApi = null!,
-            ApiToken = "",
-        }
+            Shockers = new Dictionary<Guid, Conf.ShockerConf>(),
+            Token = "",
+        },
+        Groups = new Dictionary<Guid, Conf.Group>()
     };
 
     public class Conf
     {
         public required OscConf Osc { get; set; }
         public required BehaviourConf Behaviour { get; set; }
-        public required OpenShockConf ShockLink { get; set; }
-        public ChatboxConf Chatbox { get; set; } = new();
+        public required OpenShockConf OpenShock { get; set; }
+        public required ChatboxConf Chatbox { get; set; }
+        
+        public IDictionary<Guid, Group> Groups { get; set; } = new Dictionary<Guid, Group>();
+            
         public Version? LastIgnoredVersion { get; set; }
+        
+        
+        public sealed class Group
+        {
+            public required string Name { get; set; }
+            public IList<Guid> Shockers { get; set; } = new List<Guid>();
+        }
+        
 
         public class ChatboxConf
         {
@@ -228,15 +240,13 @@ public static class Config
 
         public class OpenShockConf
         {
-            public Uri OpenShockApi { get; set; } = new("https://api.shocklink.net/1");
-            public required string ApiToken { get; set; }
-            public required IReadOnlyDictionary<string, ShockerConf> Shockers { get; set; }
+            public Uri Backend { get; set; } = new("https://api.shocklink.net");
+            public required string Token { get; set; }
+            public required IReadOnlyDictionary<Guid, ShockerConf> Shockers { get; set; }
         }
         
         public class ShockerConf
         {
-            public required string NickName { get; set; }
-            public required Guid Id { get; set; }
             public required bool Enabled { get; set; } = true;
         }
     }

@@ -9,7 +9,7 @@
         <br/>
         @if (!Loading)
         {
-            <MudTextField @bind-Value="Config.ConfigInstance.ShockLink.ApiToken" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+            <MudTextField @bind-Value="Config.ConfigInstance.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
             <br />
             <MudButton OnClick="ShockOsc.ClickLogin" Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton>
             <br />

@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Http.Connections;
-using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Logging;
-using OpenShock.ShockOsc.Models;
+﻿using Microsoft.Extensions.Logging;
+using OpenShock.SDK.CSharp.Live;
+using OpenShock.SDK.CSharp.Live.Models;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
@@ -11,40 +10,44 @@ public static class UserHubClient
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(UserHubClient));
     public static string? ConnectionId { get; set; }
+    
+    private static OpenShockApiLiveClient? _liveClient;
 
-    private static HubConnection? Connection;
 
-    public static async Task InitializeAsync()
+    public static async Task SetupLiveClient()
     {
-        Connection?.DisposeAsync();
-        Connection = new HubConnectionBuilder()
-            .WithUrl($"{Config.ConfigInstance.ShockLink.OpenShockApi}/hubs/user", HttpTransportType.WebSockets,
-                options => { options.Headers.Add("OpenShockToken", Config.ConfigInstance.ShockLink.ApiToken); })
-            .WithAutomaticReconnect()
-            .ConfigureLogging(builder =>
+        if(_liveClient != null) await _liveClient.DisposeAsync();
+        _liveClient = new OpenShockApiLiveClient(new ApiLiveClientOptions()
+        {
+            Server = Config.ConfigInstance.OpenShock.Backend,
+            Token = Config.ConfigInstance.OpenShock.Token,
+            ConfigureLogging = builder =>
             {
                 builder.ClearProviders();
                 builder.SetMinimumLevel(LogLevel.Trace);
                 builder.AddSerilog();
-            })
-            .AddJsonProtocol(options =>
-            {
-                options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
-                options.PayloadSerializerOptions.Converters.Add(new CustomJsonStringEnumConverter());
-            })
-            .Build();
-        Connection.On<ControlLogSender, ICollection<ControlLog>>("Log", LogReceive);
-        Connection.On<string>("Welcome", WelcomeReceive);
-        Connection.Closed += exception => {
+            }
+        });
+
+        _liveClient.OnLog(LogReceive);
+        _liveClient.OnWelcome(WelcomeReceive);
+        
+        
+       _liveClient.Connection.Closed += exception => {
             ShockOsc.SetAuthSate(ShockOsc.AuthState.NotAuthenticated);
             return Task.CompletedTask;
         };
-        await Connection.StartAsync();
+       
+        await _liveClient.StartAsync();
     }
     
-    public static Task? Control(params Control[] data) => Connection?.SendAsync("ControlV2", data, "ShockOsc");
+    
+    public static Task? Control(params Control[] data) => _liveClient?.Control(data, "ShockOsc");
 
-    public static void Disconnect() => Connection?.DisposeAsync();
+    public static async Task Disconnect()
+    {
+        if (_liveClient != null) await _liveClient.DisposeAsync();
+    }
 
     #region Handlers
 
