@@ -183,7 +183,7 @@
                     <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
                         <MudText>Other Options</MudText>
                         <MudDivider/>
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="UnderscoreConfig.KillSwitch" Label="Kill Switch"/>
+                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="UnderscoreConfig.KillSwitch" Label="Kill Switch" @bind-Value:after="OnSettingsValueChange" />
                         <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Behaviour.DisableWhileAfk" Label="Disable While Afk" @bind-Value:after="OnSettingsValueChange"/>
                         <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChange"/>
                         <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Osc.QuestSupport" Label="Quest Support" @bind-Value:after="OnSettingsValueChange"/>
@@ -350,13 +350,45 @@
         return Task.CompletedTask;
     }
 
-    private Task OnSettingsValueChange()
+    private DateTime _lastSettingsSave = DateTime.Now;
+    private CancellationTokenSource _cts = new CancellationTokenSource();
+
+    private async Task OnSettingsValueChange()
     {
+        if ((DateTime.Now - _lastSettingsSave).TotalMilliseconds >= 10)
+        {
+            await OnSettingsValueSave();
+            return;
+        }
+
+        _cts.Cancel();
+        _cts = new CancellationTokenSource();
+
+        try
+        {
+            await Task.Delay(10, _cts.Token);
+
+            if (!_cts.Token.IsCancellationRequested &&
+                (DateTime.Now - _lastSettingsSave).TotalMilliseconds >= 10)
+            {
+                await OnSettingsValueSave();
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Task was cancelled, which is expected
+        }
+    }
+
+    private Task OnSettingsValueSave()
+    {
+        _lastSettingsSave = DateTime.Now;
         _config.Behaviour.RandomIntensity = intensity == "Random Intensity";
         _config.Behaviour.RandomDuration = duration == "Random Duration";
         ValidateSettings();
 
         Config.Save();
+        UnderscoreConfig.SendUpdateForAll();
         return Task.CompletedTask;
     }
 

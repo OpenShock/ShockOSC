@@ -452,7 +452,7 @@ public static class ShockOsc
         SendParams();
 
         shocker.TriggerMethod = TriggerMethod.None;
-        var inSeconds = ((float)duration / 1000).ToString(CultureInfo.InvariantCulture);
+        var inSeconds = MathF.Round(duration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
         _logger.Information(
             "Sending shock to {Shocker} Intensity: {Intensity} IntensityPercentage: {IntensityPercentage}% Length:{Length}s",
             shocker.Name, intensity, intensityPercentage, inSeconds);
