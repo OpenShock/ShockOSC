@@ -1,4 +1,4 @@
-﻿@using OpenShock.ShockOsc.Logging
+@using OpenShock.ShockOsc.Logging
 @using OpenShock.ShockOsc.Ui.Components.Layout
 @using OpenShock.ShockOsc.Ui.Components.Tabs
 @using OpenShock.ShockOsc.Models;
@@ -83,11 +83,11 @@
                     <GroupsTab/>
                 </MudTabPanel>
                 <MudTabPanel Text="Config">
-                    <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+                    <MudPaper Class="rounded-lg" Style="padding: 10px 15px;">
                         <MudText>Chatbox Options</MudText>
                         <MudDivider/>
                         <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Osc.Chatbox" Label="Chatbox" @bind-Value:after="OnSettingsValueChange"/>
-                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Chatbox.DisplayRemoteControl" Label="Display Remote Control aaaaa" @bind-Value:after="OnSettingsValueChange"/>
+                        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Chatbox.DisplayRemoteControl" Label="Display Remote Control" @bind-Value:after="OnSettingsValueChange"/>
                         <br/>
                         <br/>
                         <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_config.Osc.Hoscy" Label="Hoscy" @bind-Value:after="OnSettingsValueChange"/>
@@ -210,7 +210,7 @@
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd>
-                                <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="@_config.OpenShock.Shockers[context.Id].Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
+                                <MudCheckBox Class="option-width option-checkbox-height" Style="margin-left:10px;" @bind-Value="@_config.OpenShock.Shockers[context.Id].Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
                             </MudTd>
                             <MudTd>@context.Name</MudTd>
                             <MudTd>@context.Id</MudTd>
@@ -219,7 +219,8 @@
                 </MudTabPanel>
                 <MudTabPanel Text="Debug">
                     <MudText>List of ShockOSC prefixed parameters and their states</MudText>
-                    <MudText>AvatarId: @ShockOsc.AvatarId</MudText>
+                    <br/>
+                    <MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
                     <br/>
                     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams" Label="Show all avatar parameters"/>
                     <MudDivider/>
@@ -314,20 +315,27 @@
     private void OnParamsChange(bool shockOscParam)
     {
         // check Debug page is active
-        if (activePageIndex != 2)
+        if (activePageIndex != 3)
             return;
 
         // only redraw page when needed
         if (!_showAllAvatarParams && !shockOscParam)
             return;
-        
+
         _updateQueued = true;
     }
 
     private void OnLogAdded()
     {
         // check Log page is active
-        if (activePageIndex == 3)
+        if (activePageIndex == 4)
+            InvokeAsync(StateHasChanged);
+    }
+
+    private void OnConfigUpdate()
+    {
+        // check Config page is active
+        if (activePageIndex == 1)
             InvokeAsync(StateHasChanged);
     }
 
@@ -348,7 +356,6 @@
         _config.Behaviour.RandomDuration = duration == "Random Duration";
         ValidateSettings();
 
-        Logger.Information("settings changed");
         Config.Save();
         return Task.CompletedTask;
     }
@@ -372,6 +379,7 @@
     {
         ShockOsc.SetAuthLoading = SetAuthLoading;
         ShockOsc.OnParamsChange = OnParamsChange;
+        ShockOsc.OnConfigUpdate = OnConfigUpdate;
         UiLogSink.NotificationAction = MsgNoty;
         LogStore.OnLogAdded = OnLogAdded;
 

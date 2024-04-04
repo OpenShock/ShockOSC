@@ -51,6 +51,7 @@ public static class ShockOsc
     public static Dictionary<string, object?> AllAvatarParams = new();
 
     public static Action<bool>? OnParamsChange;
+    public static Action? OnConfigUpdate;
     public static Action<AuthState>? SetAuthLoading;
     public static AuthState CurrentAuthState = AuthState.NotAuthenticated;
 
@@ -437,6 +438,8 @@ public static class ShockOsc
 
     private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("_Any", "_Active", false);
     private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("_Any", "_Cooldown", false);
+    private static readonly ChangeTrackedOscParam<float> ParamAnyCooldownPercentage = new("_Any", "_CooldownPercentage", 0f);
+    private static readonly ChangeTrackedOscParam<float> ParamAnyIntensity = new("_Any", "_Intensity", 0f);
 
     private static async Task InstantShock(Shocker shocker, uint duration, byte intensity)
     {
@@ -484,6 +487,8 @@ public static class ShockOsc
         // TODO: maybe force resend on avatar change
         var anyActive = false;
         var anyCooldown = false;
+        var anyCooldownPercentage = 0f;
+        var anyIntensity = 0f;
 
         foreach (var shocker in Shockers.Values)
         {
@@ -510,10 +515,14 @@ public static class ShockOsc
 
             if (isActive) anyActive = true;
             if (onCoolDown) anyCooldown = true;
+            anyCooldownPercentage = Math.Max(anyCooldownPercentage, cooldownPercentage);
+            anyIntensity = Math.Max(anyIntensity, GetFloatScaled(shocker.LastIntensity));
         }
 
         await ParamAnyActive.SetValue(anyActive);
         await ParamAnyCooldown.SetValue(anyCooldown);
+        await ParamAnyCooldownPercentage.SetValue(anyCooldownPercentage);
+        await ParamAnyIntensity.SetValue(anyIntensity);
     }
 
     private static async Task CheckLoop()
@@ -739,5 +748,7 @@ public static class ShockOsc
     }
 
     private static float LerpFloat(float min, float max, float t) => min + (max - min) * t;
-    private static float ClampFloat(float value) => value < 0 ? 0 : value > 1 ? 1 : value;
+    public static float ClampFloat(float value) => value < 0 ? 0 : value > 1 ? 1 : value;
+    public static uint LerpUint(uint min, uint max, float t) => (uint)(min + (max - min) * t);
+    public static uint ClampUint(uint value, uint min, uint max) => value < min ? min : value > max ? max : value;
 }
