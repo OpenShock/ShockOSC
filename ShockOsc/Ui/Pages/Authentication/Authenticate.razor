@@ -1,0 +1,55 @@
+@using OpenShock.ShockOsc.Ui.Utils
+@using OpenShock.SDK.CSharp.Live
+@using OpenShock.ShockOsc.Backend
+@inherits LayoutComponentBase
+
+@inject ShockOscConfigManager.ShockOscConfig ShockOscConfig
+@inject NavigationManager NavigationManager
+@inject BackendLiveApiManager LiveApiManager
+@inject OpenShockApiLiveClient LiveApiClient
+@inject OpenShockApi ApiClient
+
+@page "/"
+
+<MudThemeProvider Theme="ThemeDefinition.ShockOscTheme"/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<MudContainer Class="align-content-center" MaxWidth="MaxWidth.Small" Style="padding-top: 30px">
+    <MudPaper Id="login-background" Class="rounded-lg" Elevation="0" Style="padding: 40px 20px; text-align: center;">
+        <MudText Typo="Typo.h2">Login</MudText>
+        <br/>
+        @if (!Loading)
+        {
+            <MudTextField @bind-Value="ShockOscConfig.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+            <br />
+            <MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton>
+            <br />
+        }
+        else
+        {
+            <MudProgressCircular Color="Color.Primary" Style="height:125px;width:125px;" Indeterminate="true" />
+        }
+    </MudPaper>
+</MudContainer> 
+
+@code {
+    public bool Loading { get; set; }
+
+    public async Task Login()
+    {
+        ShockOscConfigManager.Save();
+
+        await ProceedAuthenticated();
+    }
+
+    private async Task ProceedAuthenticated()
+    {
+        Loading = true;
+
+        await LiveApiManager.SetupLiveClient();
+        await LiveApiClient.StartAsync();
+        
+        NavigationManager.NavigateTo("main");
+    }
+}

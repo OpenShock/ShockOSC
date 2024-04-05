@@ -1,0 +1,50 @@
+﻿@using OpenShock.ShockOsc.Logging
+@using OpenShock.ShockOsc.Utils
+@using Serilog.Events
+
+<MudTable T="LogStore.LogEntry" RowClass="cursor-pointer" RowClassFunc="RowClassFunc" Items="LogStore.Logs.OrderByDescending(x => x.Time)" OnRowClick="LogRowClick" Breakpoint="Breakpoint.Sm" Hover="true" Dense="true" Height="73.5vh">
+    <HeaderContent>
+        <MudTh>Time</MudTh>
+        <MudTh>Source</MudTh>
+        <MudTh>Message</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Time.ToString("HH:mm:ss")</MudTd>
+        <MudTd>@context.SourceContextShort</MudTd>
+        <MudTd>@context.Message.TruncateAtChar(120)</MudTd>
+    </RowTemplate>
+    <ChildRowContent>
+        @if (context.IsExpanded)
+        {
+            <MudTr Style="pointer-events: none;">
+                <td colspan="12" style="padding: 0 10px">
+
+                    <br/>
+                    <MudTextField ReadOnly Class="option-width" Variant="Variant.Filled" Value="@context.Time.ToString("HH:mm:ss")" Label="Time"></MudTextField>
+                    <MudTextField ReadOnly Class="option-width" Variant="Variant.Filled" Value="@context.Level" Label="Level"></MudTextField>
+                    <MudTextField Style="width: 370%" ReadOnly Class="option-width" Variant="Variant.Filled" AutoGrow="true" Value="@context.SourceContext" Label="Source Context"></MudTextField>
+
+                    <br/>
+                    <br/>
+                    <MudPaper Class="rounded-lg" Style="padding: 10px 15px;  margin: 0 50px;">
+                        <MudText>@context.Message</MudText>
+                    </MudPaper>
+                    <br/>
+                    <br/>
+                </td>
+            </MudTr>
+        }
+    </ChildRowContent>
+</MudTable>
+
+@code {
+    private string GetLogClass(LogEventLevel level)
+        => $"log {level.ToString().ToLowerInvariant()}";
+
+    private void LogRowClick(TableRowClickEventArgs<LogStore.LogEntry> rowClickEventArgs)
+    {
+        rowClickEventArgs.Item.IsExpanded = !rowClickEventArgs.Item.IsExpanded;
+    }
+    
+    private string RowClassFunc(LogStore.LogEntry? log, int arg2) => log == null ? string.Empty : GetLogClass(log.Level) + (log.IsExpanded ? " expanded" : "");
+}

@@ -1,5 +1,7 @@
 ﻿@using System.Text.RegularExpressions
-@using Swan
+@using OpenShock.ShockOsc.Backend
+@inject OpenShockApi OpenShockApi
+
 
 @code {
 
@@ -8,26 +10,26 @@
     public void AddGroup()
     {
         var groupId = Guid.NewGuid();
-        Config.ConfigInstance.Groups.Add(groupId, new Config.Conf.Group { Name = "New Group" });
+        ShockOscConfigManager.ConfigInstance.Groups.Add(groupId, new ShockOscConfigManager.ShockOscConfig.Group { Name = "New Group" });
         Group = groupId;
 
         InvokeAsync(StateHasChanged);
-        Config.Save();
+        ShockOscConfigManager.Save();
     }
 
     public void DeleteGroup()
     {
         if (Group == null) return;
         
-        Config.ConfigInstance.Groups.Remove(Group.Value);
+        ShockOscConfigManager.ConfigInstance.Groups.Remove(Group.Value);
         Group = null;
         InvokeAsync(StateHasChanged);
-        Config.Save();
+        ShockOscConfigManager.Save();
     }
 
     private Task OnSettingsValueChange()
     {
-        Config.Save();
+        ShockOscConfigManager.Save();
         return Task.CompletedTask;
     }
 
@@ -44,13 +46,13 @@
         if (CurrentGroup != null)
         {
             CurrentGroup.Shockers = _selectedShockers.ToList();
-            Config.Save();
+            ShockOscConfigManager.Save();
         }
         
         return Task.CompletedTask;
     }
 
-    private Config.Conf.Group? CurrentGroup => Group == null ? null : Config.ConfigInstance.Groups.TryGetValue(Group.Value, out var group) ? group : null;
+    private ShockOscConfigManager.ShockOscConfig.Group? CurrentGroup => Group == null ? null : ShockOscConfigManager.ConfigInstance.Groups.TryGetValue(Group.Value, out var group) ? group : null;
 
     private static Regex _nameRegex = new Regex(@"^[a-zA-Z0-9\/\\ -]+$", RegexOptions.Compiled);
 
@@ -69,7 +71,7 @@
 <MudButton OnClick="DeleteGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Placeholder="Select Group to Edit" Color="Color.Error">Delete Group</MudButton>
 <br/> <br/>
 <MudSelect Variant="Variant.Outlined" T="Guid?" Label="Select Group" Dense="true" Margin="Margin.Dense" @bind-Value="Group" @bind-Value:after="OnGroupSelect" Clearable>
-    @foreach (var group in Config.ConfigInstance.Groups)
+    @foreach (var group in ShockOscConfigManager.ConfigInstance.Groups)
     {
         <MudSelectItem T="Guid?" Value="@group.Key">@group.Value.Name</MudSelectItem>
     }

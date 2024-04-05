@@ -6,15 +6,15 @@ using Serilog;
 
 namespace OpenShock.ShockOsc;
 
-public static class Config
+public static class ShockOscConfigManager
 {
-    private static readonly ILogger Logger = Log.ForContext(typeof(Config));
-    private static Conf? _internalConfig;
+    private static readonly ILogger Logger = Log.ForContext(typeof(ShockOscConfigManager));
+    private static ShockOscConfig? _internalConfig;
     private static readonly string Path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ShockOSC\config.json";
 
-    public static Conf ConfigInstance => _internalConfig!;
+    public static ShockOscConfig ConfigInstance => _internalConfig!;
 
-    static Config()
+    static ShockOscConfigManager()
     {
         TryLoad();
         ShockOsc.RefreshShockers();
@@ -33,7 +33,7 @@ public static class Config
                 Logger.Verbose("Config file is not empty");
                 try
                 {
-                    _internalConfig = JsonSerializer.Deserialize<Conf>(json, Options);
+                    _internalConfig = JsonSerializer.Deserialize<ShockOscConfig>(json, Options);
                     Logger.Information("Successfully loaded config");
                 }
                 catch (JsonException e)
@@ -49,7 +49,7 @@ public static class Config
         _internalConfig = GetDefaultConfig();
         Save();
         var jsonNew = File.ReadAllText(Path);
-        _internalConfig = JsonSerializer.Deserialize<Conf>(jsonNew, Options);
+        _internalConfig = JsonSerializer.Deserialize<ShockOscConfig>(jsonNew, Options);
         Logger.Information("New configuration file generated! Please configure it!");
     }
 
@@ -77,25 +77,25 @@ public static class Config
         }
     }
 
-    private static Conf GetDefaultConfig() => new()
+    private static ShockOscConfig GetDefaultConfig() => new()
     {
-        Osc = new Conf.OscConf
+        Osc = new ShockOscConfig.OscConf
         {
             Chatbox = true,
             Hoscy = false,
             HoscySendPort = 9001,
             QuestSupport = false
         },
-        Chatbox = new Conf.ChatboxConf
+        Chatbox = new ShockOscConfig.ChatboxConf
         {
             DisplayRemoteControl = true,
-            HoscyType = Conf.ChatboxConf.HoscyMessageType.Message,
+            HoscyType = ShockOscConfig.ChatboxConf.HoscyMessageType.Message,
             Prefix = null!,
             Types = null!,
             IgnoredKillSwitchActive = null!,
             IgnoredAfk = null!
         },
-        Behaviour = new Conf.BehaviourConf
+        Behaviour = new ShockOscConfig.BehaviourConf
         {
             RandomDuration = false,
             RandomIntensity = false,
@@ -106,19 +106,19 @@ public static class Config
             FixedIntensity = 50,
             CooldownTime = 5000,
             HoldTime = 250,
-            WhileBoneHeld = Conf.BehaviourConf.BoneHeldAction.Vibrate,
+            WhileBoneHeld = ShockOscConfig.BehaviourConf.BoneHeldAction.Vibrate,
             DisableWhileAfk = true,
             ForceUnmute = false
         },
-        OpenShock = new Conf.OpenShockConf
+        OpenShock = new ShockOscConfig.OpenShockConf
         {
-            Shockers = new Dictionary<Guid, Conf.ShockerConf>(),
+            Shockers = new Dictionary<Guid, ShockOscConfig.ShockerConf>(),
             Token = "",
         },
-        Groups = new Dictionary<Guid, Conf.Group>()
+        Groups = new Dictionary<Guid, ShockOscConfig.Group>()
     };
 
-    public class Conf
+    public class ShockOscConfig
     {
         public required OscConf Osc { get; set; }
         public required BehaviourConf Behaviour { get; set; }

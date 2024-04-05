@@ -8,7 +8,7 @@ namespace OpenShock.ShockOsc;
 public static class OscClient
 {
     private static OscDuplex? _gameConnection;
-    private static readonly OscSender HoscySenderClient = new(new IPEndPoint(IPAddress.Loopback, Config.ConfigInstance.Osc.HoscySendPort));
+    private static readonly OscSender HoscySenderClient = new(new IPEndPoint(IPAddress.Loopback, ShockOscConfigManager.ConfigInstance.Osc.HoscySendPort));
     private static readonly ILogger Logger = Log.ForContext(typeof(OscClient));
 
     static OscClient()
@@ -43,7 +43,7 @@ public static class OscClient
     
     public static ValueTask SendChatboxMessage(string message)
     {
-        if (Config.ConfigInstance.Osc.Hoscy) return HoscySenderChannel.Writer.WriteAsync(new OscMessage("/hoscy/message", message));
+        if (ShockOscConfigManager.ConfigInstance.Osc.Hoscy) return HoscySenderChannel.Writer.WriteAsync(new OscMessage("/hoscy/message", message));
 
         return GameSenderChannel.Writer.WriteAsync(new OscMessage("/chatbox/input", message, true));
     }

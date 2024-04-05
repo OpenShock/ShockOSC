@@ -22,7 +22,7 @@
 }
 
 <MudPaper Style="position: absolute; right: 0">
-    @if (Updater.UpdateAvailable)
+    @if (true || Updater.UpdateAvailable)
     {
         <MudTooltip Text="Update">
             <MudButton Color="Color.Primary" @onclick="OpenUpdateDialog" Size="Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
@@ -33,7 +33,7 @@
     @if (Authenticated)
     {
         <MudTooltip Text="Logout">
-            <MudButton Color="Color.Primary" @onclick="ShockOsc.Logout" Size=" Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
+            <MudButton Color="Color.Primary" @onclick="ShockOscConfigManager.Save" Size=" Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
                 <MudIcon Icon="@Icons.Material.Filled.Logout" />
             </MudButton>
         </MudTooltip>

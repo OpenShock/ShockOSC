@@ -6,8 +6,8 @@
 
     private void Skip()
     {
-        Config.ConfigInstance.LastIgnoredVersion = Updater.LatestVersion;
-        Config.Save();
+        ShockOscConfigManager.ConfigInstance.LastIgnoredVersion = Updater.LatestVersion;
+        ShockOscConfigManager.Save();
         MudDialog.Close(DialogResult.Ok(true));
     }
 

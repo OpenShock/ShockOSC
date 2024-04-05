@@ -94,8 +94,8 @@ public static class Updater
         UpdateAvailable = true;
         LatestVersion = latestVersion.Value.Item1;
         LatestDownloadUrl = latestVersion.Value.Item2.BrowserDownloadUrl;
-        if (Config.ConfigInstance.LastIgnoredVersion != null &&
-            Config.ConfigInstance.LastIgnoredVersion >= latestVersion.Value.Item1)
+        if (ShockOscConfigManager.ConfigInstance.LastIgnoredVersion != null &&
+            ShockOscConfigManager.ConfigInstance.LastIgnoredVersion >= latestVersion.Value.Item1)
         {
             Logger.Information("ShockOsc is not up to date. Skipping update due to previous postpone. You can reenable the updater by setting 'LastIgnoredVersion' to null");
             return false;

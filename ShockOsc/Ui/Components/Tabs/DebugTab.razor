@@ -1,0 +1,65 @@
+﻿@using OpenShock.ShockOsc.Utils
+<MudText>List of ShockOSC prefixed parameters and their states</MudText>
+<br/>
+<MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
+<br/>
+<MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams" Label="Show all avatar parameters"/>
+<MudDivider/>
+<br/>
+@if (_showAllAvatarParams)
+{
+    @foreach (var param in ShockOsc.AllAvatarParams)
+    {
+        <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+    }
+}
+else
+{
+    @foreach (var param in ShockOsc.ParamsInUse)
+    {
+        <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+    }
+}
+
+@code {
+    private bool _showAllAvatarParams = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ShockOsc.OnParamsChange = OnParamsChange;
+    }
+
+    private void OnParamsChange(bool shockOscParam)
+    {
+        // check Debug page is active
+        // if (activePageIndex != 3)
+        //     return;
+
+        // only redraw page when needed
+        if (!_showAllAvatarParams && !shockOscParam)
+            return;
+
+        _updateQueued = true;
+    }
+    
+    private bool _updateQueued = true;
+
+    protected override void OnInitialized()
+    {
+        OsTask.Run(UpdateParams);
+    }
+
+    private async Task UpdateParams()
+    {
+        while (true)
+        {
+            await Task.Delay(250);
+
+            if (!_updateQueued)
+                continue;
+            _updateQueued = false;
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

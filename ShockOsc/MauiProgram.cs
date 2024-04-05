@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
+using OpenShock.SDK.CSharp.Live;
+using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Logging;
 using OpenShock.ShockOsc.Ui;
 using Serilog;
@@ -11,18 +13,9 @@ public static class MauiProgram
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
-        builder
-            .UseMauiApp<App>()
-            .ConfigureFonts(fonts => { fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular"); });
-
-        builder.Services.AddMudServices();
-        builder.Services.AddMauiBlazorWebView();
-
-#if DEBUG
-        builder.Services.AddBlazorWebViewDeveloperTools();
-        builder.Logging.AddDebug();
-#endif
-
+        
+        // <---- Services ---->
+        
         var loggerConfiguration = new LoggerConfiguration()
             .MinimumLevel.Information()
             .Filter.ByExcluding(ev =>
@@ -48,8 +41,28 @@ public static class MauiProgram
         
         builder.Services.AddSerilog(Log.Logger);
 
-        var mauiApp = builder.Build();
+        builder.Services.AddSingleton(ShockOscConfigManager.ConfigInstance);
         
-        return mauiApp;
+        builder.Services.AddSingleton<OpenShockApiLiveClient>();
+        builder.Services.AddSingleton<BackendLiveApiManager>();
+        builder.Services.AddSingleton<OpenShockApi>();
+        
+        builder.Services.AddSingleton<OscHandler>();
+        
+        builder.Services.AddMudServices();
+        builder.Services.AddMauiBlazorWebView();
+        
+        // <---- App ---->
+        
+        builder
+            .UseMauiApp<App>()
+            .ConfigureFonts(fonts => { fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular"); });
+        
+
+#if DEBUG
+        builder.Services.AddBlazorWebViewDeveloperTools();
+#endif
+        
+        return builder.Build();;
     }
 }
