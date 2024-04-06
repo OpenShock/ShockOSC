@@ -21,9 +21,8 @@
 </MudTable>
 
 @code {
-    private Task OnShockerConfigUpdate()
+    private void OnShockerConfigUpdate()
     {
-        ShockOsc.RefreshShockers();
-        return Task.CompletedTask;
+        ShockOscConfigManager.Save();
     }
 }

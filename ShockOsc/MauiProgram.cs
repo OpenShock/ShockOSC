@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Net;
+using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using OpenShock.SDK.CSharp.Live;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Logging;
+using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Ui;
 using Serilog;
 
@@ -42,12 +44,26 @@ public static class MauiProgram
         builder.Services.AddSerilog(Log.Logger);
 
         builder.Services.AddSingleton(ShockOscConfigManager.ConfigInstance);
+
+        builder.Services.AddSingleton<OscClient>();
         
+        builder.Services.AddSingleton<OpenShockApi>();
         builder.Services.AddSingleton<OpenShockApiLiveClient>();
         builder.Services.AddSingleton<BackendLiveApiManager>();
-        builder.Services.AddSingleton<OpenShockApi>();
+
         
         builder.Services.AddSingleton<OscHandler>();
+        
+        builder.Services.AddSingleton<ShockOsc>();
+
+        builder.Services.AddSingleton<UnderscoreConfig>();
+        
+        var listenAddress = ShockOscConfigManager.ConfigInstance.Osc.QuestSupport ? IPAddress.Any : IPAddress.Loopback; 
+        builder.Services.AddSingleton<OscQueryServer>(provider =>
+        {
+            var shockOsc = provider.GetRequiredService<ShockOsc>();
+            return new OscQueryServer("ShockOsc", listenAddress, shockOsc.FoundVrcClient, shockOsc.OnAvatarChange);
+        });
         
         builder.Services.AddMudServices();
         builder.Services.AddMauiBlazorWebView();

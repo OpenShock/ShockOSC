@@ -14,8 +14,10 @@ public class OscQueryServer : IDisposable
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(OscQueryServer));
 
+    private static readonly HttpClient Client = new();
+    
     private readonly ushort _httpPort;
-    private readonly string _ipAddress;
+    private readonly IPAddress _ipAddress;
     public static string OscIpAddress;
     public static ushort OscReceivePort;
     public static ushort OscSendPort;
@@ -33,7 +35,7 @@ public class OscQueryServer : IDisposable
     private static event Action<Dictionary<string, object?>, string>? ParameterUpdate;
     private static readonly Dictionary<string, object?> ParameterList = new();
 
-    public OscQueryServer(string serviceName, string ipAddress,
+    public OscQueryServer(string serviceName, IPAddress ipAddress,
         Action? foundVrcClient = null,
         Action<Dictionary<string, object?>, string>? parameterUpdate = null)
     {
@@ -79,10 +81,10 @@ public class OscQueryServer : IDisposable
     {
         var httpProfile =
             new ServiceProfile(_serviceName, OscHttpServiceName, _httpPort,
-                new[] { IPAddress.Parse(_ipAddress) });
+                new[] { _ipAddress });
         var oscProfile =
             new ServiceProfile(_serviceName, OscUdpServiceName, OscReceivePort,
-                new[] { IPAddress.Parse(_ipAddress) });
+                new[] { _ipAddress });
         _serviceDiscovery.Advertise(httpProfile);
         _serviceDiscovery.Advertise(oscProfile);
     }
@@ -154,10 +156,10 @@ public class OscQueryServer : IDisposable
         var url = $"http://{ipAddress}:{port}?HOST_INFO";
         Logger.Debug("OSCQueryHttpClient: Fetching OSC send port from {Url}", url);
         var response = string.Empty;
-        var client = new HttpClient();
+
         try
         {
-            response = await client.GetStringAsync(url);
+            response = await Client.GetStringAsync(url);
             var rootNode = JsonSerializer.Deserialize<OscQueryModels.HostInfo>(response);
             if (rootNode?.OSC_PORT == null)
             {
@@ -188,10 +190,9 @@ public class OscQueryServer : IDisposable
         Logger.Debug("OSCQueryHttpClient: Fetching new parameters from {Url}", url);
         var response = string.Empty;
         var avatarId = string.Empty;
-        var client = new HttpClient();
         try
         {
-            response = await client.GetStringAsync(url);
+            response = await Client.GetStringAsync(url);
             var rootNode = JsonSerializer.Deserialize<OscQueryModels.RootNode>(response);
             if (rootNode?.CONTENTS?.avatar?.CONTENTS?.parameters?.CONTENTS == null)
             {
@@ -250,7 +251,7 @@ public class OscQueryServer : IDisposable
     private ushort FindAvailableTcpPort()
     {
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        socket.Bind(new IPEndPoint(IPAddress.Parse(_ipAddress), port: 0));
+        socket.Bind(new IPEndPoint(_ipAddress, port: 0));
         ushort port = 0;
         if (socket.LocalEndPoint != null)
             port = (ushort)((IPEndPoint)socket.LocalEndPoint).Port;
@@ -260,7 +261,7 @@ public class OscQueryServer : IDisposable
     private ushort FindAvailableUdpPort()
     {
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        socket.Bind(new IPEndPoint(IPAddress.Parse(_ipAddress), port: 0));
+        socket.Bind(new IPEndPoint(_ipAddress, port: 0));
         ushort port = 0;
         if (socket.LocalEndPoint != null)
             port = (ushort)((IPEndPoint)socket.LocalEndPoint).Port;
@@ -288,7 +289,7 @@ public class OscQueryServer : IDisposable
         {
             NAME = _serviceName,
             OSC_PORT = OscReceivePort,
-            OSC_IP = _ipAddress,
+            OSC_IP = _ipAddress.ToString(),
             OSC_TRANSPORT = "UDP",
             EXTENSIONS = new OscQueryModels.Extensions
             {

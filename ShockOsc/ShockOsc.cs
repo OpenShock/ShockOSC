@@ -1,33 +1,38 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
-using System.Reflection;
 using LucHeart.CoreOSC;
+using Microsoft.Extensions.Logging;
+using OpenShock.SDK.CSharp.Live;
 using OpenShock.SDK.CSharp.Live.Models;
 using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOsc.Backend;
-using OpenShock.ShockOsc.Logging;
 using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.OscChangeTracker;
 using OpenShock.ShockOsc.OscQueryLibrary;
+using OpenShock.ShockOsc.Ui.Utils;
 using OpenShock.ShockOsc.Utils;
-using Serilog;
-using Serilog.Events;
 using SmartFormat;
 
 #pragma warning disable CS4014
 
 namespace OpenShock.ShockOsc;
 
-public static class ShockOsc
+public sealed class ShockOsc
 {
-    private static ILogger _logger = null!;
+    private readonly ILogger<ShockOsc> _logger;
+    private readonly OscClient _oscClient;
+    private readonly OpenShockApiLiveClient _liveClient;
+    private readonly UnderscoreConfig _underscoreConfig;
+
     private static bool _oscServerActive;
     private static bool _isAfk;
     private static bool _isMuted;
     public static string AvatarId = string.Empty;
     private static readonly Random Random = new();
-    public static readonly ConcurrentDictionary<string, Shocker> Shockers = new();
+    public static readonly ConcurrentDictionary<string, ProgramGroup> ProgramGroups = new();
+    
+    public event Func<Task>? OnGroupsChanged; 
 
     public static readonly string[] ShockerParams =
     {
@@ -40,76 +45,47 @@ public static class ShockOsc
         "CooldownPercentage",
         "IShock"
     };
-
-
-
+    
     public static Dictionary<string, object?> ParamsInUse = new();
     public static Dictionary<string, object?> AllAvatarParams = new();
 
     public static Action<bool>? OnParamsChange;
     public static Action? OnConfigUpdate;
-    public static Action<AuthState>? SetAuthLoading;
-    public static AuthState CurrentAuthState = AuthState.NotAuthenticated;
+    
+    private readonly ChangeTrackedOscParam<bool> _paramAnyActive;
+    private readonly ChangeTrackedOscParam<bool> _paramAnyCooldown;
+    private readonly ChangeTrackedOscParam<float> _paramAnyCooldownPercentage;
+    private readonly ChangeTrackedOscParam<float> _paramAnyIntensity;
 
-    public static async Task StartMain()
+    public ShockOsc(ILogger<ShockOsc> logger, OscClient oscClient, OpenShockApi openShockApi, OpenShockApiLiveClient liveClient, UnderscoreConfig underscoreConfig)
     {
-        
-        _logger = Log.ForContext(typeof(ShockOsc));
-        
-        _logger.Information("Starting ShockOsc version {Version}",
-            Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "error");
+        _logger = logger;
+        _oscClient = oscClient;
+        _liveClient = liveClient;
+        _underscoreConfig = underscoreConfig;
 
-        _logger.Information("Creating OSC Query Server...");
-        _ = new OscQueryServer(
-            "ShockOsc", // service name
-            "127.0.0.1", // ip address for udp and http server
-            FoundVrcClient, // optional callback on vrc discovery
-            OnAvatarChange // optional parameter list callback on vrc discovery
-        );
-
-        // listen for VRC on every network interface
-        if (ShockOscConfigManager.ConfigInstance.Osc.QuestSupport)
-        {
-            var host = await Dns.GetHostEntryAsync(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
-            {
-                if (ip.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
-                    continue;
-
-                var ipAddress = ip.ToString();
-                _ = new OscQueryServer(
-                    "ShockOsc", // service name
-                    ipAddress, // ip address for udp and http server
-                    FoundVrcClient, // optional callback on vrc discovery
-                    OnAvatarChange // parameter list callback on vrc discovery
-                );
-            }
-        }
-
-        await Task.Delay(Timeout.Infinite).ConfigureAwait(false);
+        _paramAnyActive = new ChangeTrackedOscParam<bool>("_Any", "_Active", false, _oscClient);
+        _paramAnyCooldown = new ChangeTrackedOscParam<bool>("_Any", "_Cooldown", false, _oscClient);
+        _paramAnyCooldownPercentage = new ChangeTrackedOscParam<float>("_Any", "_CooldownPercentage", 0f, _oscClient);
+        _paramAnyIntensity = new ChangeTrackedOscParam<float>("_Any", "_Intensity", 0f, _oscClient);
     }
     
-
-    public static void SetAuthSate(AuthState state)
-    {
-        CurrentAuthState = state;
-        SetAuthLoading?.Invoke(state);
-    }
-
+    public void RaiseOnGroupsChanged() => OnGroupsChanged.Raise();
+    
     private static void OnParamChange(bool shockOscParam)
     {
         OnParamsChange?.Invoke(shockOscParam);
     }
 
-    private static void FoundVrcClient()
+    public void FoundVrcClient()
     {
-        _logger.Information("Found VRC client");
+        _logger.LogInformation("Found VRC client");
         // stop tasks
         _oscServerActive = false;
         Task.Delay(1000).Wait(); // wait for tasks to stop
 
-        OscClient.CreateGameConnection(IPAddress.Parse(OscQueryServer.OscIpAddress), OscQueryServer.OscReceivePort, OscQueryServer.OscSendPort);
-        _logger.Information("Connecting UDP Clients...");
+        _oscClient.CreateGameConnection(IPAddress.Parse(OscQueryServer.OscIpAddress), OscQueryServer.OscReceivePort, OscQueryServer.OscSendPort);
+        _logger.LogInformation("Connecting UDP Clients...");
 
         // Start tasks
         _oscServerActive = true;
@@ -117,37 +93,16 @@ public static class ShockOsc
         OsTask.Run(SenderLoopAsync);
         OsTask.Run(CheckLoop);
 
-        _logger.Information("Ready");
-        OsTask.Run(UnderscoreConfig.SendUpdateForAll);
+        _logger.LogInformation("Ready");
+        OsTask.Run(_underscoreConfig.SendUpdateForAll);
     }
     
-    public static void RefreshShockers()
-    {
-        Shockers.Clear();
-        Shockers.TryAdd("_All", new Shocker(Guid.Empty, "_All"));
-        // foreach (var (shockerName, shocker) in Config.ConfigInstance.OpenShock.Shockers)
-        // {
-        //     if(!shocker.Enabled) continue;
-        //     
-        //     if (string.IsNullOrEmpty(shocker.NickName))
-        //         Shockers.TryAdd(shockerName, new Shocker(shocker.Id, shockerName));
-        //     else
-        //         Shockers.TryAdd(shocker.NickName, new Shocker(shocker.Id, shocker.NickName));
-        // }
-    }
-
-    public static void SaveShockers()
-    {
-        RefreshShockers();
-        ShockOscConfigManager.Save();
-    }
-
-    private static void OnAvatarChange(Dictionary<string, object?>? parameters, string avatarId)
+    public void OnAvatarChange(Dictionary<string, object?>? parameters, string avatarId)
     {
         AvatarId = avatarId;
         try
         {
-            foreach (var obj in Shockers)
+            foreach (var obj in ProgramGroups)
             {
                 obj.Value.Reset();
             }
@@ -156,7 +111,7 @@ public static class ShockOsc
 
             if (parameters == null)
             {
-                _logger.Error("Failed to receive avatar parameters");
+                _logger.LogError("Failed to receive avatar parameters");
                 return;
             }
 
@@ -187,23 +142,23 @@ public static class ShockOsc
                     ParamsInUse.TryAdd(paramName, parameters[param]);
                 }
 
-                if (!Shockers.ContainsKey(shockerName) && !shockerName.StartsWith("_"))
+                if (!ProgramGroups.ContainsKey(shockerName) && !shockerName.StartsWith("_"))
                 {
-                    _logger.Warning("Unknown shocker on avatar {Shocker}", shockerName);
-                    _logger.Debug("Param: {Param}", param);
+                    _logger.LogWarning("Unknown shocker on avatar {Shocker}", shockerName);
+                    _logger.LogDebug("Param: {Param}", param);
                 }
             }
 
-            _logger.Information("Loaded avatar config with {ParamCount} parameters", parameterCount);
+            _logger.LogInformation("Loaded avatar config with {ParamCount} parameters", parameterCount);
         }
         catch (Exception e)
         {
-            _logger.Error(e, "Error on avatar change logic");
+            _logger.LogError(e, "Error on avatar change logic");
         }
         OnParamChange(true);
     }
 
-    private static async Task ReceiverLoopAsync()
+    private async Task ReceiverLoopAsync()
     {
         while (_oscServerActive)
         {
@@ -213,27 +168,27 @@ public static class ShockOsc
             }
             catch (Exception e)
             {
-                _logger.Error(e, "Error in receiver loop");
+                _logger.LogError(e, "Error in receiver loop");
             }
         }
         // ReSharper disable once FunctionNeverReturns
     }
 
-    private static async Task ReceiveLogic()
+    private async Task ReceiveLogic()
     {
         OscMessage received;
         try
         {
-            received = await OscClient.ReceiveGameMessage()!;
+            received = await _oscClient.ReceiveGameMessage()!;
         }
         catch (Exception e)
         {
-            _logger.Verbose(e, "Error receiving message");
+            _logger.LogTrace(e, "Error receiving message");
             return;
         }
 
         var addr = received.Address;
-        _logger.Verbose("Received message: {Addr}", addr);
+        _logger.LogTrace("Received message: {Addr}", addr);
 
         if (addr.StartsWith("/avatar/parameters/"))
         {
@@ -251,17 +206,17 @@ public static class ShockOsc
         {
             case "/avatar/change":
                 var avatarId = received.Arguments.ElementAtOrDefault(0);
-                _logger.Debug("Avatar changed: {AvatarId}", avatarId);
+                _logger.LogDebug("Avatar changed: {AvatarId}", avatarId);
                 OsTask.Run(OscQueryServer.GetParameters);
-                OsTask.Run(UnderscoreConfig.SendUpdateForAll);
+                OsTask.Run(_underscoreConfig.SendUpdateForAll);
                 return;
             case "/avatar/parameters/AFK":
                 _isAfk = received.Arguments.ElementAtOrDefault(0) is true;
-                _logger.Debug("Afk: {State}", _isAfk);
+                _logger.LogDebug("Afk: {State}", _isAfk);
                 return;
             case "/avatar/parameters/MuteSelf":
                 _isMuted = received.Arguments.ElementAtOrDefault(0) is true;
-                _logger.Debug("Muted: {State}", _isMuted);
+                _logger.LogDebug("Muted: {State}", _isMuted);
                 return;
         }
 
@@ -273,7 +228,7 @@ public static class ShockOsc
         // Check if _Config
         if (pos.StartsWith("_Config/"))
         {
-            UnderscoreConfig.HandleCommand(pos, received.Arguments);
+            _underscoreConfig.HandleCommand(pos, received.Arguments);
             return;
         }
 
@@ -296,15 +251,15 @@ public static class ShockOsc
 
         if (!ShockerParams.Contains(action)) return;
 
-        if (!Shockers.ContainsKey(shockerName))
+        if (!ProgramGroups.ContainsKey(shockerName))
         {
             if (shockerName == "_Any") return;
-            _logger.Warning("Unknown shocker {Shocker}", shockerName);
-            _logger.Debug("Param: {Param}", pos);
+            _logger.LogWarning("Unknown shocker {Shocker}", shockerName);
+            _logger.LogDebug("Param: {Param}", pos);
             return;
         }
 
-        var shocker = Shockers[shockerName];
+        var shocker = ProgramGroups[shockerName];
 
         var value = received.Arguments.ElementAtOrDefault(0);
         switch (action)
@@ -312,7 +267,7 @@ public static class ShockOsc
             case "IShock":
                 // TODO: check Cooldowns
                 if (value is not true) return;
-                if (UnderscoreConfig.KillSwitch)
+                if (_underscoreConfig.KillSwitch)
                 {
                     shocker.TriggerMethod = TriggerMethod.None;
                     await LogIgnoredKillSwitchActive();
@@ -368,25 +323,25 @@ public static class ShockOsc
         else shocker.TriggerMethod = TriggerMethod.None;
     }
 
-    private static ValueTask LogIgnoredKillSwitchActive()
+    private ValueTask LogIgnoredKillSwitchActive()
     {
-        _logger.Information("Ignoring shock, kill switch is active");
+        _logger.LogInformation("Ignoring shock, kill switch is active");
         if (string.IsNullOrEmpty(ShockOscConfigManager.ConfigInstance.Chatbox.IgnoredKillSwitchActive)) return ValueTask.CompletedTask;
 
-        return OscClient.SendChatboxMessage(
+        return _oscClient.SendChatboxMessage(
             $"{ShockOscConfigManager.ConfigInstance.Chatbox.Prefix}{ShockOscConfigManager.ConfigInstance.Chatbox.IgnoredKillSwitchActive}");
     }
 
-    private static ValueTask LogIgnoredAfk()
+    private ValueTask LogIgnoredAfk()
     {
-        _logger.Information("Ignoring shock, user is AFK");
+        _logger.LogInformation("Ignoring shock, user is AFK");
         if (string.IsNullOrEmpty(ShockOscConfigManager.ConfigInstance.Chatbox.IgnoredAfk)) return ValueTask.CompletedTask;
 
-        return OscClient.SendChatboxMessage(
+        return _oscClient.SendChatboxMessage(
             $"{ShockOscConfigManager.ConfigInstance.Chatbox.Prefix}{ShockOscConfigManager.ConfigInstance.Chatbox.IgnoredAfk}");
     }
 
-    private static async Task SenderLoopAsync()
+    private async Task SenderLoopAsync()
     {
         while (_oscServerActive)
         {
@@ -394,35 +349,30 @@ public static class ShockOsc
             await Task.Delay(300);
         }
     }
-
-    private static readonly ChangeTrackedOscParam<bool> ParamAnyActive = new("_Any", "_Active", false);
-    private static readonly ChangeTrackedOscParam<bool> ParamAnyCooldown = new("_Any", "_Cooldown", false);
-    private static readonly ChangeTrackedOscParam<float> ParamAnyCooldownPercentage = new("_Any", "_CooldownPercentage", 0f);
-    private static readonly ChangeTrackedOscParam<float> ParamAnyIntensity = new("_Any", "_Intensity", 0f);
-
-    private static async Task InstantShock(Shocker shocker, uint duration, byte intensity)
+    
+    private async Task InstantShock(ProgramGroup programGroup, uint duration, byte intensity)
     {
-        shocker.LastExecuted = DateTime.UtcNow;
-        shocker.LastDuration = duration;
+        programGroup.LastExecuted = DateTime.UtcNow;
+        programGroup.LastDuration = duration;
         var intensityPercentage = Math.Round(GetFloatScaled(intensity) * 100f);
-        shocker.LastIntensity = intensity;
+        programGroup.LastIntensity = intensity;
 
         ForceUnmute();
         SendParams();
 
-        shocker.TriggerMethod = TriggerMethod.None;
+        programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(duration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
-        _logger.Information(
+        _logger.LogInformation(
             "Sending shock to {Shocker} Intensity: {Intensity} IntensityPercentage: {IntensityPercentage}% Length:{Length}s",
-            shocker.Name, intensity, intensityPercentage, inSeconds);
+            programGroup.Name, intensity, intensityPercentage, inSeconds);
 
-        await ControlShocker(shocker.Id, duration, intensity, ControlType.Shock);
+        await ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock);
 
         if (!ShockOscConfigManager.ConfigInstance.Osc.Chatbox) return;
         // Chatbox message local
         var dat = new
         {
-            ShockerName = shocker.Name,
+            ShockerName = programGroup.Name,
             Intensity = intensity,
             IntensityPercentage = intensityPercentage,
             Duration = duration,
@@ -430,7 +380,7 @@ public static class ShockOsc
         };
         var template = ShockOscConfigManager.ConfigInstance.Chatbox.Types[ControlType.Shock];
         var msg = $"{ShockOscConfigManager.ConfigInstance.Chatbox.Prefix}{Smart.Format(template.Local, dat)}";
-        await OscClient.SendChatboxMessage(msg);
+        await _oscClient.SendChatboxMessage(msg);
     }
 
     /// <summary>
@@ -441,7 +391,7 @@ public static class ShockOsc
     private static float GetFloatScaled(byte intensity) =>
         ClampFloat((float)intensity / ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Max);
 
-    private static async Task SendParams()
+    private async Task SendParams()
     {
         // TODO: maybe force resend on avatar change
         var anyActive = false;
@@ -449,7 +399,7 @@ public static class ShockOsc
         var anyCooldownPercentage = 0f;
         var anyIntensity = 0f;
 
-        foreach (var shocker in Shockers.Values)
+        foreach (var shocker in ProgramGroups.Values)
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             var isActiveOrOnCooldown =
@@ -478,13 +428,13 @@ public static class ShockOsc
             anyIntensity = Math.Max(anyIntensity, GetFloatScaled(shocker.LastIntensity));
         }
 
-        await ParamAnyActive.SetValue(anyActive);
-        await ParamAnyCooldown.SetValue(anyCooldown);
-        await ParamAnyCooldownPercentage.SetValue(anyCooldownPercentage);
-        await ParamAnyIntensity.SetValue(anyIntensity);
+        await _paramAnyActive.SetValue(anyActive);
+        await _paramAnyCooldown.SetValue(anyCooldown);
+        await _paramAnyCooldownPercentage.SetValue(anyCooldownPercentage);
+        await _paramAnyIntensity.SetValue(anyIntensity);
     }
 
-    private static async Task CheckLoop()
+    private async Task CheckLoop()
     {
         while (_oscServerActive)
         {
@@ -494,14 +444,14 @@ public static class ShockOsc
             }
             catch (Exception e)
             {
-                _logger.Error(e, "Error in check loop");
+                _logger.LogError(e, "Error in check loop");
             }
 
             await Task.Delay(20);
         }
     }
 
-    private static byte GetIntensity()
+    private byte GetIntensity()
     {
         var config = ShockOscConfigManager.ConfigInstance.Behaviour;
 
@@ -511,76 +461,76 @@ public static class ShockOsc
         return (byte)intensityValue;
     }
 
-    private static async Task CheckLogic()
+    private async Task CheckLogic()
     {
         var config = ShockOscConfigManager.ConfigInstance.Behaviour;
-        foreach (var (pos, shocker) in Shockers)
+        foreach (var (pos, programGroup) in ProgramGroups)
         {
             var isActiveOrOnCooldown =
-                shocker.LastExecuted.AddMilliseconds(ShockOscConfigManager.ConfigInstance.Behaviour.CooldownTime)
-                    .AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
+                programGroup.LastExecuted.AddMilliseconds(ShockOscConfigManager.ConfigInstance.Behaviour.CooldownTime)
+                    .AddMilliseconds(programGroup.LastDuration) > DateTime.UtcNow;
 
-            if (shocker.TriggerMethod == TriggerMethod.None &&
+            if (programGroup.TriggerMethod == TriggerMethod.None &&
                 ShockOscConfigManager.ConfigInstance.Behaviour.WhileBoneHeld != ShockOscConfigManager.ShockOscConfig.BehaviourConf.BoneHeldAction.None &&
                 !isActiveOrOnCooldown &&
-                shocker.IsGrabbed &&
-                shocker.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(300)))
+                programGroup.IsGrabbed &&
+                programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(300)))
             {
-                var vibrationIntensity = shocker.LastStretchValue * 100f;
+                var vibrationIntensity = programGroup.LastStretchValue * 100f;
                 if (vibrationIntensity < 1)
                     vibrationIntensity = 1;
-                shocker.LastVibration = DateTime.UtcNow;
+                programGroup.LastVibration = DateTime.UtcNow;
 
-                _logger.Debug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
-                await ControlShocker(shocker.Id, 1000, (byte)vibrationIntensity,
+                _logger.LogDebug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
+                await ControlGroup(programGroup.Id, 1000, (byte)vibrationIntensity,
                     ShockOscConfigManager.ConfigInstance.Behaviour.WhileBoneHeld == ShockOscConfigManager.ShockOscConfig.BehaviourConf.BoneHeldAction.Shock
                         ? ControlType.Shock
                         : ControlType.Vibrate);
             }
 
-            if (shocker.TriggerMethod == TriggerMethod.None)
+            if (programGroup.TriggerMethod == TriggerMethod.None)
                 continue;
 
-            if (shocker.TriggerMethod == TriggerMethod.Manual &&
-                shocker.LastActive.AddMilliseconds(config.HoldTime) > DateTime.UtcNow)
+            if (programGroup.TriggerMethod == TriggerMethod.Manual &&
+                programGroup.LastActive.AddMilliseconds(config.HoldTime) > DateTime.UtcNow)
                 continue;
 
             if (isActiveOrOnCooldown)
             {
-                shocker.TriggerMethod = TriggerMethod.None;
-                _logger.Information("Ignoring shock {Shocker} is on cooldown", pos);
+                programGroup.TriggerMethod = TriggerMethod.None;
+                _logger.LogInformation("Ignoring shock, group {Shocker} is on cooldown", pos);
                 continue;
             }
 
-            if (UnderscoreConfig.KillSwitch)
+            if (_underscoreConfig.KillSwitch)
             {
-                shocker.TriggerMethod = TriggerMethod.None;
+                programGroup.TriggerMethod = TriggerMethod.None;
                 await LogIgnoredKillSwitchActive();
                 continue;
             }
 
             if (_isAfk && config.DisableWhileAfk)
             {
-                shocker.TriggerMethod = TriggerMethod.None;
+                programGroup.TriggerMethod = TriggerMethod.None;
                 await LogIgnoredAfk();
                 continue;
             }
 
             byte intensity;
 
-            if (shocker.TriggerMethod == TriggerMethod.PhysBoneRelease)
+            if (programGroup.TriggerMethod == TriggerMethod.PhysBoneRelease)
             {
                 intensity = (byte)LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max,
-                    shocker.LastStretchValue);
-                shocker.LastStretchValue = 0;
+                    programGroup.LastStretchValue);
+                programGroup.LastStretchValue = 0;
             }
             else intensity = GetIntensity();
 
-            InstantShock(shocker, GetDuration(), intensity);
+            InstantShock(programGroup, GetDuration(), intensity);
         }
     }
 
-    private static uint GetDuration()
+    private uint GetDuration()
     {
         var config = ShockOscConfigManager.ConfigInstance.Behaviour;
 
@@ -590,43 +540,38 @@ public static class ShockOsc
             (int)(rdr.Max / config.RandomDurationStep)) * config.RandomDurationStep);
     }
 
-    private static Task ControlShocker(Guid shockerId, uint duration, byte intensity, ControlType type)
+    private async Task<bool> ControlGroup(Guid groupId, uint duration, byte intensity, ControlType type)
     {
-        // if (shockerId == Guid.Empty)
-        //     return BackendLiveApiManager.Control(Shockers.Where(x => x.Value.Id != Guid.Empty).Select(x => new Control
-        //     {
-        //         Id = x.Value.Id,
-        //         Intensity = intensity,
-        //         Duration = duration,
-        //         Type = type
-        //     }).ToArray());
-        //
-        // return BackendLiveApiManager.Control(new Control
-        // {
-        //     Id = shockerId,
-        //     Intensity = intensity,
-        //     Duration = duration,
-        //     Type = type
-        // });
-        return Task.CompletedTask;
+        if (!ShockOscConfigManager.ConfigInstance.Groups.TryGetValue(groupId, out var group)) return false;
+
+        var controlCommands = group.Shockers.Select(x => new Control
+        {
+            Id = x,
+            Duration = duration,
+            Intensity = intensity,
+            Type = type
+        });
+        
+        await _liveClient.Control(controlCommands);
+        return true;
     }
 
-    public static async Task RemoteActivateShocker(ControlLogSender sender, ControlLog log)
+    public async Task RemoteActivateShocker(ControlLogSender sender, ControlLog log)
     {
         // if (sender.ConnectionId == BackendLiveApiManager.ConnectionId)
         // {
-        //     _logger.Debug("Ignoring remote command log cause it was the local connection");
+        //     _logger.LogDebug("Ignoring remote command log cause it was the local connection");
         //     return;
         // }
 
         var inSeconds = ((float)log.Duration / 1000).ToString(CultureInfo.InvariantCulture);
 
         if (sender.CustomName == null)
-            _logger.Information(
+            _logger.LogInformation(
                 "Received remote {Type} for \"{ShockerName}\" at {Intensity}%:{Duration}s by {Sender}",
                 log.Type, log.Shocker.Name, log.Intensity, inSeconds, sender.Name);
         else
-            _logger.Information(
+            _logger.LogInformation(
                 "Received remote {Type} for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
                 log.Type, log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
 
@@ -646,10 +591,10 @@ public static class ShockOsc
 
             var msg =
                 $"{ShockOscConfigManager.ConfigInstance.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
-            await OscClient.SendChatboxMessage(msg);
+            await _oscClient.SendChatboxMessage(msg);
         }
 
-        var shocker = Shockers.Values.Where(s => s.Id == log.Shocker.Id).ToArray();
+        var shocker = ProgramGroups.Values.Where(s => s.Id == log.Shocker.Id).ToArray();
         if (shocker.Length <= 0)
             return;
 
@@ -678,7 +623,7 @@ public static class ShockOsc
                 case ControlType.Sound:
                     break;
                 default:
-                    _logger.Error("ControlType was out of range. Value was: {Type}", log.Type);
+                    _logger.LogError("ControlType was out of range. Value was: {Type}", log.Type);
                     break;
             }
 
@@ -690,21 +635,21 @@ public static class ShockOsc
         }
     }
 
-    private static async Task ForceUnmute()
+    private async Task ForceUnmute()
     {
         if (!ShockOscConfigManager.ConfigInstance.Behaviour.ForceUnmute || !_isMuted) return;
-        _logger.Debug("Force unmuting...");
-        await OscClient.SendGameMessage("/input/Voice", false);
+        _logger.LogDebug("Force unmuting...");
+        await _oscClient.SendGameMessage("/input/Voice", false);
         await Task.Delay(50);
-        await OscClient.SendGameMessage("/input/Voice", true);
+        await _oscClient.SendGameMessage("/input/Voice", true);
         await Task.Delay(50);
-        await OscClient.SendGameMessage("/input/Voice", false);
+        await _oscClient.SendGameMessage("/input/Voice", false);
     }
 
-    private static Task CancelAction(Shocker shocker)
+    private Task CancelAction(ProgramGroup programGroup)
     {
-        _logger.Debug("Cancelling action");
-        return ControlShocker(shocker.Id, 0, 0, ControlType.Stop);
+        _logger.LogDebug("Cancelling action");
+        return ControlGroup(programGroup.Id, 0, 0, ControlType.Stop);
     }
 
     private static float LerpFloat(float min, float max, float t) => min + (max - min) * t;

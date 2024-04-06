@@ -1,21 +1,29 @@
-﻿using Serilog;
+﻿using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace OpenShock.ShockOsc;
 
-public static class UnderscoreConfig
+public sealed class UnderscoreConfig
 {
-    private static readonly ILogger Logger = Log.ForContext(typeof(UnderscoreConfig));
+    private readonly ILogger<UnderscoreConfig> _logger;
+    private readonly OscClient _oscClient;
+
+    public UnderscoreConfig(ILogger<UnderscoreConfig> logger, OscClient oscClient)
+    {
+        _logger = logger;
+        _oscClient = oscClient;
+    }
     
-    public static bool KillSwitch { get; set; } = false;
+    public bool KillSwitch { get; set; } = false;
     
-    public static void HandleCommand(string parameterName, object?[] arguments)
+    public void HandleCommand(string parameterName, object?[] arguments)
     {
         var settingName = parameterName[8..];
         
         var settingPath = settingName.Split('/');
         if (settingPath.Length > 2)
         {
-            Logger.Warning("Invalid setting path: {SettingPath}", settingPath);
+            _logger.LogWarning("Invalid setting path: {SettingPath}", settingPath);
             return;
         }
 
@@ -23,14 +31,14 @@ public static class UnderscoreConfig
         {
             var shockerName = settingPath[0];
             var action = settingPath[1];
-            if (!ShockOsc.Shockers.ContainsKey(shockerName) && shockerName != "_All")
+            if (!ShockOsc.ProgramGroups.ContainsKey(shockerName) && shockerName != "_All")
             {
-                Logger.Warning("Unknown shocker {Shocker}", shockerName);
-                Logger.Debug("Param: {Param}", action);
+                _logger.LogWarning("Unknown shocker {Shocker}", shockerName);
+                _logger.LogDebug("Param: {Param}", action);
                 return;
             }
             
-            var shocker = ShockOsc.Shockers[shockerName];
+            var shocker = ShockOsc.ProgramGroups[shockerName];
             var value = arguments.ElementAtOrDefault(0);
 
             // TODO: support groups
@@ -118,13 +126,13 @@ public static class UnderscoreConfig
                     if (KillSwitch == stateBool) return;
 
                     KillSwitch = stateBool;
-                    Logger.Information("Paused state set to: {KillSwitch}", KillSwitch);
+                    _logger.LogInformation("Paused state set to: {KillSwitch}", KillSwitch);
                 }
                 break;
         }
     }
 
-    private static void ValidateSettings()
+    private void ValidateSettings()
     {
         if (ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Min > ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Max)
         {
@@ -132,13 +140,13 @@ public static class UnderscoreConfig
         }
     }
 
-    public static async Task SendUpdateForAll()
+    public async Task SendUpdateForAll()
     {
-        await OscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/Paused", KillSwitch);
-        await OscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MinIntensity", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Min / 100f));
-        await OscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxIntensity", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Max / 100f));
-        await OscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Duration", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.FixedDuration / 10000f));
-        await OscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/CooldownTime", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.CooldownTime / 100000f));
-        await OscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/HoldTime", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.HoldTime / 1000f));
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/Paused", KillSwitch);
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MinIntensity", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Min / 100f));
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxIntensity", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Max / 100f));
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Duration", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.FixedDuration / 10000f));
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/CooldownTime", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.CooldownTime / 100000f));
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/HoldTime", ShockOsc.ClampFloat(ShockOscConfigManager.ConfigInstance.Behaviour.HoldTime / 1000f));
     }
 }

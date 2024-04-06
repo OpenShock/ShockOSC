@@ -1,6 +1,7 @@
 ﻿@inject ShockOscConfigManager.ShockOscConfig Config
 @using OpenShock.SDK.CSharp.Models
 @implements IDisposable
+@inject UnderscoreConfig underscoreConfig
 
 
 <MudPaper Class="rounded-lg" Style="padding: 10px 15px;">
@@ -103,7 +104,7 @@
 <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
     <MudText>Other Options</MudText>
     <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="UnderscoreConfig.KillSwitch" Label="Kill Switch" @bind-Value:after="OnSettingsValueChange"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="underscoreConfig.KillSwitch" Label="Kill Switch" @bind-Value:after="OnSettingsValueChange"/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Behaviour.DisableWhileAfk" Label="Disable While Afk" @bind-Value:after="OnSettingsValueChange"/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChange"/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Osc.QuestSupport" Label="Quest Support" @bind-Value:after="OnSettingsValueChange"/>
@@ -150,7 +151,7 @@
         }
     }
 
-    private Task OnSettingsValueSave()
+    private async Task OnSettingsValueSave()
     {
         _lastSettingsSave = DateTime.Now;
         Config.Behaviour.RandomIntensity = intensity == "Random Intensity";
@@ -158,8 +159,7 @@
         ValidateSettings();
 
         ShockOscConfigManager.Save();
-        UnderscoreConfig.SendUpdateForAll();
-        return Task.CompletedTask;
+        await underscoreConfig.SendUpdateForAll();
     }
     
     private void ValidateSettings()

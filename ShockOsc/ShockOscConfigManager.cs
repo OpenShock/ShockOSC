@@ -17,7 +17,6 @@ public static class ShockOscConfigManager
     static ShockOscConfigManager()
     {
         TryLoad();
-        ShockOsc.RefreshShockers();
     }
 
     private static void TryLoad()

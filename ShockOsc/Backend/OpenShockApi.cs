@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using OpenShock.SDK.CSharp;
+using OpenShock.SDK.CSharp.Live.Utils;
 using OpenShock.SDK.CSharp.Models;
 
 namespace OpenShock.ShockOsc.Backend;
@@ -25,6 +26,8 @@ public sealed class OpenShockApi
             Token = _config.OpenShock.Token
         });
     }
+    
+    public event Func<IReadOnlyCollection<ShockerResponse>, Task>? OnShockersUpdated; 
 
     public IReadOnlyCollection<ShockerResponse> Shockers = Array.Empty<ShockerResponse>();
 
@@ -54,7 +57,7 @@ public sealed class OpenShockApi
                 }
                 ShockOscConfigManager.ConfigInstance.OpenShock.Shockers = shockerList;
                 ShockOscConfigManager.Save();
-                ShockOsc.RefreshShockers();
+                OnShockersUpdated.Raise(Shockers);
             },
         error =>
         {

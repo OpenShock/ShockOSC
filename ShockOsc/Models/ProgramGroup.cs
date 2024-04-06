@@ -2,7 +2,7 @@ using OpenShock.ShockOsc.OscChangeTracker;
 
 namespace OpenShock.ShockOsc.Models;
 
-public class Shocker
+public sealed class ProgramGroup
 {
     public DateTime LastActive { get; set; }
     public DateTime LastExecuted { get; set; }
@@ -22,15 +22,15 @@ public class Shocker
     public string Name { get; }
     public TriggerMethod TriggerMethod { get; set; }
 
-    public Shocker(Guid id, string name)
+    public ProgramGroup(Guid id, string name, OscClient oscClient)
     {
         Id = id;
         Name = name;
 
-        ParamActive = new ChangeTrackedOscParam<bool>(Name, "_Active", false);
-        ParamCooldown = new ChangeTrackedOscParam<bool>(Name, "_Cooldown", false);
-        ParamCooldownPercentage = new ChangeTrackedOscParam<float>(Name, "_CooldownPercentage", 0f);
-        ParamIntensity = new ChangeTrackedOscParam<float>(Name, "_Intensity", 0f);
+        ParamActive = new ChangeTrackedOscParam<bool>(Name, "_Active", false, oscClient);
+        ParamCooldown = new ChangeTrackedOscParam<bool>(Name, "_Cooldown", false, oscClient);
+        ParamCooldownPercentage = new ChangeTrackedOscParam<float>(Name, "_CooldownPercentage", 0f, oscClient);
+        ParamIntensity = new ChangeTrackedOscParam<float>(Name, "_Intensity", 0f, oscClient);
     }
 
     public void Reset()

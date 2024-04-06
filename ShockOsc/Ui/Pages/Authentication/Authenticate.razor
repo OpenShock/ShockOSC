@@ -49,6 +49,8 @@
     public async Task Login()
     {
         ShockOscConfigManager.Save();
+        ApiClient.SetupApiClient();
+        await LiveApiManager.SetupLiveClient();
         await ProceedAuthenticated();
     }
 
@@ -58,6 +60,7 @@
 
         await LiveApiManager.SetupLiveClient();
         await LiveApiClient.StartAsync();
+        await ApiClient.RefreshShockers();
         
         NavigationManager.NavigateTo("main");
     }
