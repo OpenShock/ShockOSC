@@ -1,6 +1,7 @@
 @using OpenShock.ShockOsc.Ui.Utils
 @using OpenShock.SDK.CSharp.Live
 @using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Ui.Components.Layout
 @inherits LayoutComponentBase
 
 @inject ShockOscConfigManager.ShockOscConfig ShockOscConfig
@@ -14,6 +15,8 @@
 <MudThemeProvider Theme="ThemeDefinition.ShockOscTheme"/>
 <MudDialogProvider/>
 <MudSnackbarProvider/>
+
+<Logo/>
 
 <MudContainer Class="align-content-center" MaxWidth="MaxWidth.Small" Style="padding-top: 30px">
     <MudPaper Id="login-background" Class="rounded-lg" Elevation="0" Style="padding: 40px 20px; text-align: center;">
@@ -34,12 +37,18 @@
 </MudContainer> 
 
 @code {
-    public bool Loading { get; set; }
+    private bool Loading { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(string.IsNullOrEmpty(ShockOscConfig.OpenShock.Token)) return;
+
+        await ProceedAuthenticated();
+    }
 
     public async Task Login()
     {
         ShockOscConfigManager.Save();
-
         await ProceedAuthenticated();
     }
 

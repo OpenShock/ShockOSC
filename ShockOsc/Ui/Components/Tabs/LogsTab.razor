@@ -1,6 +1,7 @@
 ﻿@using OpenShock.ShockOsc.Logging
 @using OpenShock.ShockOsc.Utils
 @using Serilog.Events
+@implements IDisposable
 
 <MudTable T="LogStore.LogEntry" RowClass="cursor-pointer" RowClassFunc="RowClassFunc" Items="LogStore.Logs.OrderByDescending(x => x.Time)" OnRowClick="LogRowClick" Breakpoint="Breakpoint.Sm" Hover="true" Dense="true" Height="73.5vh">
     <HeaderContent>
@@ -47,4 +48,20 @@
     }
     
     private string RowClassFunc(LogStore.LogEntry? log, int arg2) => log == null ? string.Empty : GetLogClass(log.Level) + (log.IsExpanded ? " expanded" : "");
+
+    protected override void OnInitialized()
+    {
+        LogStore.OnLogAdded = OnLogAdded;
+    }
+
+    private void OnLogAdded()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        LogStore.OnLogAdded = null;
+    }
+
 }

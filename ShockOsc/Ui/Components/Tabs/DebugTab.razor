@@ -1,4 +1,7 @@
 ﻿@using OpenShock.ShockOsc.Utils
+@using Serilog.Sinks.SystemConsole.Themes
+@implements IAsyncDisposable
+
 <MudText>List of ShockOSC prefixed parameters and their states</MudText>
 <br/>
 <MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
@@ -23,18 +26,9 @@ else
 
 @code {
     private bool _showAllAvatarParams = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        ShockOsc.OnParamsChange = OnParamsChange;
-    }
-
+    
     private void OnParamsChange(bool shockOscParam)
     {
-        // check Debug page is active
-        // if (activePageIndex != 3)
-        //     return;
-
         // only redraw page when needed
         if (!_showAllAvatarParams && !shockOscParam)
             return;
@@ -46,20 +40,30 @@ else
 
     protected override void OnInitialized()
     {
+        ShockOsc.OnParamsChange = OnParamsChange;
         OsTask.Run(UpdateParams);
     }
 
     private async Task UpdateParams()
     {
-        while (true)
+        while (!_cts.IsCancellationRequested)
         {
-            await Task.Delay(250);
-
             if (!_updateQueued)
                 continue;
             _updateQueued = false;
 
             await InvokeAsync(StateHasChanged);
+            
+            await Task.Delay(200);
         }
     }
+    
+    private CancellationTokenSource _cts = new CancellationTokenSource();
+    
+    
+    public async ValueTask DisposeAsync()
+    {
+        await _cts.CancelAsync();
+    }
+
 }
