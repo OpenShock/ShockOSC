@@ -79,6 +79,11 @@ public static class MauiProgram
         builder.Services.AddBlazorWebViewDeveloperTools();
 #endif
         
-        return builder.Build();;
+        var app = builder.Build();
+        
+        // Warmup
+        app.Services.GetRequiredService<OscQueryServer>();
+
+        return app;
     }
 }

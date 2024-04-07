@@ -29,16 +29,16 @@ public sealed class UnderscoreConfig
 
         if (settingPath.Length == 2)
         {
-            var shockerName = settingPath[0];
+            var groupName = settingPath[0];
             var action = settingPath[1];
-            if (!ShockOsc.ProgramGroups.ContainsKey(shockerName) && shockerName != "_All")
+            if (!ShockOsc.ProgramGroups.Any(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase)) && groupName != "_All")
             {
-                _logger.LogWarning("Unknown shocker {Shocker}", shockerName);
+                _logger.LogWarning("Unknown shocker {Shocker}", groupName);
                 _logger.LogDebug("Param: {Param}", action);
                 return;
             }
             
-            var shocker = ShockOsc.ProgramGroups[shockerName];
+            var group = ShockOsc.ProgramGroups.First(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase));
             var value = arguments.ElementAtOrDefault(0);
 
             // TODO: support groups

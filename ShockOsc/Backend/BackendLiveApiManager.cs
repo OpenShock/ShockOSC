@@ -31,7 +31,6 @@ public sealed class BackendLiveApiManager
                 builder.AddSerilog();
             }
         });
-        //await _openShockApiLiveClient.StartAsync();
     }
     
 }

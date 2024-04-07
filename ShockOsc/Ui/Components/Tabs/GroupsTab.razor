@@ -8,31 +8,32 @@
 
     public Guid? Group { get; set; } = null;
 
-    public void AddGroup()
+    public async Task AddGroup()
     {
         var groupId = Guid.NewGuid();
         ShockOscConfigManager.ConfigInstance.Groups.Add(groupId, new ShockOscConfigManager.ShockOscConfig.Group { Name = "New Group" });
         Group = groupId;
 
-        InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
         ShockOscConfigManager.Save();
-        ShockOsc.RaiseOnGroupsChanged();
+        await ShockOsc.RaiseOnGroupsChanged();
     }
 
-    public void DeleteGroup()
+    public async Task DeleteGroup()
     {
         if (Group == null) return;
         
         ShockOscConfigManager.ConfigInstance.Groups.Remove(Group.Value);
         Group = null;
-        InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
         ShockOscConfigManager.Save();
+        await ShockOsc.RaiseOnGroupsChanged();
     }
 
-    private Task OnSettingsValueChange()
+    private async Task OnSettingsValueChange()
     {
         ShockOscConfigManager.Save();
-        return Task.CompletedTask;
+        await ShockOsc.RaiseOnGroupsChanged();
     }
 
     private Task OnGroupSelect()
