@@ -22,7 +22,7 @@
 }
 
 <MudPaper Style="position: absolute; right: 0">
-    @if (true || Updater.UpdateAvailable)
+    @if (Updater.UpdateAvailable)
     {
         <MudTooltip Text="Update">
             <MudButton Color="Color.Primary" @onclick="OpenUpdateDialog" Size="Size.Small" Variant="Variant.Filled" Style="margin: 5px;">

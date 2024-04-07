@@ -3,6 +3,63 @@
 @implements IDisposable
 @inject UnderscoreConfig underscoreConfig
 
+<MudPaper Class="rounded-lg" Style="padding: 10px 15px;">
+    <MudText>Shocker Options</MudText>
+    <MudDivider/>
+    <MudPaper Style="display: inline-block; width: 200px; padding-top: 8px; padding-left: 5px">
+        <MudSelect Class="option-width" @bind-Value="Config.Behaviour.WhileBoneHeld" Label="While PhysBone Held" @bind-Value:after="OnSettingsValueChange">
+            @foreach (ShockOscConfigManager.ShockOscConfig.BehaviourConf.BoneHeldAction boneHeldAction in Enum.GetValues(typeof(ShockOscConfigManager.ShockOscConfig.BehaviourConf.BoneHeldAction)))
+            {
+                <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
+            }
+        </MudSelect>
+    </MudPaper>
+    <br/>
+    <br/>
+    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnSettingsValueChange"/>
+    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.HoldTime" Label="Contact Hold Time" @bind-Value:after="OnSettingsValueChange"/>
+    <br/>
+    <MudToggleGroup T="string" @bind-Value="intensity" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChange">
+        <MudToggleItem Value="@("Fixed Intensity")"/>
+        <MudToggleItem Value="@("Random Intensity")"/>
+    </MudToggleGroup>
+    <br/>
+    @if (intensity == "Fixed Intensity")
+    {
+        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.FixedIntensity" @bind-Value:after="OnSliderSettingsValueChange">Intensity: @Config.Behaviour.FixedIntensity.ToString()%</MudSlider>
+    }
+    else
+    {
+        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.IntensityRange.Min" @bind-Value:after="OnSliderSettingsValueChange">Intensity Min: @Config.Behaviour.IntensityRange.Min.ToString()%</MudSlider>
+        <br/>
+        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.IntensityRange.Max" @bind-Value:after="OnSliderSettingsValueChange">Intensity Max: @Config.Behaviour.IntensityRange.Max.ToString()%</MudSlider>
+    }
+    <MudToggleGroup T="string" @bind-Value="duration" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChange">
+        <MudToggleItem Value="@("Fixed Duration")"/>
+        <MudToggleItem Value="@("Random Duration")"/>
+    </MudToggleGroup>
+    <br/>
+    @if (duration == "Fixed Duration")
+    {
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.FixedDuration" Label="Duration" @bind-Value:after="OnSettingsValueChange"/>
+    }
+    else
+    {
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.DurationRange.Min" Label="Duration Min" @bind-Value:after="OnSettingsValueChange"/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.DurationRange.Max" Label="Duration Max" @bind-Value:after="OnSettingsValueChange"/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.RandomDurationStep" Label="Random Duration Step" @bind-Value:after="OnSettingsValueChange"/>
+    }
+    <br/>
+    <br/>
+</MudPaper>
+
+<MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+    <MudText>Game Options</MudText>
+    <MudDivider/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="underscoreConfig.KillSwitch" Label="Kill Switch" @bind-Value:after="OnSettingsValueChange"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Behaviour.DisableWhileAfk" Label="Disable While Afk" @bind-Value:after="OnSettingsValueChange"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChange"/>
+</MudPaper>
 
 <MudPaper Class="rounded-lg" Style="padding: 10px 15px;">
     <MudText>Chatbox Options</MudText>
@@ -54,60 +111,16 @@
 </MudPaper>
 
 <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
-    <MudText>Shocker Options</MudText>
+    <MudText>OSC Options</MudText>
     <MudDivider/>
-    <MudPaper Style="display: inline-block; width: 200px; padding-top: 8px;">
-        <MudSelect Class="option-width" @bind-Value="Config.Behaviour.WhileBoneHeld" Label="While PhysBone Held" @bind-Value:after="OnSettingsValueChange">
-            @foreach (ShockOscConfigManager.ShockOscConfig.BehaviourConf.BoneHeldAction boneHeldAction in Enum.GetValues(typeof(ShockOscConfigManager.ShockOscConfig.BehaviourConf.BoneHeldAction)))
-            {
-                <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
-            }
-        </MudSelect>
-    </MudPaper>
-    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnSettingsValueChange"/>
-    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.HoldTime" Label="Contact Hold Time" @bind-Value:after="OnSettingsValueChange"/>
-    <br/>
-    <MudToggleGroup T="string" @bind-Value="intensity" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChange">
-        <MudToggleItem Value="@("Fixed Intensity")"/>
-        <MudToggleItem Value="@("Random Intensity")"/>
-    </MudToggleGroup>
-    <br/>
-    @if (intensity == "Fixed Intensity")
-    {
-        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.FixedIntensity" @bind-Value:after="OnSliderSettingsValueChange">Intensity: @Config.Behaviour.FixedIntensity.ToString()%</MudSlider>
-    }
-    else
-    {
-        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.IntensityRange.Min" @bind-Value:after="OnSliderSettingsValueChange">Intensity Min: @Config.Behaviour.IntensityRange.Min.ToString()%</MudSlider>
-        <br/>
-        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.IntensityRange.Max" @bind-Value:after="OnSliderSettingsValueChange">Intensity Max: @Config.Behaviour.IntensityRange.Max.ToString()%</MudSlider>
-    }
-    <MudToggleGroup T="string" @bind-Value="duration" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChange">
-        <MudToggleItem Value="@("Fixed Duration")"/>
-        <MudToggleItem Value="@("Random Duration")"/>
-    </MudToggleGroup>
-    <br/>
-    @if (duration == "Fixed Duration")
-    {
-        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.FixedDuration" Label="Duration" @bind-Value:after="OnSettingsValueChange"/>
-    }
-    else
-    {
-        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.DurationRange.Min" Label="Duration Min" @bind-Value:after="OnSettingsValueChange"/>
-        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.DurationRange.Max" Label="Duration Max" @bind-Value:after="OnSettingsValueChange"/>
-        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Behaviour.RandomDurationStep" Label="Random Duration Step" @bind-Value:after="OnSettingsValueChange"/>
-    }
-    <br/>
-    <br/>
-</MudPaper>
-
-<MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
-    <MudText>Other Options</MudText>
-    <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="underscoreConfig.KillSwitch" Label="Kill Switch" @bind-Value:after="OnSettingsValueChange"/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Behaviour.DisableWhileAfk" Label="Disable While Afk" @bind-Value:after="OnSettingsValueChange"/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChange"/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Osc.QuestSupport" Label="Quest Support" @bind-Value:after="OnSettingsValueChange"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="Config.Osc.OscQuery" Label="OSC Query (requires restart)" @bind-Value:after="OnSettingsValueChange"/>
+    @if (!Config.Osc.OscQuery)
+    {
+        <br/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Osc.OscSendPort" Label="OSC Send Port" @bind-Value:after="OnSettingsValueChange"/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="Config.Osc.OscReceivePort" Label="OSC Receive Port" @bind-Value:after="OnSettingsValueChange"/>
+    }
 </MudPaper>
 
 @code {

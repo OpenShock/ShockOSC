@@ -38,6 +38,12 @@ public static class ShockOscConfigManager
                 catch (JsonException e)
                 {
                     Logger.Fatal(e, "Error during deserialization/loading of config");
+                    Logger.Warning("Attempting to move old config and generate a new one");
+                    File.Move(Path, Path + ".old");
+                    Save();
+                    json = File.ReadAllText(Path);
+                    _internalConfig = JsonSerializer.Deserialize<ShockOscConfig>(json, Options);
+                    Logger.Information("Successfully loaded config");
                     return;
                 }
             }
@@ -83,7 +89,10 @@ public static class ShockOscConfigManager
             Chatbox = true,
             Hoscy = false,
             HoscySendPort = 9001,
-            QuestSupport = false
+            QuestSupport = false,
+            OscQuery = true,
+            OscSendPort = 9000,
+            OscReceivePort = 9001
         },
         Chatbox = new ShockOscConfig.ChatboxConf
         {
@@ -212,6 +221,9 @@ public static class ShockOscConfigManager
             public required bool Hoscy { get; set; }
             public ushort HoscySendPort { get; set; } = 9001;
             public required bool QuestSupport { get; set; }
+            public required bool OscQuery { get; set; }
+            public ushort OscSendPort { get; set; } = 9000;
+            public ushort OscReceivePort { get; set; } = 9001;
         }
 
         public class BehaviourConf

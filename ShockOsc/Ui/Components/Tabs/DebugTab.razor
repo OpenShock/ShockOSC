@@ -18,7 +18,7 @@
 }
 else
 {
-    @foreach (var param in ShockOsc.ParamsInUse)
+    @foreach (var param in ShockOsc.ShockOscParams)
     {
         <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
     }

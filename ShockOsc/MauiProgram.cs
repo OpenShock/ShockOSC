@@ -59,11 +59,15 @@ public static class MauiProgram
         builder.Services.AddSingleton<UnderscoreConfig>();
         
         var listenAddress = ShockOscConfigManager.ConfigInstance.Osc.QuestSupport ? IPAddress.Any : IPAddress.Loopback; 
-        builder.Services.AddSingleton<OscQueryServer>(provider =>
+        if (ShockOscConfigManager.ConfigInstance.Osc.OscQuery)
         {
-            var shockOsc = provider.GetRequiredService<ShockOsc>();
-            return new OscQueryServer("ShockOsc", listenAddress, shockOsc.FoundVrcClient, shockOsc.OnAvatarChange);
-        });
+            builder.Services.AddSingleton<ShockOsc>();
+            builder.Services.AddSingleton<OscQueryServer>(provider =>
+            {
+                var shockOsc = provider.GetRequiredService<ShockOsc>();
+                return new OscQueryServer("ShockOsc", listenAddress, shockOsc.FoundVrcClient, shockOsc.OnAvatarChange);
+            });
+        }
         
         builder.Services.AddMudServices();
         builder.Services.AddMauiBlazorWebView();
@@ -80,9 +84,12 @@ public static class MauiProgram
 #endif
         
         var app = builder.Build();
-        
-        // Warmup
-        app.Services.GetRequiredService<OscQueryServer>();
+
+        if (ShockOscConfigManager.ConfigInstance.Osc.OscQuery)
+        {
+            // Warmup
+            app.Services.GetRequiredService<OscQueryServer>();
+        }
 
         return app;
     }

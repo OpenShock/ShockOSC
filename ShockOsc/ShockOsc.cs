@@ -47,7 +47,7 @@ public sealed class ShockOsc
         "IShock"
     };
 
-    public static Dictionary<string, object?> ParamsInUse = new();
+    public static Dictionary<string, object?> ShockOscParams = new();
     public static Dictionary<string, object?> AllAvatarParams = new();
 
     public static Action<bool>? OnParamsChange;
@@ -86,6 +86,11 @@ public sealed class ShockOsc
         OnGroupsChanged += SetupGroups;
         
         SetupGroups().Wait();
+
+        if (!ShockOscConfigManager.ConfigInstance.Osc.OscQuery)
+        {
+            FoundVrcClient();
+        }
     }
 
     private async Task SetupGroups()
@@ -109,8 +114,17 @@ public sealed class ShockOsc
         _oscServerActive = false;
         Task.Delay(1000).Wait(); // wait for tasks to stop
 
-        _oscClient.CreateGameConnection(IPAddress.Parse(OscQueryServer.OscIpAddress), OscQueryServer.OscReceivePort,
-            OscQueryServer.OscSendPort);
+        if (ShockOscConfigManager.ConfigInstance.Osc.OscQuery)
+        {
+            _oscClient.CreateGameConnection(IPAddress.Parse(OscQueryServer.OscIpAddress), OscQueryServer.OscReceivePort,
+                OscQueryServer.OscSendPort);
+        }
+        else
+        {
+            _oscClient.CreateGameConnection(IPAddress.Loopback, ShockOscConfigManager.ConfigInstance.Osc.OscReceivePort,
+                ShockOscConfigManager.ConfigInstance.Osc.OscSendPort);
+        }
+
         _logger.LogInformation("Connecting UDP Clients...");
 
         // Start tasks
@@ -141,7 +155,7 @@ public sealed class ShockOsc
                 return;
             }
 
-            ParamsInUse.Clear();
+            ShockOscParams.Clear();
             AllAvatarParams.Clear();
 
             foreach (var param in parameters.Keys)
@@ -154,19 +168,16 @@ public sealed class ShockOsc
 
                 var paramName = param[28..];
                 var lastUnderscoreIndex = paramName.LastIndexOf('_') + 1;
-                var action = string.Empty;
                 var shockerName = paramName;
+                // var action = string.Empty;
                 if (lastUnderscoreIndex > 1)
                 {
                     shockerName = paramName[..(lastUnderscoreIndex - 1)];
-                    action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
+                    // action = paramName.Substring(lastUnderscoreIndex, paramName.Length - lastUnderscoreIndex);
                 }
-
-                if (ShockerParams.Contains(action))
-                {
-                    parameterCount++;
-                    ParamsInUse.TryAdd(paramName, parameters[param]);
-                }
+                
+                parameterCount++;
+                ShockOscParams.TryAdd(param[28..], parameters[param]);
 
                 if (!ProgramGroups.Any(x =>
                         x.Value.Name.Equals(shockerName, StringComparison.InvariantCultureIgnoreCase)) &&
@@ -254,6 +265,14 @@ public sealed class ShockOsc
 
         var pos = addr.Substring(28, addr.Length - 28);
 
+        if (ShockOscParams.ContainsKey(pos))
+        {
+            ShockOscParams[pos] = received.Arguments[0];
+            OnParamChange(true);
+        }
+        else
+            ShockOscParams.TryAdd(pos, received.Arguments[0]);
+
         // Check if _Config
         if (pos.StartsWith("_Config/"))
         {
@@ -269,14 +288,6 @@ public sealed class ShockOsc
             groupName = pos[..(lastUnderscoreIndex - 1)];
             action = pos.Substring(lastUnderscoreIndex, pos.Length - lastUnderscoreIndex);
         }
-
-        if (ParamsInUse.ContainsKey(pos))
-        {
-            ParamsInUse[pos] = received.Arguments[0];
-            OnParamChange(true);
-        }
-        else
-            ParamsInUse.TryAdd(pos, received.Arguments[0]);
 
         if (!ShockerParams.Contains(action)) return;
 
@@ -386,7 +397,7 @@ public sealed class ShockOsc
     {
         programGroup.LastExecuted = DateTime.UtcNow;
         programGroup.LastDuration = duration;
-        var intensityPercentage = Math.Round(GetFloatScaled(intensity) * 100f);
+        var intensityPercentage = Math.Round(ClampFloat(intensity) * 100f);
         programGroup.LastIntensity = intensity;
 
         ForceUnmute();
@@ -415,13 +426,13 @@ public sealed class ShockOsc
         await _oscClient.SendChatboxMessage(msg);
     }
 
-    /// <summary>
-    /// Coverts to a 0-1 float and scale it to the max intensity
-    /// </summary>
-    /// <param name="intensity"></param>
-    /// <returns></returns>
-    private static float GetFloatScaled(byte intensity) =>
-        ClampFloat((float)intensity / ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Max);
+    // /// <summary>
+    // /// Coverts to a 0-1 float and scale it to the max intensity
+    // /// </summary>
+    // /// <param name="intensity"></param>
+    // /// <returns></returns>
+    // private static float GetFloatScaled(byte intensity) =>
+    //     ClampFloat((float)intensity / ShockOscConfigManager.ConfigInstance.Behaviour.IntensityRange.Max);
 
     private async Task SendParams()
     {
@@ -453,12 +464,12 @@ public sealed class ShockOsc
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);
             await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
-            await shocker.ParamIntensity.SetValue(GetFloatScaled(shocker.LastIntensity));
+            await shocker.ParamIntensity.SetValue(ClampFloat(shocker.LastIntensity));
 
             if (isActive) anyActive = true;
             if (onCoolDown) anyCooldown = true;
             anyCooldownPercentage = Math.Max(anyCooldownPercentage, cooldownPercentage);
-            anyIntensity = Math.Max(anyIntensity, GetFloatScaled(shocker.LastIntensity));
+            anyIntensity = Math.Max(anyIntensity, ClampFloat(shocker.LastIntensity));
         }
 
         await _paramAnyActive.SetValue(anyActive);
