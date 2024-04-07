@@ -74,13 +74,13 @@
     <br/>
     @if (intensity == "Fixed Intensity")
     {
-        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.FixedIntensity" @bind-Value:after="OnSettingsValueChange">Intensity: @Config.Behaviour.FixedIntensity.ToString()%</MudSlider>
+        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.FixedIntensity" @bind-Value:after="OnSliderSettingsValueChange">Intensity: @Config.Behaviour.FixedIntensity.ToString()%</MudSlider>
     }
     else
     {
-        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.IntensityRange.Min" @bind-Value:after="OnSettingsValueChange">Intensity Min: @Config.Behaviour.IntensityRange.Min.ToString()%</MudSlider>
+        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.IntensityRange.Min" @bind-Value:after="OnSliderSettingsValueChange">Intensity Min: @Config.Behaviour.IntensityRange.Min.ToString()%</MudSlider>
         <br/>
-        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.IntensityRange.Max" @bind-Value:after="OnSettingsValueChange">Intensity Max: @Config.Behaviour.IntensityRange.Max.ToString()%</MudSlider>
+        <MudSlider Size="Size.Large" Style="width: 300px; margin-left: 30px;" @bind-Value="Config.Behaviour.IntensityRange.Max" @bind-Value:after="OnSliderSettingsValueChange">Intensity Max: @Config.Behaviour.IntensityRange.Max.ToString()%</MudSlider>
     }
     <MudToggleGroup T="string" @bind-Value="duration" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChange">
         <MudToggleItem Value="@("Fixed Duration")"/>
@@ -124,11 +124,11 @@
         _advancedSettingsExpanded = !_advancedSettingsExpanded;
     }
     
-    private async Task OnSettingsValueChange()
+    private async Task OnSliderSettingsValueChange()
     {
         if ((DateTime.Now - _lastSettingsSave).TotalMilliseconds >= 10)
         {
-            await OnSettingsValueSave();
+            await OnSettingsValueChange();
             return;
         }
 
@@ -142,7 +142,7 @@
             if (!_cts.Token.IsCancellationRequested &&
                 (DateTime.Now - _lastSettingsSave).TotalMilliseconds >= 10)
             {
-                await OnSettingsValueSave();
+                await OnSettingsValueChange();
             }
         }
         catch (TaskCanceledException)
@@ -151,7 +151,7 @@
         }
     }
 
-    private async Task OnSettingsValueSave()
+    private async Task OnSettingsValueChange()
     {
         _lastSettingsSave = DateTime.Now;
         Config.Behaviour.RandomIntensity = intensity == "Random Intensity";
