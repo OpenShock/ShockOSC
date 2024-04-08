@@ -1,11 +1,10 @@
 @using OpenShock.ShockOsc.Logging
 @using OpenShock.ShockOsc.Ui.Components.Layout
 @using OpenShock.ShockOsc.Ui.Components.Tabs
-@using Serilog
 @using OpenShock.ShockOsc.Ui.Utils
+@using OpenShock.ShockOsc.Config
 @inject ISnackbar Snackbar
 @inherits LayoutComponentBase
-@inject ShockOscConfigManager.ShockOscConfig Config
 
 @page "/main"
 
@@ -13,42 +12,37 @@
 <MudDialogProvider/>
 <MudSnackbarProvider/>
 
-@code {
-    private static readonly ILogger Logger = Log.ForContext(typeof(MainLayout));
-
-
-}
-
-<style>
-    .log.fatal {
-        background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,9,9,0) 58%, rgba(255,0,0,0.4247899843531162) 100%);
-    }
-    .log.error {
-        background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(121,19,9,0) 58%, rgba(255,44,0,0.4247899843531162) 100%);
-    }
-    .log.warning {
-        background: linear-gradient(180deg, rgba(2,0,36,0) 0%, rgba(118,121,9,0) 58%, rgba(255,254,0,0.42) 100%);
-    }
-    
-    .expanded {
-        background: rgba(0,0,0,0.32);
-    }
-    
-    .expanded:hover {
-            background: rgba(0,0,0,0.4) !important;
-    }
-</style>
-
 <MudLayout>
     <UpdateLogout Authenticated="true"/>
     <Logo/>
-
-    @*  <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_loading" Label="Loading" />
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_authenticated" Label="Authed" /> *@
-
-
+    
+    @* <MudPaper Width="250px" Elevation="0"> *@
+    @* <MudNavMenu Margin="Margin.Dense" Color="Color.Primary" Class="pa-2" Rounded="true" > *@
+    @*     <MudNavLink Href="/Main" OnClick="() => NavigateTab(Tab.Groups)" Match="NavLinkMatch.All">Groups</MudNavLink> *@
+    @* </MudNavMenu> *@
+    @* </MudPaper> *@
+    @* *@
+    @* @switch(_currentTab) *@
+    @* { *@
+    @*     case Tab.Groups: *@
+    @*         <GroupsTab/> *@
+    @*         break; *@
+    @*     case Tab.Config: *@
+    @*         <ConfigTab/> *@
+    @*         break; *@
+    @*     case Tab.Shockers: *@
+    @*         <ShockersTab/> *@
+    @*         break; *@
+    @*     case Tab.Debug: *@
+    @*         <DebugTab/> *@
+    @*         break; *@
+    @*     case Tab.Logs: *@
+    @*         <LogsTab/> *@
+    @*         break; *@
+    @* } *@
+    
     <MudContainer>
-        <MudTabs @bind-ActivePanelIndex="activePageIndex" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="rounded-lg">
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="rounded-lg">
             <MudTabPanel Text="Groups">
                 <GroupsTab/>
             </MudTabPanel>
@@ -70,7 +64,15 @@
 </MudLayout>
 
 @code {
-    private int activePageIndex = 0;
+
+    public enum Tab { Groups, Config, Shockers, Debug, Logs }
+
+    private Tab _currentTab = Tab.Groups;
+    
+    private void NavigateTab(Tab tab)
+    {
+        _currentTab = tab;
+    }
     
     private void MsgNoty(string msg, Severity severity)
     {

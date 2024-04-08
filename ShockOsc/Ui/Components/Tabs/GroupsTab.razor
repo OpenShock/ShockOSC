@@ -1,7 +1,9 @@
 ﻿@using System.Text.RegularExpressions
 @using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Config
 @inject OpenShockApi OpenShockApi
 @inject ShockOsc ShockOsc
+@inject ConfigManager ConfigManager
 
 
 @code {
@@ -11,11 +13,11 @@
     public async Task AddGroup()
     {
         var groupId = Guid.NewGuid();
-        ShockOscConfigManager.ConfigInstance.Groups.Add(groupId, new ShockOscConfigManager.ShockOscConfig.Group { Name = "New Group" });
+        ConfigManager.Config.Groups.Add(groupId, new ShockOscConfig.Group { Name = "New Group" });
         Group = groupId;
 
         await InvokeAsync(StateHasChanged);
-        ShockOscConfigManager.Save();
+        await ConfigManager.SaveAsync();
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
@@ -23,39 +25,36 @@
     {
         if (Group == null) return;
         
-        ShockOscConfigManager.ConfigInstance.Groups.Remove(Group.Value);
+        ConfigManager.Config.Groups.Remove(Group.Value);
         Group = null;
         await InvokeAsync(StateHasChanged);
-        ShockOscConfigManager.Save();
+        await ConfigManager.SaveAsync();
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
     private async Task OnSettingsValueChange()
     {
-        ShockOscConfigManager.Save();
+        await ConfigManager.SaveAsync();
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
-    private Task OnGroupSelect()
+    private async Task OnGroupSelect()
     {
         if (CurrentGroup != null) _selectedShockers = [..CurrentGroup.Shockers];
         
-        InvokeAsync(StateHasChanged);
-        return Task.CompletedTask;
+        await InvokeAsync(StateHasChanged);
     }
 
-    private Task OnSelectedShockersUpdate()
+    private async Task OnSelectedShockersUpdate()
     {
         if (CurrentGroup != null)
         {
             CurrentGroup.Shockers = _selectedShockers.ToList();
-            ShockOscConfigManager.Save();
+            await ConfigManager.SaveAsync();
         }
-        
-        return Task.CompletedTask;
     }
 
-    private ShockOscConfigManager.ShockOscConfig.Group? CurrentGroup => Group == null ? null : ShockOscConfigManager.ConfigInstance.Groups.TryGetValue(Group.Value, out var group) ? group : null;
+    private ShockOscConfig.Group? CurrentGroup => Group == null ? null : ConfigManager.Config.Groups.TryGetValue(Group.Value, out var group) ? group : null;
 
     private static Regex _nameRegex = new Regex(@"^[a-zA-Z0-9\/\\ -]+$", RegexOptions.Compiled);
 
@@ -74,7 +73,7 @@
 <MudButton OnClick="DeleteGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Placeholder="Select Group to Edit" Color="Color.Error">Delete Group</MudButton>
 <br/> <br/>
 <MudSelect Variant="Variant.Outlined" T="Guid?" Label="Select Group" Dense="true" Margin="Margin.Dense" @bind-Value="Group" @bind-Value:after="OnGroupSelect" Clearable>
-    @foreach (var group in ShockOscConfigManager.ConfigInstance.Groups)
+    @foreach (var group in ConfigManager.Config.Groups)
     {
         <MudSelectItem T="Guid?" Value="@group.Key">@group.Value.Name</MudSelectItem>
     }

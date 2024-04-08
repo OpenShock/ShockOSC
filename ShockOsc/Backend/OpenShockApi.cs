@@ -2,19 +2,20 @@
 using OpenShock.SDK.CSharp;
 using OpenShock.SDK.CSharp.Live.Utils;
 using OpenShock.SDK.CSharp.Models;
+using OpenShock.ShockOsc.Config;
 
 namespace OpenShock.ShockOsc.Backend;
 
 public sealed class OpenShockApi
 {
     private readonly ILogger<OpenShockApi> _logger;
-    private readonly ShockOscConfigManager.ShockOscConfig _config;
+    private readonly ConfigManager _configManager;
     private OpenShockApiClient _client;
 
-    public OpenShockApi(ILogger<OpenShockApi> logger, ShockOscConfigManager.ShockOscConfig config)
+    public OpenShockApi(ILogger<OpenShockApi> logger, ConfigManager configManager)
     {
         _logger = logger;
-        _config = config;
+        _configManager = configManager;
         SetupApiClient();
     }
 
@@ -22,8 +23,8 @@ public sealed class OpenShockApi
     {
         _client = new OpenShockApiClient(new ApiClientOptions
         {
-            Server = _config.OpenShock.Backend,
-            Token = _config.OpenShock.Token
+            Server = _configManager.Config.OpenShock.Backend,
+            Token = _configManager.Config.OpenShock.Token
         });
     }
     
@@ -40,23 +41,23 @@ public sealed class OpenShockApi
                 Shockers = success.Value.SelectMany(x => x.Shockers).ToArray();
                 
                 // re-populate config with previous data if present, this also deletes any shockers that are no longer present
-                var shockerList = new Dictionary<Guid, ShockOscConfigManager.ShockOscConfig.ShockerConf>();
+                var shockerList = new Dictionary<Guid, OpenShockConf.ShockerConf>();
                 foreach (var shocker in Shockers)
                 {
                     var enabled = true;
                 
-                    if (ShockOscConfigManager.ConfigInstance.OpenShock.Shockers.TryGetValue(shocker.Id, out var confShocker))
+                    if (_configManager.Config.OpenShock.Shockers.TryGetValue(shocker.Id, out var confShocker))
                     {
                         enabled = confShocker.Enabled;
                     }
 
-                    shockerList.Add(shocker.Id, new ShockOscConfigManager.ShockOscConfig.ShockerConf
+                    shockerList.Add(shocker.Id, new OpenShockConf.ShockerConf
                     {
                         Enabled = enabled
                     });
                 }
-                ShockOscConfigManager.ConfigInstance.OpenShock.Shockers = shockerList;
-                ShockOscConfigManager.Save();
+                _configManager.Config.OpenShock.Shockers = shockerList;
+                _configManager.Save();
                 OnShockersUpdated.Raise(Shockers);
             },
         error =>

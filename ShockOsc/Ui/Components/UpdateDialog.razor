@@ -1,20 +1,25 @@
+@using OpenShock.ShockOsc.Config
+@using OpenShock.ShockOsc.Utils
+@inject ConfigManager ConfigManager
+@inject Updater Updater
+
 @code {
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; }
 
     private bool _isDownloading = false;
 
-    private void Skip()
+    private async Task Skip()
     {
-        ShockOscConfigManager.ConfigInstance.LastIgnoredVersion = Updater.LatestVersion;
-        ShockOscConfigManager.Save();
+        ConfigManager.Config.LastIgnoredVersion = Updater.LatestVersion;
+        await ConfigManager.SaveAsync();
         MudDialog.Close(DialogResult.Ok(true));
     }
 
     private void DownloadUpdate()
     {
         _isDownloading = true;
-        Updater.DoUpdate();
+        OsTask.Run(Updater.DoUpdate);
     }
 }
 

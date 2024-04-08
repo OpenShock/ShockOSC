@@ -1,6 +1,7 @@
 ﻿@using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Config
 @inject OpenShockApi OpenShockApi
-@inject ShockOscConfigManager.ShockOscConfig Config
+@inject ConfigManager ConfigManager
 
 <MudButton OnClick="OpenShockApi.RefreshShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Style="margin-right: 10px;">Refresh</MudButton>
 <br/>
@@ -13,7 +14,7 @@
     </HeaderContent>
     <RowTemplate>
         <MudTd>
-            <MudCheckBox Class="option-width option-checkbox-height" Style="margin-left:10px;" @bind-Value="@Config.OpenShock.Shockers[context.Id].Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
+            <MudCheckBox Class="option-width option-checkbox-height" Style="margin-left:10px;" @bind-Value="@ConfigManager.Config.OpenShock.Shockers[context.Id].Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
         </MudTd>
         <MudTd>@context.Name</MudTd>
         <MudTd>@context.Id</MudTd>
@@ -21,8 +22,8 @@
 </MudTable>
 
 @code {
-    private void OnShockerConfigUpdate()
+    private Task OnShockerConfigUpdate()
     {
-        ShockOscConfigManager.Save();
+        return ConfigManager.SaveAsync();
     }
 }

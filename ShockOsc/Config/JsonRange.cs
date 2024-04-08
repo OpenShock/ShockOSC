@@ -1,5 +1,5 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
-namespace OpenShock.ShockOsc.Models;
+namespace OpenShock.ShockOsc.Config;
 
 public class JsonRange
 {

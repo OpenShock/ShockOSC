@@ -1,14 +1,17 @@
 @using OpenShock.ShockOsc.Ui.Utils
 @using OpenShock.SDK.CSharp.Live
 @using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Config
 @using OpenShock.ShockOsc.Ui.Components.Layout
+@using Microsoft.Extensions.Logging
 @inherits LayoutComponentBase
 
-@inject ShockOscConfigManager.ShockOscConfig ShockOscConfig
+@inject ConfigManager ConfigManager
 @inject NavigationManager NavigationManager
 @inject BackendLiveApiManager LiveApiManager
 @inject OpenShockApiLiveClient LiveApiClient
 @inject OpenShockApi ApiClient
+@inject ILogger<Authenticate> Logger
 
 @page "/"
 
@@ -24,7 +27,7 @@
         <br/>
         @if (!Loading)
         {
-            <MudTextField @bind-Value="ShockOscConfig.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+            <MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
             <br />
             <MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton>
             <br />
@@ -41,27 +44,30 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if(string.IsNullOrEmpty(ShockOscConfig.OpenShock.Token)) return;
+        if(string.IsNullOrEmpty(ConfigManager.Config.OpenShock.Token)) return;
 
         await ProceedAuthenticated();
     }
 
     public async Task Login()
     {
-        ShockOscConfigManager.Save();
+        await ConfigManager.SaveAsync();
         ApiClient.SetupApiClient();
-        await LiveApiManager.SetupLiveClient();
         await ProceedAuthenticated();
     }
 
     private async Task ProceedAuthenticated()
     {
         Loading = true;
-
-        await LiveApiManager.SetupLiveClient();
-        await LiveApiClient.StartAsync();
-        await ApiClient.RefreshShockers();
         
+        Logger.LogInformation("Setting up live client");
+        await LiveApiManager.SetupLiveClient();
+        Logger.LogInformation("Starting live client");
+        await LiveApiClient.StartAsync();
+        
+        Logger.LogInformation("Refreshing shockers");
+        await ApiClient.RefreshShockers();
+
         NavigationManager.NavigateTo("main");
     }
 }

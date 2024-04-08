@@ -8,6 +8,6 @@ public sealed class OscHandler
     
     public OscHandler(ILogger<OscHandler> logger)
     {
-        
+        logger.LogInformation("YES STARTED");
     }
 }

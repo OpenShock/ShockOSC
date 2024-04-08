@@ -1,4 +1,7 @@
-﻿namespace OpenShock.ShockOsc.Ui.Utils;
+﻿using System.Net;
+using OpenShock.ShockOsc.OscQueryLibrary;
+
+namespace OpenShock.ShockOsc.Utils;
 
 public static class AsynchronousEventExtensions
 {

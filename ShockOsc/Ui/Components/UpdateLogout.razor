@@ -1,23 +1,23 @@
+@using OpenShock.ShockOsc.Config
 @inject IDialogService Dialog
 @inject IDialogService DialogService
+@inject ConfigManager ConfigManager
+@inject Updater Updater
 
 @code {
     [Parameter]
     public bool Authenticated { get; set; }
 
-    private DialogOptions dialogOptions = new DialogOptions() { NoHeader = true, DisableBackdropClick = true };
+    private readonly DialogOptions _dialogOptions = new() { NoHeader = true, DisableBackdropClick = true };
 
     private void OpenUpdateDialog()
     {
-        DialogService.Show<UpdateDialog>("Update", dialogOptions);
+        DialogService.Show<UpdateDialog>("Update", _dialogOptions);
     }
 
     protected override async Task OnInitializedAsync()
     {
-        if (await Updater.CheckUpdate())
-        {
-            OpenUpdateDialog();
-        }
+        if (await Updater.CheckUpdate()) OpenUpdateDialog();
     }
 }
 
@@ -33,7 +33,7 @@
     @if (Authenticated)
     {
         <MudTooltip Text="Logout">
-            <MudButton Color="Color.Primary" @onclick="ShockOscConfigManager.Save" Size=" Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
+            <MudButton Color="Color.Primary" @onclick="ConfigManager.SaveAsync" Size=" Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
                 <MudIcon Icon="@Icons.Material.Filled.Logout" />
             </MudButton>
         </MudTooltip>
