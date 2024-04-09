@@ -37,7 +37,7 @@ public class OscQueryServer : IDisposable
     
 
     public event Func<IPEndPoint, Task>? FoundVrcClient;
-    private event Func<Dictionary<string, object?>, string, Task>? ParameterUpdate;
+    public event Func<Dictionary<string, object?>, string, Task>? ParameterUpdate;
     
     private readonly Dictionary<string, object?> ParameterList = new();
     
@@ -224,7 +224,7 @@ public class OscQueryServer : IDisposable
             }
 
             avatarId = rootNode.CONTENTS.avatar.CONTENTS.change.VALUE?[0]?.ToString() ?? string.Empty;
-            ParameterUpdate?.Raise(ParameterList, avatarId);
+            if(ParameterUpdate != null) await ParameterUpdate.Raise(ParameterList, avatarId);
         }
         catch (HttpRequestException ex)
         {

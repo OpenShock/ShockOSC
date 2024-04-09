@@ -9,12 +9,16 @@ public sealed class UnderscoreConfig
     private readonly ILogger<UnderscoreConfig> _logger;
     private readonly OscClient _oscClient;
     private readonly ConfigManager _configManager;
+    private readonly ShockOscData _dataLayer;
 
-    public UnderscoreConfig(ILogger<UnderscoreConfig> logger, OscClient oscClient, ConfigManager configManager)
+    public event Action? OnConfigUpdate;
+    
+    public UnderscoreConfig(ILogger<UnderscoreConfig> logger, OscClient oscClient, ConfigManager configManager, ShockOscData dataLayer)
     {
         _logger = logger;
         _oscClient = oscClient;
         _configManager = configManager;
+        _dataLayer = dataLayer;
     }
     
     public bool KillSwitch { get; set; } = false;
@@ -34,14 +38,14 @@ public sealed class UnderscoreConfig
         {
             var groupName = settingPath[0];
             var action = settingPath[1];
-            if (!ShockOsc.ProgramGroups.Any(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase)) && groupName != "_All")
+            if (!_dataLayer.ProgramGroups.Any(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase)) && groupName != "_All")
             {
                 _logger.LogWarning("Unknown shocker {Shocker}", groupName);
                 _logger.LogDebug("Param: {Param}", action);
                 return;
             }
             
-            var group = ShockOsc.ProgramGroups.First(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase));
+            var group = _dataLayer.ProgramGroups.First(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase));
             var value = arguments.ElementAtOrDefault(0);
 
             // TODO: support groups
@@ -58,7 +62,7 @@ public sealed class UnderscoreConfig
                         _configManager.Config.Behaviour.IntensityRange.Min = MathUtils.ClampUint((uint)Math.Round(minIntensityFloat * 100), 0, 100);
                         ValidateSettings();
                         _configManager.Save();
-                        ShockOsc.OnConfigUpdate?.Invoke(); // update Ui
+                        OnConfigUpdate?.Invoke(); // update Ui
                     }
                     break;
 
@@ -72,7 +76,7 @@ public sealed class UnderscoreConfig
                         _configManager.Config.Behaviour.IntensityRange.Max = MathUtils.ClampUint((uint)Math.Round(maxIntensityFloat * 100), 0, 100);
                         ValidateSettings();
                         _configManager.Save();
-                        ShockOsc.OnConfigUpdate?.Invoke(); // update Ui
+                        OnConfigUpdate?.Invoke(); // update Ui
                     }
                     break;
                 
@@ -86,7 +90,7 @@ public sealed class UnderscoreConfig
                         _configManager.Config.Behaviour.FixedDuration = MathUtils.ClampUint((uint)Math.Round(durationFloat * 10000), 0, 10000);
                         ValidateSettings();
                         _configManager.Save();
-                        ShockOsc.OnConfigUpdate?.Invoke(); // update Ui
+                        OnConfigUpdate?.Invoke(); // update Ui
                     }
                     break;
 
@@ -100,7 +104,7 @@ public sealed class UnderscoreConfig
                         _configManager.Config.Behaviour.CooldownTime = MathUtils.ClampUint((uint)Math.Round(cooldownTimeFloat * 100000), 0, 100000);
                         ValidateSettings();
                         _configManager.Save();
-                        ShockOsc.OnConfigUpdate?.Invoke(); // update Ui
+                        OnConfigUpdate?.Invoke(); // update Ui
                     }
                     break;
 
@@ -115,7 +119,7 @@ public sealed class UnderscoreConfig
                         _configManager.Config.Behaviour.HoldTime = MathUtils.ClampUint((uint)Math.Round(holdTimeFloat * 1000), 0, 1000);
                         ValidateSettings();
                         _configManager.Save();
-                        ShockOsc.OnConfigUpdate?.Invoke(); // update Ui
+                        OnConfigUpdate?.Invoke(); // update Ui
                     }
                     break;
             }

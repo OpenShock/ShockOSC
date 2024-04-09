@@ -45,8 +45,9 @@ public static class MauiProgram
         Log.Logger = loggerConfiguration.CreateLogger();
 
         builder.Services.AddSerilog(Log.Logger);
-
-
+        
+        builder.Services.AddSingleton<ShockOscData>();
+        
         builder.Services.AddSingleton<ConfigManager>();
 
         builder.Services.AddSingleton<Updater>();
@@ -66,8 +67,8 @@ public static class MauiProgram
             return new OscQueryServer("ShockOsc", listenAddress, config);
         });
         
-        builder.Services.AddSingleton<UnderscoreConfig>();
         builder.Services.AddSingleton<ShockOsc>();
+        builder.Services.AddSingleton<UnderscoreConfig>();
         
         builder.Services.AddMudServices();
         builder.Services.AddMauiBlazorWebView();

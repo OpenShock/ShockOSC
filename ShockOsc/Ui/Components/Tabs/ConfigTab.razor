@@ -6,6 +6,8 @@
 @implements IDisposable
 @inject UnderscoreConfig underscoreConfig
 @inject ConfigManager ConfigManager
+@inject ShockOsc ShockOsc
+@inject UnderscoreConfig UnderscoreConfig
 
 <MudPaper Class="rounded-lg" Style="padding: 10px 15px;">
     <MudText>Shocker Options</MudText>
@@ -186,7 +188,7 @@
 
     protected override void OnInitialized()
     {
-        ShockOsc.OnConfigUpdate = OnConfigUpdate;
+        UnderscoreConfig.OnConfigUpdate += OnConfigUpdate;
 
         intensity = ConfigManager.Config.Behaviour.RandomIntensity ? "Random Intensity" : "Fixed Intensity";
         duration = ConfigManager.Config.Behaviour.RandomDuration ? "Random Duration" : "Fixed Duration";
@@ -220,7 +222,7 @@
 
     public void Dispose()
     {
-        ShockOsc.OnConfigUpdate = null;
+        UnderscoreConfig.OnConfigUpdate -= OnConfigUpdate;
     }
 
 }

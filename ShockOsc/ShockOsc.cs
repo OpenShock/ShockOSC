@@ -26,13 +26,13 @@ public sealed class ShockOsc
     private readonly UnderscoreConfig _underscoreConfig;
     private readonly ConfigManager _configManager;
     private readonly OscQueryServer _oscQueryServer;
+    private readonly ShockOscData _dataLayer;
 
-    private static bool _oscServerActive;
-    private static bool _isAfk;
-    private static bool _isMuted;
-    public static string AvatarId = string.Empty;
-    private static readonly Random Random = new();
-    public static readonly ConcurrentDictionary<Guid, ProgramGroup> ProgramGroups = new();
+    private bool _oscServerActive;
+    private bool _isAfk;
+    private bool _isMuted;
+    public string AvatarId = string.Empty;
+    private readonly Random Random = new();
 
     public event Func<Task>? OnGroupsChanged;
 
@@ -48,22 +48,21 @@ public sealed class ShockOsc
         "IShock"
     };
 
-    public static Dictionary<string, object?> ShockOscParams = new();
-    public static Dictionary<string, object?> AllAvatarParams = new();
+    public readonly Dictionary<string, object?> ShockOscParams = new();
+    public readonly Dictionary<string, object?> AllAvatarParams = new();
 
-    public static Action<bool>? OnParamsChange;
-    public static Action? OnConfigUpdate;
+    public Action<bool>? OnParamsChange;
 
     private readonly ChangeTrackedOscParam<bool> _paramAnyActive;
     private readonly ChangeTrackedOscParam<bool> _paramAnyCooldown;
     private readonly ChangeTrackedOscParam<float> _paramAnyCooldownPercentage;
     private readonly ChangeTrackedOscParam<float> _paramAnyIntensity;
 
-    private string connectionId = string.Empty;
+    private string _liveConnectionId = string.Empty;
 
     public ShockOsc(ILogger<ShockOsc> logger, OscClient oscClient, OpenShockApi openShockApi,
         OpenShockApiLiveClient liveClient, UnderscoreConfig underscoreConfig,
-        ConfigManager configManager, OscQueryServer oscQueryServer)
+        ConfigManager configManager, OscQueryServer oscQueryServer, ShockOscData dataLayer)
     {
         _logger = logger;
         _oscClient = oscClient;
@@ -71,6 +70,7 @@ public sealed class ShockOsc
         _underscoreConfig = underscoreConfig;
         _configManager = configManager;
         _oscQueryServer = oscQueryServer;
+        _dataLayer = dataLayer;
 
         _paramAnyActive = new ChangeTrackedOscParam<bool>("_Any", "_Active", false, _oscClient);
         _paramAnyCooldown = new ChangeTrackedOscParam<bool>("_Any", "_Cooldown", false, _oscClient);
@@ -79,7 +79,7 @@ public sealed class ShockOsc
 
         liveClient.OnWelcome += s =>
         {
-            connectionId = s;
+            _liveConnectionId = s;
             return Task.CompletedTask;
         };
 
@@ -88,6 +88,7 @@ public sealed class ShockOsc
         OnGroupsChanged += SetupGroups;
         
         oscQueryServer.FoundVrcClient += FoundVrcClient;
+        oscQueryServer.ParameterUpdate += OnAvatarChange;
         
         SetupGroups().Wait();
 
@@ -101,14 +102,14 @@ public sealed class ShockOsc
 
     private async Task SetupGroups()
     {
-        ProgramGroups.Clear();
-        ProgramGroups[Guid.Empty] = new ProgramGroup(Guid.Empty, "_All", _oscClient);
-        foreach (var (id, group) in _configManager.Config.Groups) ProgramGroups[id] = new ProgramGroup(id, group.Name, _oscClient);
+        _dataLayer.ProgramGroups.Clear();
+        _dataLayer.ProgramGroups[Guid.Empty] = new ProgramGroup(Guid.Empty, "_All", _oscClient);
+        foreach (var (id, group) in _configManager.Config.Groups) _dataLayer.ProgramGroups[id] = new ProgramGroup(id, group.Name, _oscClient);
     }
 
     public Task RaiseOnGroupsChanged() => OnGroupsChanged.Raise();
 
-    private static void OnParamChange(bool shockOscParam)
+    private void OnParamChange(bool shockOscParam)
     {
         OnParamsChange?.Invoke(shockOscParam);
     }
@@ -142,23 +143,17 @@ public sealed class ShockOsc
         OsTask.Run(_underscoreConfig.SendUpdateForAll);
     }
 
-    public void OnAvatarChange(Dictionary<string, object?>? parameters, string avatarId)
+    public async Task OnAvatarChange(Dictionary<string, object?> parameters, string avatarId)
     {
         AvatarId = avatarId;
         try
         {
-            foreach (var obj in ProgramGroups)
+            foreach (var obj in _dataLayer.ProgramGroups)
             {
                 obj.Value.Reset();
             }
 
             var parameterCount = 0;
-
-            if (parameters == null)
-            {
-                _logger.LogError("Failed to receive avatar parameters");
-                return;
-            }
 
             ShockOscParams.Clear();
             AllAvatarParams.Clear();
@@ -184,7 +179,7 @@ public sealed class ShockOsc
                 parameterCount++;
                 ShockOscParams.TryAdd(param[28..], parameters[param]);
 
-                if (!ProgramGroups.Any(x =>
+                if (!_dataLayer.ProgramGroups.Any(x =>
                         x.Value.Name.Equals(shockerName, StringComparison.InvariantCultureIgnoreCase)) &&
                     !shockerName.StartsWith('_'))
                 {
@@ -233,7 +228,6 @@ public sealed class ShockOsc
         }
 
         var addr = received.Address;
-        _logger.LogTrace("Received message: {Addr}", addr);
 
         if (addr.StartsWith("/avatar/parameters/"))
         {
@@ -296,7 +290,7 @@ public sealed class ShockOsc
 
         if (!ShockerParams.Contains(action)) return;
 
-        if (!ProgramGroups.Any(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase)))
+        if (!_dataLayer.ProgramGroups.Any(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase)))
         {
             if (groupName == "_Any") return;
             _logger.LogWarning("Unknown group {GroupName}", groupName);
@@ -304,7 +298,7 @@ public sealed class ShockOsc
             return;
         }
 
-        var programGroup = ProgramGroups
+        var programGroup = _dataLayer.ProgramGroups
             .First(x => x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase)).Value;
 
         var value = received.Arguments.ElementAtOrDefault(0);
@@ -447,7 +441,7 @@ public sealed class ShockOsc
         var anyCooldownPercentage = 0f;
         var anyIntensity = 0f;
 
-        foreach (var shocker in ProgramGroups.Values)
+        foreach (var shocker in _dataLayer.ProgramGroups.Values)
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             var isActiveOrOnCooldown =
@@ -513,7 +507,7 @@ public sealed class ShockOsc
     private async Task CheckLogic()
     {
         var config = _configManager.Config.Behaviour;
-        foreach (var (pos, programGroup) in ProgramGroups)
+        foreach (var (pos, programGroup) in _dataLayer.ProgramGroups)
         {
             var isActiveOrOnCooldown =
                 programGroup.LastExecuted.AddMilliseconds(_configManager.Config.Behaviour.CooldownTime)
@@ -625,7 +619,7 @@ public sealed class ShockOsc
 
     private async Task RemoteActivateShockers(ControlLogSender sender, ICollection<ControlLog> logs)
     {
-        if (sender.ConnectionId == connectionId)
+        if (sender.ConnectionId == _liveConnectionId)
         {
             _logger.LogDebug("Ignoring remote command log cause it was the local connection");
             return;
@@ -670,7 +664,7 @@ public sealed class ShockOsc
         }
         
         var configGroupsAffected = _configManager.Config.Groups.Where(s => s.Value.Shockers.Any(x => x == log.Shocker.Id)).Select(x => x.Key).ToArray();
-        var programGroupsAffected = ProgramGroups.Where(x => configGroupsAffected.Contains(x.Key)).Select(x => x.Value);
+        var programGroupsAffected = _dataLayer.ProgramGroups.Where(x => configGroupsAffected.Contains(x.Key)).Select(x => x.Value);
         var oneShock = false;
 
         foreach (var pain in programGroupsAffected)
