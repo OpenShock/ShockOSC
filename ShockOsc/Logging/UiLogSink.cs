@@ -23,46 +23,36 @@ public class UiLogSink : ILogEventSink
 
     public void Emit(LogEvent logEvent)
     {
-        try
-        {
-            using var textWriter = new StringWriter();
-            _messageProvider.Format(logEvent, textWriter);
-            // var logMessage = logEvent.RenderMessage(_formatProvider);
-            var logMessage = textWriter.ToString();
-            if (string.IsNullOrEmpty(logMessage)) return;
-            if (logMessage.StartsWith("[Microsoft.AspNetCore.Http.Connections.Client.Internal.LoggingHttpMessageHandler] "))
-                NotificationAction?.Invoke(logMessage[82..], Severity.Error);
+        using var textWriter = new StringWriter();
+        _messageProvider.Format(logEvent, textWriter);
+        
+        var logMessage = textWriter.ToString();
+        if (string.IsNullOrEmpty(logMessage)) return;
+        if (logMessage.StartsWith("[Microsoft.AspNetCore.Http.Connections.Client.Internal.LoggingHttpMessageHandler] "))
+            NotificationAction?.Invoke(logMessage[82..], Severity.Error);
 
-            Debug.WriteLine(logMessage);
+        var sourceContextString = string.Empty;
 
-            var sourceContextString = string.Empty; 
-            
-            if (logEvent.Properties.TryGetValue("SourceContext", out var sourceContext) && sourceContext is ScalarValue
-                {
-                    Value: string scalarString
-                }) sourceContextString = scalarString;
-            
-            var lastIndexSlash = Math.Min(sourceContextString.Length, sourceContextString.LastIndexOf('.') + 1);
-            
-            LogStore.AddLog(new LogStore.LogEntry
+        if (logEvent.Properties.TryGetValue("SourceContext", out var sourceContext) && sourceContext is ScalarValue
             {
-                Message = logMessage,
-                Time = logEvent.Timestamp,
-                Level = logEvent.Level,
-                SourceContext =  sourceContextString,
-                SourceContextShort = sourceContextString[lastIndexSlash..]
-            });
-        }
-        catch (Exception)
+                Value: string scalarString
+            }) sourceContextString = scalarString;
+
+        var lastIndexSlash = Math.Min(sourceContextString.Length, sourceContextString.LastIndexOf('.') + 1);
+
+        LogStore.AddLog(new LogStore.LogEntry
         {
-            // this kinda sucks
-        }
+            Message = logMessage,
+            Time = logEvent.Timestamp,
+            Level = logEvent.Level,
+            SourceContext = sourceContextString,
+            SourceContextShort = sourceContextString[lastIndexSlash..]
+        });
     }
 }
 
 public static class UiLogSinkExtensions
 {
-
     public static LoggerConfiguration UiLogSink(
         this LoggerSinkConfiguration sinkConfiguration)
     {
