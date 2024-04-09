@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using LucHeart.CoreOSC;
@@ -9,7 +8,6 @@ using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
-using OpenShock.ShockOsc.OscChangeTracker;
 using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Utils;
 using SmartFormat;
@@ -22,11 +20,12 @@ public sealed class ShockOsc
 {
     private readonly ILogger<ShockOsc> _logger;
     private readonly OscClient _oscClient;
-    private readonly OpenShockApiLiveClient _liveClient;
+    private readonly BackendLiveApiManager _backendLiveApiManager;
     private readonly UnderscoreConfig _underscoreConfig;
     private readonly ConfigManager _configManager;
     private readonly OscQueryServer _oscQueryServer;
     private readonly ShockOscData _dataLayer;
+    private readonly OscHandler _oscHandler;
 
     private bool _oscServerActive;
     private bool _isAfk;
@@ -53,38 +52,27 @@ public sealed class ShockOsc
 
     public Action<bool>? OnParamsChange;
 
-    private readonly ChangeTrackedOscParam<bool> _paramAnyActive;
-    private readonly ChangeTrackedOscParam<bool> _paramAnyCooldown;
-    private readonly ChangeTrackedOscParam<float> _paramAnyCooldownPercentage;
-    private readonly ChangeTrackedOscParam<float> _paramAnyIntensity;
 
-    private string _liveConnectionId = string.Empty;
-
-    public ShockOsc(ILogger<ShockOsc> logger, OscClient oscClient, OpenShockApi openShockApi,
-        OpenShockApiLiveClient liveClient, UnderscoreConfig underscoreConfig,
-        ConfigManager configManager, OscQueryServer oscQueryServer, ShockOscData dataLayer)
+    public ShockOsc(ILogger<ShockOsc> logger,
+        OscClient oscClient,
+        BackendLiveApiManager backendLiveApiManager,
+        UnderscoreConfig underscoreConfig,
+        ConfigManager configManager,
+        OscQueryServer oscQueryServer,
+        ShockOscData dataLayer,
+        OscHandler oscHandler
+        )
     {
         _logger = logger;
         _oscClient = oscClient;
-        _liveClient = liveClient;
+        _backendLiveApiManager = backendLiveApiManager;
         _underscoreConfig = underscoreConfig;
         _configManager = configManager;
         _oscQueryServer = oscQueryServer;
         _dataLayer = dataLayer;
+        _oscHandler = oscHandler;
 
-        _paramAnyActive = new ChangeTrackedOscParam<bool>("_Any", "_Active", false, _oscClient);
-        _paramAnyCooldown = new ChangeTrackedOscParam<bool>("_Any", "_Cooldown", false, _oscClient);
-        _paramAnyCooldownPercentage = new ChangeTrackedOscParam<float>("_Any", "_CooldownPercentage", 0f, _oscClient);
-        _paramAnyIntensity = new ChangeTrackedOscParam<float>("_Any", "_Intensity", 0f, _oscClient);
-
-        liveClient.OnWelcome += s =>
-        {
-            _liveConnectionId = s;
-            return Task.CompletedTask;
-        };
-
-        liveClient.OnLog += RemoteActivateShockers;
-
+        
         OnGroupsChanged += SetupGroups;
         
         oscQueryServer.FoundVrcClient += FoundVrcClient;
@@ -341,7 +329,7 @@ public sealed class ShockOsc
                     else if (_configManager.Config.Behaviour.WhileBoneHeld !=
                              BehaviourConf.BoneHeldAction.None)
                     {
-                        await CancelAction(programGroup);
+                        await _backendLiveApiManager.CancelControl(programGroup);
                     }
                 }
 
@@ -387,7 +375,7 @@ public sealed class ShockOsc
     {
         while (_oscServerActive)
         {
-            await SendParams();
+            await _oscHandler.SendParams();
             await Task.Delay(300);
         }
     }
@@ -399,8 +387,8 @@ public sealed class ShockOsc
         var intensityPercentage = Math.Round(MathUtils.ClampFloat(intensity) * 100f);
         programGroup.LastIntensity = intensity;
 
-        ForceUnmute();
-        SendParams();
+        _oscHandler.ForceUnmute();
+        _oscHandler.SendParams();
 
         programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(duration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
@@ -408,7 +396,7 @@ public sealed class ShockOsc
             "Sending shock to {GroupName} Intensity: {Intensity} IntensityPercentage: {IntensityPercentage}% Length:{Length}s",
             programGroup.Name, intensity, intensityPercentage, inSeconds);
 
-        await ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock);
+        await _backendLiveApiManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock);
 
         if (!_configManager.Config.Osc.Chatbox) return;
         // Chatbox message local
@@ -424,59 +412,7 @@ public sealed class ShockOsc
         var msg = $"{_configManager.Config.Chatbox.Prefix}{Smart.Format(template.Local, dat)}";
         await _oscClient.SendChatboxMessage(msg);
     }
-
-    // /// <summary>
-    // /// Coverts to a 0-1 float and scale it to the max intensity
-    // /// </summary>
-    // /// <param name="intensity"></param>
-    // /// <returns></returns>
-    // private static float GetFloatScaled(byte intensity) =>
-    //     ClampFloat((float)intensity / _configManager.ConfigInstance.Behaviour.IntensityRange.Max);
-
-    private async Task SendParams()
-    {
-        // TODO: maybe force resend on avatar change
-        var anyActive = false;
-        var anyCooldown = false;
-        var anyCooldownPercentage = 0f;
-        var anyIntensity = 0f;
-
-        foreach (var shocker in _dataLayer.ProgramGroups.Values)
-        {
-            var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
-            var isActiveOrOnCooldown =
-                shocker.LastExecuted.AddMilliseconds(_configManager.Config.Behaviour.CooldownTime)
-                    .AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
-            if (!isActiveOrOnCooldown && shocker.LastIntensity > 0)
-                shocker.LastIntensity = 0;
-
-            var onCoolDown = !isActive && isActiveOrOnCooldown;
-
-            var cooldownPercentage = 0f;
-            if (onCoolDown)
-                cooldownPercentage = MathUtils.ClampFloat(1 -
-                                                          (float)(DateTime.UtcNow -
-                                                                  shocker.LastExecuted.AddMilliseconds(shocker.LastDuration))
-                                                          .TotalMilliseconds /
-                                                          _configManager.Config.Behaviour.CooldownTime);
-
-            await shocker.ParamActive.SetValue(isActive);
-            await shocker.ParamCooldown.SetValue(onCoolDown);
-            await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
-            await shocker.ParamIntensity.SetValue(MathUtils.ClampFloat(shocker.LastIntensity));
-
-            if (isActive) anyActive = true;
-            if (onCoolDown) anyCooldown = true;
-            anyCooldownPercentage = Math.Max(anyCooldownPercentage, cooldownPercentage);
-            anyIntensity = Math.Max(anyIntensity, MathUtils.ClampFloat(shocker.LastIntensity));
-        }
-
-        await _paramAnyActive.SetValue(anyActive);
-        await _paramAnyCooldown.SetValue(anyCooldown);
-        await _paramAnyCooldownPercentage.SetValue(anyCooldownPercentage);
-        await _paramAnyIntensity.SetValue(anyIntensity);
-    }
-
+    
     private async Task CheckLoop()
     {
         while (_oscServerActive)
@@ -526,7 +462,7 @@ public sealed class ShockOsc
                 programGroup.LastVibration = DateTime.UtcNow;
 
                 _logger.LogDebug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
-                await ControlGroup(programGroup.Id, 1000, (byte)vibrationIntensity,
+                await _backendLiveApiManager.ControlGroup(programGroup.Id, 1000, (byte)vibrationIntensity,
                     _configManager.Config.Behaviour.WhileBoneHeld ==
                     BehaviourConf.BoneHeldAction.Shock
                         ? ControlType.Shock
@@ -584,141 +520,5 @@ public sealed class ShockOsc
         return (uint)(Random.Next((int)(rdr.Min / config.RandomDurationStep),
             (int)(rdr.Max / config.RandomDurationStep)) * config.RandomDurationStep);
     }
-
-    private async Task<bool> ControlGroup(Guid groupId, uint duration, byte intensity, ControlType type)
-    {
-        if(groupId == Guid.Empty)
-        {
-            var controlCommandsAll = _configManager.Config.OpenShock.Shockers
-                .Where(x => x.Value.Enabled)
-                .Select(x => new Control
-                {
-                    Id = x.Key,
-                    Duration = duration,
-                    Intensity = intensity,
-                    Type = type
-                });
-            await _liveClient.Control(controlCommandsAll);
-            return true;
-        }
-        
-        
-        if (!_configManager.Config.Groups.TryGetValue(groupId, out var group)) return false;
-
-        var controlCommands = group.Shockers.Select(x => new Control
-        {
-            Id = x,
-            Duration = duration,
-            Intensity = intensity,
-            Type = type
-        });
-
-        await _liveClient.Control(controlCommands);
-        return true;
-    }
-
-    private async Task RemoteActivateShockers(ControlLogSender sender, ICollection<ControlLog> logs)
-    {
-        if (sender.ConnectionId == _liveConnectionId)
-        {
-            _logger.LogDebug("Ignoring remote command log cause it was the local connection");
-            return;
-        }
-        
-        foreach (var controlLog in logs) await RemoteActivateShocker(sender, controlLog);
-        
-
-    }
-
-    private async Task RemoteActivateShocker(ControlLogSender sender, ControlLog log)
-    {
-        var inSeconds = ((float)log.Duration / 1000).ToString(CultureInfo.InvariantCulture);
-
-        if (sender.CustomName == null)
-            _logger.LogInformation(
-                "Received remote {Type} for \"{ShockerName}\" at {Intensity}%:{Duration}s by {Sender}",
-                log.Type, log.Shocker.Name, log.Intensity, inSeconds, sender.Name);
-        else
-            _logger.LogInformation(
-                "Received remote {Type} for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
-                log.Type, log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
-
-        var template = _configManager.Config.Chatbox.Types[log.Type];
-        if (_configManager.Config.Osc.Chatbox &&
-            _configManager.Config.Chatbox.DisplayRemoteControl && template.Enabled)
-        {
-            // Chatbox message remote
-            var dat = new
-            {
-                ShockerName = log.Shocker.Name,
-                Intensity = log.Intensity,
-                Duration = log.Duration,
-                DurationSeconds = inSeconds,
-                Name = sender.Name,
-                CustomName = sender.CustomName
-            };
-
-            var msg =
-                $"{_configManager.Config.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
-            await _oscClient.SendChatboxMessage(msg);
-        }
-        
-        var configGroupsAffected = _configManager.Config.Groups.Where(s => s.Value.Shockers.Any(x => x == log.Shocker.Id)).Select(x => x.Key).ToArray();
-        var programGroupsAffected = _dataLayer.ProgramGroups.Where(x => configGroupsAffected.Contains(x.Key)).Select(x => x.Value);
-        var oneShock = false;
-
-        foreach (var pain in programGroupsAffected)
-        {
-            switch (log.Type)
-        
-            {
-                case ControlType.Shock:
-                {
-                    pain.LastIntensity = log.Intensity;
-                    pain.LastDuration = log.Duration;
-                    pain.LastExecuted = log.ExecutedAt;
-        
-                    oneShock = true;
-                    break;
-                }
-                case ControlType.Vibrate:
-                    pain.LastVibration = log.ExecutedAt;
-                    break;
-                case ControlType.Stop:
-                    pain.LastDuration = 0;
-                    SendParams();
-                    break;
-                case ControlType.Sound:
-                    break;
-                default:
-                    _logger.LogError("ControlType was out of range. Value was: {Type}", log.Type);
-                    break;
-            }
-        
-            if (oneShock)
-            {
-                ForceUnmute();
-                SendParams();
-            }
-        }
-    }
-
-    private async Task ForceUnmute()
-    {
-        if (!_configManager.Config.Behaviour.ForceUnmute || !_isMuted) return;
-        _logger.LogDebug("Force unmuting...");
-        await _oscClient.SendGameMessage("/input/Voice", false);
-        await Task.Delay(50);
-        await _oscClient.SendGameMessage("/input/Voice", true);
-        await Task.Delay(50);
-        await _oscClient.SendGameMessage("/input/Voice", false);
-    }
-
-    private Task CancelAction(ProgramGroup programGroup)
-    {
-        _logger.LogDebug("Cancelling action");
-        return ControlGroup(programGroup.Id, 0, 0, ControlType.Stop);
-    }
-
 
 }
