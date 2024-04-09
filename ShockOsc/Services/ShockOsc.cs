@@ -21,7 +21,7 @@ public sealed class ShockOsc
 {
     private readonly ILogger<ShockOsc> _logger;
     private readonly OscClient _oscClient;
-    private readonly BackendLiveApiManager _backendLiveApiManager;
+    private readonly BackendHubManager _backendHubManager;
     private readonly UnderscoreConfig _underscoreConfig;
     private readonly ConfigManager _configManager;
     private readonly OscQueryServer _oscQueryServer;
@@ -56,7 +56,7 @@ public sealed class ShockOsc
 
     public ShockOsc(ILogger<ShockOsc> logger,
         OscClient oscClient,
-        BackendLiveApiManager backendLiveApiManager,
+        BackendHubManager backendHubManager,
         UnderscoreConfig underscoreConfig,
         ConfigManager configManager,
         OscQueryServer oscQueryServer,
@@ -66,7 +66,7 @@ public sealed class ShockOsc
     {
         _logger = logger;
         _oscClient = oscClient;
-        _backendLiveApiManager = backendLiveApiManager;
+        _backendHubManager = backendHubManager;
         _underscoreConfig = underscoreConfig;
         _configManager = configManager;
         _oscQueryServer = oscQueryServer;
@@ -330,7 +330,7 @@ public sealed class ShockOsc
                     else if (_configManager.Config.Behaviour.WhileBoneHeld !=
                              BehaviourConf.BoneHeldAction.None)
                     {
-                        await _backendLiveApiManager.CancelControl(programGroup);
+                        await _backendHubManager.CancelControl(programGroup);
                     }
                 }
 
@@ -397,7 +397,7 @@ public sealed class ShockOsc
             "Sending shock to {GroupName} Intensity: {Intensity} IntensityPercentage: {IntensityPercentage}% Length:{Length}s",
             programGroup.Name, intensity, intensityPercentage, inSeconds);
 
-        await _backendLiveApiManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock);
+        await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock);
 
         if (!_configManager.Config.Osc.Chatbox) return;
         // Chatbox message local
@@ -463,7 +463,7 @@ public sealed class ShockOsc
                 programGroup.LastVibration = DateTime.UtcNow;
 
                 _logger.LogDebug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
-                await _backendLiveApiManager.ControlGroup(programGroup.Id, 1000, (byte)vibrationIntensity,
+                await _backendHubManager.ControlGroup(programGroup.Id, 1000, (byte)vibrationIntensity,
                     _configManager.Config.Behaviour.WhileBoneHeld ==
                     BehaviourConf.BoneHeldAction.Shock
                         ? ControlType.Shock

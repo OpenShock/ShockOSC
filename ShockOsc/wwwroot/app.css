@@ -13,13 +13,9 @@ html, body {
 }
 
 body {
-    background-color: #2f2f2f;
-    padding: 20px;
+    --mud-palette-background: #212121;
+    background-color: #212121;
     min-width: 600px;
-}
-
-#login-background {
-    background-color: #272727;
 }
 
 .mud-tabs-toolbar {
@@ -37,4 +33,13 @@ body {
 
 .option-checkbox-height {
     padding-top: 10px !important;
+}
+
+.mud-paper-padding-margin {
+    padding: 10px 15px;
+    margin: 20px 0;
+}
+
+.mud-paper-padding {
+    padding: 10px 15px;
 }

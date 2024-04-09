@@ -1,86 +1,121 @@
 @using OpenShock.ShockOsc.Logging
-@using OpenShock.ShockOsc.Ui.Components.Layout
 @using OpenShock.ShockOsc.Ui.Components.Tabs
 @using OpenShock.ShockOsc.Ui.Utils
-@using OpenShock.ShockOsc.Config
+@using OpenShock.SDK.CSharp.Live
 @inject ISnackbar Snackbar
 @inherits LayoutComponentBase
+@inject OpenShockHubClient ApiHubClient
 
 @page "/main"
+
+<style>
+    .childs-width-100 > * {
+        width: 100%;
+    }
+   
+</style>
 
 <MudThemeProvider Theme="ThemeDefinition.ShockOscTheme"/>
 <MudDialogProvider/>
 <MudSnackbarProvider/>
 
 <MudLayout>
-    <UpdateLogout Authenticated="true"/>
-    <Logo/>
-    
-    @* <MudPaper Width="250px" Elevation="0"> *@
-    @* <MudNavMenu Margin="Margin.Dense" Color="Color.Primary" Class="pa-2" Rounded="true" > *@
-    @*     <MudNavLink Href="/Main" OnClick="() => NavigateTab(Tab.Groups)" Match="NavLinkMatch.All">Groups</MudNavLink> *@
-    @* </MudNavMenu> *@
-    @* </MudPaper> *@
-    @* *@
-    @* @switch(_currentTab) *@
-    @* { *@
-    @*     case Tab.Groups: *@
-    @*         <GroupsTab/> *@
-    @*         break; *@
-    @*     case Tab.Config: *@
-    @*         <ConfigTab/> *@
-    @*         break; *@
-    @*     case Tab.Shockers: *@
-    @*         <ShockersTab/> *@
-    @*         break; *@
-    @*     case Tab.Debug: *@
-    @*         <DebugTab/> *@
-    @*         break; *@
-    @*     case Tab.Logs: *@
-    @*         <LogsTab/> *@
-    @*         break; *@
-    @* } *@
-    
-    <MudContainer>
-        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="rounded-lg">
-            <MudTabPanel Text="Groups">
-                <GroupsTab/>
-            </MudTabPanel>
-            <MudTabPanel Text="Config">
-                <ConfigTab/>
-            </MudTabPanel>
-            <MudTabPanel Text="Shockers">
-                <ShockersTab/>
-            </MudTabPanel>
-            <MudTabPanel Text="Debug">
-                <DebugTab/>
-            </MudTabPanel>
-            <MudTabPanel Text="Logs">
-                <LogsTab/>
-            </MudTabPanel>
-        </MudTabs>
-    </MudContainer>
+    <div class="d-flex" style="width: 100vw; height: 100vh">
+
+        <MudPaper Width="250px" Height="100%" Elevation="0" Class="flex-none">
+
+            <div class="d-flex childs-width-100" style="height: 100%; flex-direction: column">
+
+                <div style="align-self: flex-start;">
+                    <div class="d-flex" style="align-items: center">
+                        <MudImage Src="images/Icon.svg" Alt="Logo" Width="45" Height="45" Class="ma-4" Style="vertical-align: bottom;"/>
+                        <MudText Style="font-size: 22.5pt">ShockOSC</MudText>
+
+                    </div>
+                    <MudDivider Style="margin-bottom: 5px" DividerType="DividerType.Middle"/>
+                </div>
+
+
+                <MudNavMenu style="align-self: flex-start; flex-grow: 1" Margin="Margin.Dense" Color="Color.Primary" Bordered="true">
+
+                    <MudNavLinkFix Icon="@Icons.Material.Filled.Group" OnClick="() => NavigateTab(Tab.Groups)" IsActive="_currentTab == Tab.Groups">Groups</MudNavLinkFix>
+                    <MudNavLinkFix Icon="@Icons.Material.Filled.Settings" OnClick="() => NavigateTab(Tab.Config)" IsActive="_currentTab == Tab.Config">Config</MudNavLinkFix>
+                    <MudNavLinkFix Icon="@Icons.Material.Filled.Bolt" OnClick="() => NavigateTab(Tab.Shockers)" IsActive="_currentTab == Tab.Shockers">Shockers</MudNavLinkFix>
+                    <MudNavLinkFix Icon="@Icons.Material.Filled.BugReport" OnClick="() => NavigateTab(Tab.Debug)" IsActive="_currentTab == Tab.Debug">Debug</MudNavLinkFix>
+                    <MudNavLinkFix Icon="@Icons.Material.Filled.List" OnClick="() => NavigateTab(Tab.Logs)" IsActive="_currentTab == Tab.Logs">Logs</MudNavLinkFix>
+                </MudNavMenu>
+
+                <div style="align-self: flex-end">
+                    <MudDivider DividerType="DividerType.Middle"/>
+                    <div Class="pa-4">
+
+                        <MudText Style="font-size: 10pt">ShockOSC v@(Version)</MudText>
+                        <MudText Style="font-size: 10pt">Connection Status: @ApiHubClient.State</MudText>
+                        
+                        <UpdateLogout/>
+                    </div>
+                </div>
+
+            </div>
+        </MudPaper>
+
+
+        <MudDivider Vertical="true" FlexItem="true"/>
+
+        <div Style="width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden" Class="pa-6">
+            @switch (_currentTab)
+            {
+                case Tab.Groups:
+                    <GroupsTab/>
+                    break;
+                case Tab.Config:
+                    <ConfigTab/>
+                    break;
+                case Tab.Shockers:
+                    <ShockersTab/>
+                    break;
+                case Tab.Debug:
+                    <DebugTab/>
+                    break;
+                case Tab.Logs:
+                    <LogsTab/>
+                    break;
+            }
+        </div>
+
+    </div>
+
 
 </MudLayout>
 
 @code {
 
-    public enum Tab { Groups, Config, Shockers, Debug, Logs }
+    private static readonly string Version = typeof(MainLayout).Assembly.GetName().Version!.ToString();
+
+    public enum Tab
+    {
+        Groups,
+        Config,
+        Shockers,
+        Debug,
+        Logs
+    }
 
     private Tab _currentTab = Tab.Groups;
-    
+
     private void NavigateTab(Tab tab)
     {
         _currentTab = tab;
     }
-    
+
     private void MsgNoty(string msg, Severity severity)
     {
         Snackbar.Add(msg, severity);
     }
-    
+
     protected override void OnInitialized()
     {
         UiLogSink.NotificationAction = MsgNoty;
     }
+
 }

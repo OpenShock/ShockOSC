@@ -24,7 +24,7 @@
     public async Task DeleteGroup()
     {
         if (Group == null) return;
-        
+
         ConfigManager.Config.Groups.Remove(Group.Value);
         Group = null;
         await InvokeAsync(StateHasChanged);
@@ -41,7 +41,7 @@
     private async Task OnGroupSelect()
     {
         if (CurrentGroup != null) _selectedShockers = [..CurrentGroup.Shockers];
-        
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -81,7 +81,7 @@
 
 @if (CurrentGroup != null)
 {
-    <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+    <MudPaper Outlined="true" Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
         <MudText>Group Settings</MudText>
         <MudDivider/>
         <br/>
@@ -89,12 +89,12 @@
         <MudTextField Label="Group Name" Validation="@(new Func<string, string>(NameValidation))" DebounceInterval="250" @bind-Value="@CurrentGroup.Name" @bind-Value:after="OnSettingsValueChange"/>
     </MudPaper>
 
-    <MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+    <MudPaper Outlined="true" Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
         <MudText>Shockers in Group</MudText>
         <MudDivider/>
         <br/>
 
-        <MudTable Height="300px" Items="OpenShockApi.Shockers.Select(x => x.Id)" MultiSelection="true" Hover="true" @bind-SelectedItems="@_selectedShockers" @bind-SelectedItems:after="OnSelectedShockersUpdate">
+        <MudTable Elevation="0" Height="300px" Items="OpenShockApi.Shockers.Select(x => x.Id)" MultiSelection="true" Hover="true" @bind-SelectedItems="@_selectedShockers" @bind-SelectedItems:after="OnSelectedShockersUpdate">
             <HeaderContent>
                 <MudTh>Name</MudTh>
             </HeaderContent>
@@ -106,5 +106,7 @@
 }
 else
 {
-    <MudText Typo="Typo.h6">Please select a group to edit</MudText>
+    <MudPaper Outlined="true" Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+        <MudText Typo="Typo.h6">Please select a group to edit</MudText>
+    </MudPaper>
 }

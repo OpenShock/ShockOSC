@@ -3,27 +3,35 @@
 @inject OpenShockApi OpenShockApi
 @inject ConfigManager ConfigManager
 
-<MudButton OnClick="OpenShockApi.RefreshShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Style="margin-right: 10px;">Refresh</MudButton>
-<br/>
-<br/>
-<MudTable Items="OpenShockApi.Shockers" Height="58vh">
-    <HeaderContent>
-        <MudTh>Enabled</MudTh>
-        <MudTh>Name</MudTh>
-        <MudTh>Guid</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd>
-            <MudCheckBox Class="option-width option-checkbox-height" Style="margin-left:10px;" @bind-Value="@ConfigManager.Config.OpenShock.Shockers[context.Id].Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
-        </MudTd>
-        <MudTd>@context.Name</MudTd>
-        <MudTd>@context.Id</MudTd>
-    </RowTemplate>
-</MudTable>
+<MudPaper Height="100%" Outlined="true" Class="rounded-lg mud-paper-padding d-flex" Style="position: relative; flex-direction: column">
+
+    <MudButton OnClick="OpenShockApi.RefreshShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Style="margin-right: 10px;">Refresh</MudButton>
+    <br/>
+    <br/>
+    <div style="height: 100%; overflow-y: scroll;">
+    <MudTable Elevation="0" Items="OpenShockApi.Shockers">
+        <HeaderContent>
+            <MudTh>Enabled</MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Guid</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudCheckBox Class="option-width option-checkbox-height" Style="margin-left:10px;" @bind-Value="@ConfigManager.Config.OpenShock.Shockers[context.Id].Enabled" Label="Enabled" @bind-Value:after="OnShockerConfigUpdate"/>
+            </MudTd>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@context.Id</MudTd>
+        </RowTemplate>
+    </MudTable>
+    </div>
+
+</MudPaper>
 
 @code {
+
     private Task OnShockerConfigUpdate()
     {
         return ConfigManager.SaveAsync();
     }
+
 }

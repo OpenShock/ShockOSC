@@ -2,14 +2,13 @@
 @using OpenShock.SDK.CSharp.Live
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
-@using OpenShock.ShockOsc.Ui.Components.Layout
 @using Microsoft.Extensions.Logging
 @inherits LayoutComponentBase
 
 @inject ConfigManager ConfigManager
 @inject NavigationManager NavigationManager
-@inject BackendLiveApiManager LiveApiManager
-@inject OpenShockApiLiveClient LiveApiClient
+@inject BackendHubManager HubManager
+@inject OpenShockHubClient HubClient
 @inject OpenShockApi ApiClient
 @inject ILogger<Authenticate> Logger
 
@@ -19,10 +18,18 @@
 <MudDialogProvider/>
 <MudSnackbarProvider/>
 
-<Logo/>
+<MudContainer Class="d-flex align-content-center" Style="padding: 0 0 15px 0;">
+    <MudContainer Style="width: 600px; padding: 0;">
+        <MudImage Src="images/Icon.svg" Alt="Logo" Width="75" Height="75" Class="ma-4" Style="vertical-align: bottom;" />
+        <MudContainer Class="d-inline-block" Style="width: 485px; padding: 0;">
+            <MudText Typo="Typo.h1">ShockOSC</MudText>
+        </MudContainer>
+    </MudContainer>
+</MudContainer>
+
 
 <MudContainer Class="align-content-center" MaxWidth="MaxWidth.Small" Style="padding-top: 30px">
-    <MudPaper Id="login-background" Class="rounded-lg" Elevation="0" Style="padding: 40px 20px; text-align: center;">
+    <MudPaper Class="rounded-lg" Elevation="0" Style="padding: 40px 20px; text-align: center;" Outlined="true">
         <MudText Typo="Typo.h2">Login</MudText>
         <br/>
         @if (!Loading)
@@ -61,9 +68,9 @@
         Loading = true;
         
         Logger.LogInformation("Setting up live client");
-        await LiveApiManager.SetupLiveClient();
+        await HubManager.SetupLiveClient();
         Logger.LogInformation("Starting live client");
-        await LiveApiClient.StartAsync();
+        await HubClient.StartAsync();
         
         Logger.LogInformation("Refreshing shockers");
         await ApiClient.RefreshShockers();

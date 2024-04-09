@@ -3,31 +3,36 @@
 @implements IAsyncDisposable
 @inject ShockOsc ShockOsc
 
-<MudText>List of ShockOSC prefixed parameters and their states</MudText>
-<br/>
-<MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
-<br/>
-<MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams" Label="Show all avatar parameters"/>
-<MudDivider/>
-<br/>
-@if (_showAllAvatarParams)
-{
-    @foreach (var param in ShockOsc.AllAvatarParams)
+
+<MudPaper Outlined="true" Class="mud-paper-padding">
+    <MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
+</MudPaper>
+<MudPaper Outlined="true" Class="mud-paper-padding-margin">
+    <MudText>OSC Parameters</MudText>
+    <MudDivider/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams" Label="Show all avatar parameters"/>
+    <MudDivider/>
+    <br/>
+    @if (_showAllAvatarParams)
     {
-        <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+        @foreach (var param in ShockOsc.AllAvatarParams)
+        {
+            <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+        }
     }
-}
-else
-{
-    @foreach (var param in ShockOsc.ShockOscParams)
+    else
     {
-        <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+        @foreach (var param in ShockOsc.ShockOscParams)
+        {
+            <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+        }
     }
-}
+
+</MudPaper>
 
 @code {
     private bool _showAllAvatarParams = false;
-    
+
     private void OnParamsChange(bool shockOscParam)
     {
         // only redraw page when needed
@@ -36,7 +41,7 @@ else
 
         _updateQueued = true;
     }
-    
+
     private bool _updateQueued = true;
 
     protected override void OnInitialized()
@@ -54,14 +59,14 @@ else
             _updateQueued = false;
 
             await InvokeAsync(StateHasChanged);
-            
+
             await Task.Delay(200);
         }
     }
-    
+
     private CancellationTokenSource _cts = new CancellationTokenSource();
-    
-    
+
+
     public async ValueTask DisposeAsync()
     {
         await _cts.CancelAsync();

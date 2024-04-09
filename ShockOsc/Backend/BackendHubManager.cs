@@ -11,44 +11,44 @@ using SmartFormat;
 
 namespace OpenShock.ShockOsc.Backend;
 
-public sealed class BackendLiveApiManager
+public sealed class BackendHubManager
 {
-    private readonly ILogger<BackendLiveApiManager> _logger;
+    private readonly ILogger<BackendHubManager> _logger;
     private readonly ConfigManager _configManager;
-    private readonly OpenShockApiLiveClient _openShockApiLiveClient;
+    private readonly OpenShockHubClient _openShockHubClient;
     private readonly OscClient _oscClient;
     private readonly ShockOscData _dataLayer;
     private readonly OscHandler _oscHandler;
 
     private string _liveConnectionId = string.Empty;
     
-    public BackendLiveApiManager(ILogger<BackendLiveApiManager> logger,
+    public BackendHubManager(ILogger<BackendHubManager> logger,
         ConfigManager configManager,
-        OpenShockApiLiveClient openShockApiLiveClient,
+        OpenShockHubClient openShockHubClient,
         OscClient oscClient,
         ShockOscData dataLayer,
         OscHandler oscHandler)
     {
         _logger = logger;
         _configManager = configManager;
-        _openShockApiLiveClient = openShockApiLiveClient;
+        _openShockHubClient = openShockHubClient;
         _oscClient = oscClient;
         _dataLayer = dataLayer;
         _oscHandler = oscHandler;
 
-        _openShockApiLiveClient.OnWelcome += s =>
+        _openShockHubClient.OnWelcome += s =>
         {
             _liveConnectionId = s;
             return Task.CompletedTask;
         };
 
-        _openShockApiLiveClient.OnLog += RemoteActivateShockers;
+        _openShockHubClient.OnLog += RemoteActivateShockers;
     }
 
 
     public async Task SetupLiveClient()
     {
-        await _openShockApiLiveClient.Setup(new ApiLiveClientOptions()
+        await _openShockHubClient.Setup(new HubClientOptions()
         {
             Token = _configManager.Config.OpenShock.Token,
             Server = _configManager.Config.OpenShock.Backend,
@@ -93,7 +93,7 @@ public sealed class BackendLiveApiManager
                     Intensity = intensity,
                     Type = type
                 });
-            await _openShockApiLiveClient.Control(controlCommandsAll);
+            await _openShockHubClient.Control(controlCommandsAll);
             return true;
         }
         
@@ -108,7 +108,7 @@ public sealed class BackendLiveApiManager
             Type = type
         });
 
-        await _openShockApiLiveClient.Control(controlCommands);
+        await _openShockHubClient.Control(controlCommands);
         return true;
     }
     

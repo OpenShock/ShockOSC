@@ -10,7 +10,7 @@
 @inject ShockOsc ShockOsc
 @inject UnderscoreConfig UnderscoreConfig
 
-<MudPaper Class="rounded-lg" Style="padding: 10px 15px;">
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding">
     <MudText>Shocker Options</MudText>
     <MudDivider/>
     <MudPaper Style="display: inline-block; width: 200px; padding-top: 8px; padding-left: 5px">
@@ -60,7 +60,7 @@
     <br/>
 </MudPaper>
 
-<MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
     <MudText>Game Options</MudText>
     <MudDivider/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="underscoreConfig.KillSwitch" Label="Kill Switch" @bind-Value:after="OnSettingsValueChange"/>
@@ -68,7 +68,7 @@
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChange"/>
 </MudPaper>
 
-<MudPaper Class="rounded-lg" Style="padding: 10px 15px;">
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
     <MudText>Chatbox Options</MudText>
     <MudDivider/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.Chatbox" Label="Chatbox" @bind-Value:after="OnSettingsValueChange"/>
@@ -117,7 +117,7 @@
     </MudStack>
 </MudPaper>
 
-<MudPaper Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
     <MudText>OSC Options</MudText>
     <MudDivider/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.QuestSupport" Label="Quest Support" @bind-Value:after="OnSettingsValueChange"/>

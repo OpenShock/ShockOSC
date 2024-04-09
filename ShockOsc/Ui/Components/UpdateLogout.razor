@@ -4,11 +4,9 @@
 @inject IDialogService DialogService
 @inject ConfigManager ConfigManager
 @inject Updater Updater
+@inject NavigationManager NavigationManager
 
 @code {
-    [Parameter]
-    public bool Authenticated { get; set; }
-
     private readonly DialogOptions _dialogOptions = new() { NoHeader = true, DisableBackdropClick = true };
 
     private void OpenUpdateDialog()
@@ -20,23 +18,35 @@
     {
         if (await Updater.CheckUpdate()) OpenUpdateDialog();
     }
+
+    private async Task Logout()
+    {
+        ConfigManager.Config.OpenShock.Token = string.Empty;
+        await ConfigManager.SaveAsync();
+        
+        NavigationManager.NavigateTo("/");
+    }
 }
 
-<MudPaper Style="position: absolute; right: 0">
-    @if (Updater.UpdateAvailable)
-    {
-        <MudTooltip Text="Update">
-            <MudButton Color="Color.Primary" @onclick="OpenUpdateDialog" Size="Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
-                <MudIcon Icon="@Icons.Material.Filled.Update" />
-            </MudButton>
-        </MudTooltip>
+<div class="d-flex flex-childs-full-width gap-5">
+
+    <MudTooltip Text="Logout">
+        <MudButton Color="Color.Primary" @onclick="Logout" Size=" Size.Small" Variant="Variant.Filled" Class="mud-button-full-width">
+            <MudIcon Icon="@Icons.Material.Filled.Logout"/>
+        </MudButton>
+    </MudTooltip>
+
+
+    <MudTooltip Text="@(Updater.UpdateAvailable ? "Update" : "You are up-to-date!")">
+        <MudButton Disabled="!Updater.UpdateAvailable" Color="Color.Primary" @onclick="OpenUpdateDialog" Size="Size.Small" Variant="Variant.Filled" Class="mud-button-full-width">
+            <MudIcon Icon="@(Updater.UpdateAvailable ? Icons.Material.Filled.Update : Icons.Material.Filled.UpdateDisabled)"/>
+        </MudButton>
+    </MudTooltip>
+
+</div>
+
+<style>
+    .flex-childs-full-width >* {
+        width:  100%;
     }
-    @if (Authenticated)
-    {
-        <MudTooltip Text="Logout">
-            <MudButton Color="Color.Primary" @onclick="ConfigManager.SaveAsync" Size=" Size.Small" Variant="Variant.Filled" Style="margin: 5px;">
-                <MudIcon Icon="@Icons.Material.Filled.Logout" />
-            </MudButton>
-        </MudTooltip>
-    }
-</MudPaper>
+</style>

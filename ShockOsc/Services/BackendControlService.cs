@@ -5,10 +5,10 @@ namespace OpenShock.ShockOsc.Services;
 
 public sealed class BackendControlService
 {
-    private readonly BackendLiveApiManager _backendLiveApiManager;
+    private readonly BackendHubManager _backendHubManager;
 
-    public BackendControlService(BackendLiveApiManager backendLiveApiManager)
+    public BackendControlService(BackendHubManager backendHubManager)
     {
-        _backendLiveApiManager = backendLiveApiManager;
+        _backendHubManager = backendHubManager;
     }
 }

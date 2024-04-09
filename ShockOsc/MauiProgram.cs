@@ -55,8 +55,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<OscClient>();
 
         builder.Services.AddSingleton<OpenShockApi>();
-        builder.Services.AddSingleton<OpenShockApiLiveClient>();
-        builder.Services.AddSingleton<BackendLiveApiManager>();
+        builder.Services.AddSingleton<OpenShockHubClient>();
+        builder.Services.AddSingleton<BackendHubManager>();
 
 
         builder.Services.AddSingleton<OscHandler>();
