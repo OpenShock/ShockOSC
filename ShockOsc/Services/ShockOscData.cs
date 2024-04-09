@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using OpenShock.ShockOsc.Models;
 
-namespace OpenShock.ShockOsc;
+namespace OpenShock.ShockOsc.Services;
 
 // In a perfect world, this class would not exist.
 // But we kinda need it for now, dunno if it is possible to be removed ever.

@@ -6,6 +6,7 @@ using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Logging;
 using OpenShock.ShockOsc.OscQueryLibrary;
+using OpenShock.ShockOsc.Services;
 using OpenShock.ShockOsc.Ui;
 using Serilog;
 

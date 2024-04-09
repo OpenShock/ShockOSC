@@ -4,7 +4,7 @@ using LucHeart.CoreOSC;
 using Microsoft.Extensions.Logging;
 using OpenShock.ShockOsc.Config;
 
-namespace OpenShock.ShockOsc;
+namespace OpenShock.ShockOsc.Services;
 
 public sealed class OscClient
 {

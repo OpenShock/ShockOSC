@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using OpenShock.ShockOsc.Services;
+using Serilog;
 
 namespace OpenShock.ShockOsc.OscChangeTracker;
 

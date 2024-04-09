@@ -4,9 +4,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
-using Serilog;
 
-namespace OpenShock.ShockOsc;
+namespace OpenShock.ShockOsc.Services;
 
 public sealed class Updater
 {

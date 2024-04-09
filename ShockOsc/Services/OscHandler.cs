@@ -3,7 +3,7 @@ using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.OscChangeTracker;
 using OpenShock.ShockOsc.Utils;
 
-namespace OpenShock.ShockOsc;
+namespace OpenShock.ShockOsc.Services;
 
 public sealed class OscHandler
 {
