@@ -2,20 +2,18 @@ using System.Globalization;
 using System.Net;
 using LucHeart.CoreOSC;
 using Microsoft.Extensions.Logging;
-using OpenShock.SDK.CSharp.Live;
-using OpenShock.SDK.CSharp.Live.Models;
 using OpenShock.SDK.CSharp.Models;
+using OpenShock.SDK.CSharp.Utils;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.OscQueryLibrary;
-using OpenShock.ShockOsc.Services;
 using OpenShock.ShockOsc.Utils;
 using SmartFormat;
 
 #pragma warning disable CS4014
 
-namespace OpenShock.ShockOsc;
+namespace OpenShock.ShockOsc.Services;
 
 public sealed class ShockOsc
 {
@@ -27,6 +25,7 @@ public sealed class ShockOsc
     private readonly OscQueryServer _oscQueryServer;
     private readonly ShockOscData _dataLayer;
     private readonly OscHandler _oscHandler;
+    private readonly LiveControlManager _liveControlManager;
 
     private bool _oscServerActive;
     private bool _isAfk;
@@ -61,8 +60,7 @@ public sealed class ShockOsc
         ConfigManager configManager,
         OscQueryServer oscQueryServer,
         ShockOscData dataLayer,
-        OscHandler oscHandler
-        )
+        OscHandler oscHandler, LiveControlManager liveControlManager)
     {
         _logger = logger;
         _oscClient = oscClient;
@@ -72,8 +70,9 @@ public sealed class ShockOsc
         _oscQueryServer = oscQueryServer;
         _dataLayer = dataLayer;
         _oscHandler = oscHandler;
+        _liveControlManager = liveControlManager;
 
-        
+
         OnGroupsChanged += SetupGroups;
         
         oscQueryServer.FoundVrcClient += FoundVrcClient;
@@ -455,7 +454,7 @@ public sealed class ShockOsc
                 BehaviourConf.BoneHeldAction.None &&
                 !isActiveOrOnCooldown &&
                 programGroup.IsGrabbed &&
-                programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(300)))
+                programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
             {
                 var vibrationIntensity = programGroup.LastStretchValue * 100f;
                 if (vibrationIntensity < 1)
@@ -463,11 +462,8 @@ public sealed class ShockOsc
                 programGroup.LastVibration = DateTime.UtcNow;
 
                 _logger.LogDebug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
-                await _backendHubManager.ControlGroup(programGroup.Id, 1000, (byte)vibrationIntensity,
-                    _configManager.Config.Behaviour.WhileBoneHeld ==
-                    BehaviourConf.BoneHeldAction.Shock
-                        ? ControlType.Shock
-                        : ControlType.Vibrate);
+
+                await _liveControlManager.ControlGroupFrame(programGroup.Id, vibrationIntensity);
             }
 
             if (programGroup.TriggerMethod == TriggerMethod.None)
@@ -511,6 +507,8 @@ public sealed class ShockOsc
             InstantShock(programGroup, GetDuration(), intensity);
         }
     }
+
+
 
     private uint GetDuration()
     {

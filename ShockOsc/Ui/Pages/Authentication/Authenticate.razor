@@ -3,6 +3,8 @@
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
 @using Microsoft.Extensions.Logging
+@using OpenShock.SDK.CSharp.Hub
+@using OpenShock.ShockOsc.Services
 @inherits LayoutComponentBase
 
 @inject ConfigManager ConfigManager
@@ -11,6 +13,7 @@
 @inject OpenShockHubClient HubClient
 @inject OpenShockApi ApiClient
 @inject ILogger<Authenticate> Logger
+@inject LiveControlManager LiveControlManager
 
 @page "/"
 
@@ -74,6 +77,8 @@
         
         Logger.LogInformation("Refreshing shockers");
         await ApiClient.RefreshShockers();
+
+        await LiveControlManager.RefreshConnections();
 
         NavigationManager.NavigateTo("main");
     }

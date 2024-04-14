@@ -1,7 +1,9 @@
 ﻿using System.Globalization;
 using Microsoft.Extensions.Logging;
+using OpenShock.SDK.CSharp.Hub;
+using OpenShock.SDK.CSharp.Hub.Models;
 using OpenShock.SDK.CSharp.Live;
-using OpenShock.SDK.CSharp.Live.Models;
+using OpenShock.SDK.CSharp.Live.LiveControlModels;
 using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
@@ -21,7 +23,7 @@ public sealed class BackendHubManager
     private readonly OscHandler _oscHandler;
 
     private string _liveConnectionId = string.Empty;
-    
+
     public BackendHubManager(ILogger<BackendHubManager> logger,
         ConfigManager configManager,
         OpenShockHubClient openShockHubClient,
@@ -60,7 +62,7 @@ public sealed class BackendHubManager
             }
         });
     }
-    
+
     /// <summary>
     /// Send a stop command for every shocker in a group
     /// </summary>
@@ -71,7 +73,7 @@ public sealed class BackendHubManager
         _logger.LogTrace("Cancelling action");
         return ControlGroup(programGroup.Id, 0, 0, ControlType.Stop);
     }
-    
+
     /// <summary>
     /// Control a group, if guid is empty, all shockers will be controlled
     /// </summary>
@@ -82,7 +84,7 @@ public sealed class BackendHubManager
     /// <returns></returns>
     public async Task<bool> ControlGroup(Guid groupId, uint duration, byte intensity, ControlType type)
     {
-        if(groupId == Guid.Empty)
+        if (groupId == Guid.Empty)
         {
             var controlCommandsAll = _configManager.Config.OpenShock.Shockers
                 .Where(x => x.Value.Enabled)
@@ -96,8 +98,8 @@ public sealed class BackendHubManager
             await _openShockHubClient.Control(controlCommandsAll);
             return true;
         }
-        
-        
+
+
         if (!_configManager.Config.Groups.TryGetValue(groupId, out var group)) return false;
 
         var controlCommands = group.Shockers.Select(x => new Control
@@ -111,7 +113,7 @@ public sealed class BackendHubManager
         await _openShockHubClient.Control(controlCommands);
         return true;
     }
-    
+
     private async Task RemoteActivateShockers(ControlLogSender sender, ICollection<ControlLog> logs)
     {
         if (sender.ConnectionId == _liveConnectionId)
@@ -119,7 +121,7 @@ public sealed class BackendHubManager
             _logger.LogDebug("Ignoring remote command log cause it was the local connection");
             return;
         }
-        
+
         foreach (var controlLog in logs) await RemoteActivateShocker(sender, controlLog);
     }
 
@@ -155,22 +157,24 @@ public sealed class BackendHubManager
                 $"{_configManager.Config.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
             await _oscClient.SendChatboxMessage(msg);
         }
-        
-        var configGroupsAffected = _configManager.Config.Groups.Where(s => s.Value.Shockers.Any(x => x == log.Shocker.Id)).Select(x => x.Key).ToArray();
-        var programGroupsAffected = _dataLayer.ProgramGroups.Where(x => configGroupsAffected.Contains(x.Key)).Select(x => x.Value);
+
+        var configGroupsAffected = _configManager.Config.Groups
+            .Where(s => s.Value.Shockers.Any(x => x == log.Shocker.Id)).Select(x => x.Key).ToArray();
+        var programGroupsAffected = _dataLayer.ProgramGroups.Where(x => configGroupsAffected.Contains(x.Key))
+            .Select(x => x.Value);
         var oneShock = false;
 
         foreach (var pain in programGroupsAffected)
         {
             switch (log.Type)
-        
+
             {
                 case ControlType.Shock:
                 {
                     pain.LastIntensity = log.Intensity;
                     pain.LastDuration = log.Duration;
                     pain.LastExecuted = log.ExecutedAt;
-        
+
                     oneShock = true;
                     break;
                 }
@@ -187,7 +191,7 @@ public sealed class BackendHubManager
                     _logger.LogError("ControlType was out of range. Value was: {Type}", log.Type);
                     break;
             }
-        
+
             if (oneShock)
             {
                 await _oscHandler.ForceUnmute();

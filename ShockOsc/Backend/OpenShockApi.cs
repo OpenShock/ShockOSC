@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
+using OneOf;
+using OneOf.Types;
 using OpenShock.SDK.CSharp;
-using OpenShock.SDK.CSharp.Live.Utils;
 using OpenShock.SDK.CSharp.Models;
+using OpenShock.SDK.CSharp.Utils;
 using OpenShock.ShockOsc.Config;
 
 namespace OpenShock.ShockOsc.Backend;
@@ -30,6 +32,7 @@ public sealed class OpenShockApi
     
     public event Func<IReadOnlyCollection<ShockerResponse>, Task>? OnShockersUpdated; 
 
+    public IReadOnlyCollection<ResponseDeviceWithShockers> Devices = Array.Empty<ResponseDeviceWithShockers>(); 
     public IReadOnlyCollection<ShockerResponse> Shockers = Array.Empty<ShockerResponse>();
 
     public async Task RefreshShockers()
@@ -38,6 +41,7 @@ public sealed class OpenShockApi
         
         response.Switch(success =>
             {
+                Devices = success.Value;
                 Shockers = success.Value.SelectMany(x => x.Shockers).ToArray();
                 
                 // re-populate config with previous data if present, this also deletes any shockers that are no longer present
@@ -66,4 +70,9 @@ public sealed class OpenShockApi
             // TODO: handle unauthenticated error
         });
     }
+
+    public
+        Task<OneOf<Success<LcgResponse>, NotFound, DeviceOffline, DeviceNotConnectedToGateway, UnauthenticatedError>>
+        GetDeviceGateway(Guid deviceId, CancellationToken cancellationToken = default) =>
+        _client.GetDeviceGateway(deviceId, cancellationToken);
 }

@@ -1,7 +1,6 @@
 ﻿using System.Net;
-using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
-using OpenShock.SDK.CSharp.Live;
+using OpenShock.SDK.CSharp.Hub;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Logging;
@@ -57,8 +56,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<OpenShockApi>();
         builder.Services.AddSingleton<OpenShockHubClient>();
         builder.Services.AddSingleton<BackendHubManager>();
-
-
+        
+        builder.Services.AddSingleton<LiveControlManager>();
+        
         builder.Services.AddSingleton<OscHandler>();
 
         builder.Services.AddSingleton(provider =>
@@ -68,7 +68,7 @@ public static class MauiProgram
             return new OscQueryServer("ShockOsc", listenAddress, config);
         });
         
-        builder.Services.AddSingleton<ShockOsc>();
+        builder.Services.AddSingleton<Services.ShockOsc>();
         builder.Services.AddSingleton<UnderscoreConfig>();
         
         builder.Services.AddMudServices();
@@ -88,7 +88,7 @@ public static class MauiProgram
         var app = builder.Build();
             
         // <---- Warmup ---->
-        app.Services.GetRequiredService<ShockOsc>();
+        app.Services.GetRequiredService<Services.ShockOsc>();
         app.Services.GetRequiredService<OscQueryServer>().Start();
         
         return app;

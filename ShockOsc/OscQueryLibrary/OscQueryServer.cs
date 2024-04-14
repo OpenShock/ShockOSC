@@ -9,6 +9,7 @@ using EmbedIO;
 using EmbedIO.Actions;
 using Microsoft.Extensions.Hosting;
 using OpenShock.SDK.CSharp.Live.Utils;
+using OpenShock.SDK.CSharp.Utils;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Utils;
 

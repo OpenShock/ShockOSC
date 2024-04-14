@@ -1,10 +1,18 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@using OpenShock.SDK.CSharp.Hub
+@using OpenShock.SDK.CSharp.Live.LiveControlModels
 @using OpenShock.ShockOsc.Logging
 @using OpenShock.ShockOsc.Ui.Components.Tabs
 @using OpenShock.ShockOsc.Ui.Utils
-@using OpenShock.SDK.CSharp.Live
+@using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Services
+@using OpenShock.ShockOsc.Ui.Components.Parts
 @inject ISnackbar Snackbar
 @inherits LayoutComponentBase
 @inject OpenShockHubClient ApiHubClient
+@inject OpenShockApi Api
+@inject LiveControlManager LiveControlManager
+@implements IDisposable
 
 @page "/main"
 
@@ -12,7 +20,7 @@
     .childs-width-100 > * {
         width: 100%;
     }
-   
+    
 </style>
 
 <MudThemeProvider Theme="ThemeDefinition.ShockOscTheme"/>
@@ -50,8 +58,30 @@
                     <div Class="pa-4">
 
                         <MudText Style="font-size: 10pt">ShockOSC v@(Version)</MudText>
-                        <MudText Style="font-size: 10pt">Connection Status: @ApiHubClient.State</MudText>
-                        
+
+                        <div class="d-flex gap-5" style="flex-wrap: wrap">
+                            <StatePart Text="Hub" Icon="@Icons.Material.Filled.Wifi" 
+                                       IconColor="@GetConnectionStateColor(ApiHubClient.State)"
+                                       Tooltip="@ApiHubClient.State.ToString()"></StatePart>
+
+                            @foreach (var device in Api.Devices)
+                            {
+                                if (LiveControlManager.LiveControlClients.TryGetValue(device.Id, out var client))
+                                {
+                                    <StatePart Text="@device.Name.Truncate(13)"
+                                               Icon="@Icons.Material.Filled.Wifi"
+                                               IconColor="@GetConnectionStateColor(client.State)"
+                                               Tooltip="@client.State.ToString()"/>
+                                }
+                                else
+                                {
+                                    <StatePart Text="@device.Name.Truncate(13)" Icon="@Icons.Material.Filled.Wifi" IconColor="@Color.Dark" Tooltip="Offline"/>
+                                }
+                            }
+
+
+                        </div>
+
                         <UpdateLogout/>
                     </div>
                 </div>
@@ -116,6 +146,68 @@
     protected override void OnInitialized()
     {
         UiLogSink.NotificationAction = MsgNoty;
+
+        ApiHubClient.Reconnecting += ApiHubClientOnReconnecting;
+        ApiHubClient.Reconnected += ApiHubClientOnReconnected;
+        ApiHubClient.Closed += ApiHubClientOnClosed;
+
+        LiveControlManager.OnStateUpdated += LiveControlManagerOnOnStateUpdated;
+    }
+
+    private Task LiveControlManagerOnOnStateUpdated()
+    {
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task ApiHubClientOnReconnected(string? arg) => InvokeAsync(() =>
+    {
+        StateHasChanged();
+        Snackbar.Add("Reconnected to hub", Severity.Success);
+    });
+
+
+    private Task ApiHubClientOnReconnecting(Exception? arg) => InvokeAsync(() =>
+    {
+        StateHasChanged();
+        Snackbar.Add("Reconnecting to hub...", Severity.Warning);
+    });
+
+    private Task ApiHubClientOnClosed(Exception? arg) => InvokeAsync(() =>
+    {
+        StateHasChanged();
+        Snackbar.Add("Disconnected from hub", Severity.Error);
+    });
+
+
+    private Color GetConnectionStateColor(HubConnectionState state) =>
+        state switch
+        {
+            HubConnectionState.Connected => Color.Success,
+            HubConnectionState.Reconnecting => Color.Warning,
+            HubConnectionState.Connecting => Color.Warning,
+            HubConnectionState.Disconnected => Color.Error,
+            _ => Color.Error
+        };
+
+    private Color GetConnectionStateColor(WebsocketConnectionState state) =>
+        state switch
+        {
+            WebsocketConnectionState.Connected => Color.Success,
+            WebsocketConnectionState.Reconnecting => Color.Warning,
+            WebsocketConnectionState.Connecting => Color.Warning,
+            WebsocketConnectionState.Disconnected => Color.Error,
+            _ => Color.Error
+        };
+
+    public void Dispose()
+    {
+        Snackbar?.Dispose();
+
+        ApiHubClient.Reconnecting -= ApiHubClientOnReconnecting;
+        ApiHubClient.Reconnected -= ApiHubClientOnReconnected;
+        ApiHubClient.Closed -= ApiHubClientOnClosed;
+
+        LiveControlManager.OnStateUpdated -= LiveControlManagerOnOnStateUpdated;
     }
 
 }
