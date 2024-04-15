@@ -14,6 +14,7 @@
 @inject OpenShockApi ApiClient
 @inject ILogger<Authenticate> Logger
 @inject LiveControlManager LiveControlManager
+@inject ISnackbar Snackbar
 
 @page "/"
 
@@ -23,7 +24,7 @@
 
 <MudContainer Class="d-flex align-content-center" Style="padding: 0 0 15px 0;">
     <MudContainer Style="width: 600px; padding: 0;">
-        <MudImage Src="images/Icon.svg" Alt="Logo" Width="75" Height="75" Class="ma-4" Style="vertical-align: bottom;" />
+        <MudImage Src="images/Icon.svg" Alt="Logo" Width="75" Height="75" Class="ma-4" Style="vertical-align: bottom;"/>
         <MudContainer Class="d-inline-block" Style="width: 485px; padding: 0;">
             <MudText Typo="Typo.h1">ShockOSC</MudText>
         </MudContainer>
@@ -35,28 +36,52 @@
     <MudPaper Class="rounded-lg" Elevation="0" Style="padding: 40px 20px; text-align: center;" Outlined="true">
         <MudText Typo="Typo.h2">Login</MudText>
         <br/>
-        @if (!Loading)
+        @switch (_currentState)
         {
-            <MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
-            <br />
-            <MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton>
-            <br />
-        }
-        else
-        {
-            <MudProgressCircular Color="Color.Primary" Style="height:125px;width:125px;" Indeterminate="true" />
+            case State.Login:
+                <MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+                <br/>
+                <MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton>
+                <br/>
+                break;
+            case State.Loading:
+                <MudProgressCircular Color="Color.Primary" Style="height:125px;width:125px;" Indeterminate="true"/>
+                break;
+            case State.Failed:
+                <MudText Typo="Typo.h6">Failed to authenticate</MudText>
+                <MudButton OnClick="ReLogin" Variant="Variant.Filled" Color="Color.Primary">Re-login</MudButton>
+                break;
+            case State.Authenticated:
+                <MudText Typo="Typo.h6">Successful, redirecting...</MudText>
+                break;
         }
     </MudPaper>
-</MudContainer> 
+</MudContainer>
 
 @code {
+
+    private enum State
+    {
+        Login,
+        Loading,
+        Authenticated,
+        Failed
+    }
+
+    private State _currentState = State.Login;
+
     private bool Loading { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        if(string.IsNullOrEmpty(ConfigManager.Config.OpenShock.Token)) return;
+        if (string.IsNullOrEmpty(ConfigManager.Config.OpenShock.Token)) return;
 
         await ProceedAuthenticated();
+    }
+
+    public void ReLogin()
+    {
+        _currentState = State.Login;
     }
 
     public async Task Login()
@@ -69,17 +94,30 @@
     private async Task ProceedAuthenticated()
     {
         Loading = true;
-        
-        Logger.LogInformation("Setting up live client");
-        await HubManager.SetupLiveClient();
-        Logger.LogInformation("Starting live client");
-        await HubClient.StartAsync();
-        
-        Logger.LogInformation("Refreshing shockers");
-        await ApiClient.RefreshShockers();
+        _currentState = State.Loading;
 
-        await LiveControlManager.RefreshConnections();
+        try
+        {
+            Logger.LogInformation("Setting up live client");
+            await HubManager.SetupLiveClient();
+            Logger.LogInformation("Starting live client");
+            await HubClient.StartAsync();
 
-        NavigationManager.NavigateTo("main");
+            Logger.LogInformation("Refreshing shockers");
+            await ApiClient.RefreshShockers();
+
+            await LiveControlManager.RefreshConnections();
+
+
+            _currentState = State.Authenticated;
+
+            NavigationManager.NavigateTo("main");
+        }
+        catch (Exception e)
+        {
+            _currentState = State.Failed;
+            Snackbar.Add("Failed to authenticate", Severity.Error);
+        }
     }
+
 }
