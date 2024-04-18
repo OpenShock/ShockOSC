@@ -1,4 +1,8 @@
 ﻿using System.Net;
+using System.Windows.Controls;
+using Microsoft.Maui.LifecycleEvents;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using MudBlazor.Services;
 using OpenShock.SDK.CSharp.Hub;
 using OpenShock.ShockOsc.Backend;
@@ -8,14 +12,16 @@ using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Services;
 using OpenShock.ShockOsc.Ui;
 using Serilog;
+using MauiApp = OpenShock.ShockOsc.Ui.MauiApp;
+using MenuItem = System.Windows.Controls.MenuItem;
 
 namespace OpenShock.ShockOsc;
 
 public static class MauiProgram
 {
-    public static MauiApp CreateMauiApp()
+    public static Microsoft.Maui.Hosting.MauiApp CreateMauiApp()
     {
-        var builder = MauiApp.CreateBuilder();
+        var builder = Microsoft.Maui.Hosting.MauiApp.CreateBuilder();
 
         // <---- Services ---->
 
@@ -45,9 +51,9 @@ public static class MauiProgram
         Log.Logger = loggerConfiguration.CreateLogger();
 
         builder.Services.AddSerilog(Log.Logger);
-        
+
         builder.Services.AddSingleton<ShockOscData>();
-        
+
         builder.Services.AddSingleton<ConfigManager>();
 
         builder.Services.AddSingleton<Updater>();
@@ -56,9 +62,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<OpenShockApi>();
         builder.Services.AddSingleton<OpenShockHubClient>();
         builder.Services.AddSingleton<BackendHubManager>();
-        
+
         builder.Services.AddSingleton<LiveControlManager>();
-        
+
         builder.Services.AddSingleton<OscHandler>();
 
         builder.Services.AddSingleton(provider =>
@@ -67,17 +73,23 @@ public static class MauiProgram
             var listenAddress = config.Config.Osc.QuestSupport ? IPAddress.Any : IPAddress.Loopback;
             return new OscQueryServer("ShockOsc", listenAddress, config);
         });
-        
+
         builder.Services.AddSingleton<Services.ShockOsc>();
         builder.Services.AddSingleton<UnderscoreConfig>();
         
+        
+#if WINDOWS
+        builder.Services.AddSingleton<ITrayService, WindowsTrayService>();
+#endif
+
+
         builder.Services.AddMudServices();
         builder.Services.AddMauiBlazorWebView();
 
         // <---- App ---->
 
         builder
-            .UseMauiApp<App>()
+            .UseMauiApp<MauiApp>()
             .ConfigureFonts(fonts => { fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular"); });
 
 
@@ -86,11 +98,13 @@ public static class MauiProgram
 #endif
 
         var app = builder.Build();
-            
+
+        app.Services.GetService<ITrayService>()?.Initialize();
+
         // <---- Warmup ---->
         app.Services.GetRequiredService<Services.ShockOsc>();
         app.Services.GetRequiredService<OscQueryServer>().Start();
-        
+
         return app;
     }
 }

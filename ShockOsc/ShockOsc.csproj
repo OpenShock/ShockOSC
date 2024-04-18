@@ -32,7 +32,7 @@
 		<WindowsPackageType Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">None</WindowsPackageType>
 		<PackageIcon>Resources\Icon512.png</PackageIcon>
     </PropertyGroup>
-
+    
     <ItemGroup>
       <None Include="wwwroot\app.css" />
       <None Include="wwwroot\fonts\poppins-latin-400-normal.405055dd..woff2" />
