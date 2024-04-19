@@ -150,9 +150,16 @@
         ApiHubClient.Reconnecting += ApiHubClientOnReconnecting;
         ApiHubClient.Reconnected += ApiHubClientOnReconnected;
         ApiHubClient.Closed += ApiHubClientOnClosed;
+        ApiHubClient.Connected += AbiHubClientOnConnected;
 
         LiveControlManager.OnStateUpdated += LiveControlManagerOnOnStateUpdated;
     }
+
+    private Task AbiHubClientOnConnected(string? arg)=> InvokeAsync(() =>
+    {
+        StateHasChanged();
+        Snackbar.Add("Connected to hub", Severity.Warning);
+    });
 
     private Task LiveControlManagerOnOnStateUpdated()
     {

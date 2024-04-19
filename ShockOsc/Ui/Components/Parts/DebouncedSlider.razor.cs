@@ -1,7 +1,6 @@
 ﻿using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
 using Size = MudBlazor.Size;
 
 namespace OpenShock.ShockOsc.Ui.Components.Parts;
@@ -9,15 +8,15 @@ namespace OpenShock.ShockOsc.Ui.Components.Parts;
 public partial class DebouncedSlider<T> : ComponentBase
 {
     
-    private BehaviorSubject<T> _subject = null!;
+    private BehaviorSubject<T>? _subject;
 
     private T ValueProp
     {
-        get => _subject.Value;
+        get => _subject!.Value;
         set
         {
-            _subject.OnNext(value);
             SliderValue = value;
+            OnValueChanged?.Invoke(value);
         }
     }
 
@@ -31,6 +30,9 @@ public partial class DebouncedSlider<T> : ComponentBase
     [Parameter] public TimeSpan DebounceTime { get; set; } = TimeSpan.FromMilliseconds(500);
 
     [Parameter] public EventCallback<T> SliderValueChanged { get; set; }
+    
+    [Parameter]
+    public Action<T>? OnValueChanged { get; set; }
 
     private T _sliderValue = default!;
     
@@ -40,7 +42,8 @@ public partial class DebouncedSlider<T> : ComponentBase
         get => _sliderValue;
         set
         {
-            if(_sliderValue.Equals(value)) return;
+            _subject?.OnNext(value);
+            if(_sliderValue != null && _sliderValue.Equals(value)) return;
                 
             SliderValueChanged.InvokeAsync(value);
             _sliderValue = value!;
@@ -56,5 +59,17 @@ public partial class DebouncedSlider<T> : ComponentBase
     public string? Style { get; set; }
     
     [Parameter]
+    public string? Class { get; set; }
+    
+    [Parameter]
     public RenderFragment? ChildContent { get; set; }
+    
+    [Parameter]
+    public T? Min { get; set; }
+    
+    [Parameter]
+    public T? Max { get; set; }
+    
+    [Parameter]
+    public T? Step { get; set; }
 }

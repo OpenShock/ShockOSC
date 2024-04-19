@@ -152,7 +152,7 @@ Section "Install" SecInstall
 
     SetOutPath "$INSTDIR"
 
-    File /r /x *.log /x *.pdb "..\ShockOsc\bin\Release\net8.0-windows10.0.19041.0\win10-x64\*.*"
+    File /r /x *.log /x *.pdb /x *.mui "..\ShockOsc\bin\Release\net8.0-windows10.0.19041.0\win10-x64\*.*"
 
     WriteRegStr HKLM "Software\ShockOSC" "InstallDir" $INSTDIR
     WriteUninstaller "$INSTDIR\Uninstall.exe"

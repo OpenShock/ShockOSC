@@ -31,6 +31,9 @@
 
 		<WindowsPackageType Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">None</WindowsPackageType>
 		<PackageIcon>Resources\Icon512.png</PackageIcon>
+
+        <ResourceLanguages>en</ResourceLanguages>
+        <SatelliteResourceLanguages>en-US;en</SatelliteResourceLanguages>
     </PropertyGroup>
     
     <ItemGroup>
@@ -54,9 +57,9 @@
       <PackageReference Include="EmbedIO" Version="3.5.2" />
       <PackageReference Include="LucHeart.CoreOSC" Version="1.2.1" />
       <PackageReference Include="MeaMod.DNS" Version="1.0.70" />
-      <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.13" />
-      <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.13" />
-      <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.13" />
+      <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.15" />
+      <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.15" />
+      <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.15" />
       <PackageReference Include="Serilog" Version="3.1.1" />
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.4" />
       <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
@@ -66,7 +69,7 @@
       <PackageReference Include="SmartFormat.NET" Version="3.3.2" />
       <PackageReference Include="System.Reactive" Version="6.0.0" />
     </ItemGroup>
-
+    
     <ItemGroup>
       <None Update="Resources\Icon512.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

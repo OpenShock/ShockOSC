@@ -5,6 +5,7 @@ using Microsoft.UI.Windowing;
 using OpenShock.SDK.CSharp.Hub;
 using OpenShock.ShockOsc.Services;
 using Application = Microsoft.Maui.Controls.Application;
+using Color = System.Drawing.Color;
 using Image = System.Drawing.Image;
 
 namespace OpenShock.ShockOsc;
@@ -20,13 +21,14 @@ public class WindowsTrayService : ITrayService
         _apiHubClient.Reconnecting += _ => HubStateChanged();
         _apiHubClient.Reconnected += _ => HubStateChanged();
         _apiHubClient.Closed += _ => HubStateChanged();
+        _apiHubClient.Connected += _ => HubStateChanged();
     }
     
     private ToolStripLabel _stateLabel;
     
     private Task HubStateChanged()
     {
-        _stateLabel.Text = "State: " + _apiHubClient.State;
+        _stateLabel.Text = $"State: {_apiHubClient.State}";
         return Task.CompletedTask;
     }
 
@@ -40,7 +42,7 @@ public class WindowsTrayService : ITrayService
 
         menu.Items.Add("ShockOSC", Image.FromFile(@"Resources\openshock-icon.ico"), OnMainClick);
         menu.Items.Add(new ToolStripSeparator());
-        _stateLabel = new ToolStripLabel("State: " + _apiHubClient.State);
+        _stateLabel = new ToolStripLabel($"State: {_apiHubClient.State}");
         menu.Items.Add(_stateLabel);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Restart", null, Restart);

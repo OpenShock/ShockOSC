@@ -1,7 +1,10 @@
-﻿@using System.Text.RegularExpressions
+﻿@using System.Globalization
+@using System.Text.RegularExpressions
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
+@using OpenShock.ShockOsc.Ui.Components.Parts
 @using OpenShock.ShockOsc.Services
+@using Group = OpenShock.ShockOsc.Config.Group
 @inject OpenShockApi OpenShockApi
 @inject ShockOsc ShockOsc
 @inject ConfigManager ConfigManager
@@ -14,7 +17,7 @@
     public async Task AddGroup()
     {
         var groupId = Guid.NewGuid();
-        ConfigManager.Config.Groups.Add(groupId, new ShockOscConfig.Group { Name = "New Group" });
+        ConfigManager.Config.Groups.Add(groupId, new Group() { Name = "New Group" });
         Group = groupId;
 
         await InvokeAsync(StateHasChanged);
@@ -39,6 +42,8 @@
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
+    private Task OnGroupSettingsValueChange() => ConfigManager.SaveAsync();
+
     private async Task OnGroupSelect()
     {
         if (CurrentGroup != null) _selectedShockers = [..CurrentGroup.Shockers];
@@ -55,7 +60,7 @@
         }
     }
 
-    private ShockOscConfig.Group? CurrentGroup => Group == null ? null : ConfigManager.Config.Groups.TryGetValue(Group.Value, out var group) ? group : null;
+    private Group? CurrentGroup => Group == null ? null : ConfigManager.Config.Groups.TryGetValue(Group.Value, out var group) ? group : null;
 
     private static Regex _nameRegex = new Regex(@"^[a-zA-Z0-9\/\\ -]+$", RegexOptions.Compiled);
 
@@ -68,10 +73,54 @@
     }
 
     private HashSet<Guid> _selectedShockers = [];
+
+
+    private string CurrentRandomIntensityString
+    {
+        get => CurrentGroup?.RandomIntensity ?? false ? "Random Intensity" : "Fixed Intensity";
+        set
+        {
+            if (CurrentGroup == null) return;
+            CurrentGroup.RandomIntensity = value == "Random Intensity";
+        }
+    }
+
+    private string CurrentRandomDurationString
+    {
+        get => CurrentGroup?.RandomDuration ?? false ? "Random Duration" : "Fixed Duration";
+        set
+        {
+            if (CurrentGroup == null) return;
+            CurrentGroup.RandomDuration = value == "Random Duration";
+        }
+    }
+
+    private async Task ResetIntensity()
+    {
+        if (CurrentGroup == null) return;
+        CurrentGroup.FixedIntensity = ConfigManager.Config.Behaviour.FixedIntensity;
+        CurrentGroup.IntensityRange = ConfigManager.Config.Behaviour.IntensityRange;
+        CurrentGroup.RandomIntensity = ConfigManager.Config.Behaviour.RandomIntensity;
+
+        await InvokeAsync(StateHasChanged);
+        await ConfigManager.SaveAsync();
+    }
+
+    private async Task ResetDuration()
+    {
+        if (CurrentGroup == null) return;
+        CurrentGroup.FixedDuration = ConfigManager.Config.Behaviour.FixedDuration;
+        CurrentGroup.DurationRange = ConfigManager.Config.Behaviour.DurationRange;
+        CurrentGroup.RandomDuration = ConfigManager.Config.Behaviour.RandomDuration;
+
+        await InvokeAsync(StateHasChanged);
+        await ConfigManager.SaveAsync();
+    }
+
 }
 
-<MudButton OnClick="AddGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Placeholder="Select Group to Edit" Color="Color.Primary">Add New Group</MudButton>
-<MudButton OnClick="DeleteGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Placeholder="Select Group to Edit" Color="Color.Error">Delete Group</MudButton>
+<MudButton OnClick="AddGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add New Group</MudButton>
+<MudButton OnClick="DeleteGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Delete Group</MudButton>
 <br/> <br/>
 <MudSelect Variant="Variant.Outlined" T="Guid?" Label="Select Group" Dense="true" Margin="Margin.Dense" @bind-Value="Group" @bind-Value:after="OnGroupSelect" Clearable>
     @foreach (var group in ConfigManager.Config.Groups)
@@ -82,7 +131,7 @@
 
 @if (CurrentGroup != null)
 {
-    <MudPaper Outlined="true" Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudText>Group Settings</MudText>
         <MudDivider/>
         <br/>
@@ -90,7 +139,103 @@
         <MudTextField Label="Group Name" Validation="@(new Func<string, string>(NameValidation))" DebounceInterval="250" @bind-Value="@CurrentGroup.Name" @bind-Value:after="OnSettingsValueChange"/>
     </MudPaper>
 
-    <MudPaper Outlined="true" Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideIntensity" Label="Override Intensity Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
+        @if (CurrentGroup.OverrideIntensity)
+        {
+            <MudDivider/>
+            <br/>
+
+            <div class="d-flex" style="justify-content: space-between">
+
+                <MudToggleGroup T="string" @bind-Value="CurrentRandomIntensityString" Style="width: 330px; margin: 0 0 0 10px;"
+                                Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                    <MudToggleItem Value="@("Fixed Intensity")"/>
+                    <MudToggleItem Value="@("Random Intensity")"/>
+                </MudToggleGroup>
+                <MudButton OnClick="ResetIntensity" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.LockReset" Color="Color.Primary">Reset</MudButton>
+            </div>
+            <br/>
+            @if (!CurrentGroup.RandomIntensity)
+            {
+                <DebouncedSlider T="byte" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedIntensity"
+                                 OnSaveAction="_ => ConfigManager.SaveFnf()">
+                    Intensity: @CurrentGroup.FixedIntensity%
+                </DebouncedSlider>
+            }
+            else
+            {
+                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
+                                 OnValueChanged="u => { if (CurrentGroup.IntensityRange.Max < u) CurrentGroup.IntensityRange.Max = u; }"
+                                 OnSaveAction="_ => ConfigManager.SaveFnf()">
+                    Min Intensity: @CurrentGroup.IntensityRange.Min%
+                </DebouncedSlider>
+
+                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
+                                 OnValueChanged="u => { if (CurrentGroup.IntensityRange.Min > u) CurrentGroup.IntensityRange.Min = u; }"
+                                 OnSaveAction="_ => ConfigManager.SaveFnf()">
+                    Max Intensity: @CurrentGroup.IntensityRange.Max%
+                </DebouncedSlider>
+            }
+        }
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideDuration" Label="Override Duration Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
+        @if (CurrentGroup.OverrideDuration)
+        {
+            <MudDivider/>
+            <br/>
+
+            <div class="d-flex" style="justify-content: space-between">
+
+                <MudToggleGroup T="string" @bind-Value="CurrentRandomDurationString" Style="width: 330px; margin: 0 0 0 10px;"
+                                Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                    <MudToggleItem Value="@("Fixed Duration")"/>
+                    <MudToggleItem Value="@("Random Duration")"/>
+                </MudToggleGroup>
+                <MudButton OnClick="ResetDuration" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.LockReset" Color="Color.Primary">Reset</MudButton>
+            </div>
+            <br/>
+            @if (!CurrentGroup.RandomDuration)
+            {
+                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedDuration"
+                                 OnSaveAction="_ => ConfigManager.SaveFnf()"
+                                 Min="300" Max="30000" Step="100">
+                    Duration: @MathF.Round(CurrentGroup.FixedDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
+                </DebouncedSlider>
+            }
+            else
+            {
+                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Min"
+                                 OnValueChanged="u => { if (CurrentGroup.DurationRange.Max < u) CurrentGroup.DurationRange.Max = u; }"
+                                 OnSaveAction="_ => ConfigManager.SaveFnf()"
+                                 Min="300" Max="30000" Step="100">
+                    Min Duration: @MathF.Round(CurrentGroup.DurationRange.Min / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
+                </DebouncedSlider>
+
+                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Max"
+                                 OnValueChanged="u => { if (CurrentGroup.DurationRange.Min > u) CurrentGroup.DurationRange.Min = u; }"
+                                 OnSaveAction="_ => ConfigManager.SaveFnf()"
+                                 Min="300" Max="30000" Step="100">
+                    Max Duration: @MathF.Round(CurrentGroup.DurationRange.Max / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
+                </DebouncedSlider>
+            }
+        }
+    </MudPaper>
+    
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideCooldownTime" Label="Override Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
+        @if (CurrentGroup.OverrideCooldownTime)
+        {
+            <MudDivider/>
+            <br/>
+            
+            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="CurrentGroup.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
+        }
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudText>Shockers in Group</MudText>
         <MudDivider/>
         <br/>
@@ -111,3 +256,10 @@ else
         <MudText Typo="Typo.h6">Please select a group to edit</MudText>
     </MudPaper>
 }
+
+<style>
+    .checkbox-title {
+        margin: -10px !important;
+        padding: 0 !important;
+    }
+</style>

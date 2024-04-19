@@ -1,3 +1,4 @@
+using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.OscChangeTracker;
 using OpenShock.ShockOsc.Services;
 
@@ -23,10 +24,13 @@ public sealed class ProgramGroup
     public string Name { get; }
     public TriggerMethod TriggerMethod { get; set; }
 
-    public ProgramGroup(Guid id, string name, OscClient oscClient)
+    public Group? ConfigGroup { get; }
+
+    public ProgramGroup(Guid id, string name, OscClient oscClient, Group? group)
     {
         Id = id;
         Name = name;
+        ConfigGroup = group;
 
         ParamActive = new ChangeTrackedOscParam<bool>(Name, "_Active", false, oscClient);
         ParamCooldown = new ChangeTrackedOscParam<bool>(Name, "_Cooldown", false, oscClient);
