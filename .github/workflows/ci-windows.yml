@@ -75,6 +75,9 @@ jobs:
         with:
           name: ShockOsc
           path: publish/
+          
+      - name: Debug LS
+        run: ls -la
 
       - name: Create nsis installer
         uses: joncloud/makensis-action@publish
