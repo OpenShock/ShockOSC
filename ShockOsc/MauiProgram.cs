@@ -1,8 +1,5 @@
 ﻿using System.Net;
-using System.Windows.Controls;
 using Microsoft.Maui.LifecycleEvents;
-using Microsoft.UI;
-using Microsoft.UI.Windowing;
 using MudBlazor.Services;
 using OpenShock.SDK.CSharp.Hub;
 using OpenShock.ShockOsc.Backend;
@@ -10,10 +7,8 @@ using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Logging;
 using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Services;
-using OpenShock.ShockOsc.Ui;
 using Serilog;
 using MauiApp = OpenShock.ShockOsc.Ui.MauiApp;
-using MenuItem = System.Windows.Controls.MenuItem;
 
 namespace OpenShock.ShockOsc;
 
@@ -90,7 +85,15 @@ public static class MauiProgram
                     var handle = WinRT.Interop.WindowNative.GetWindowHandle(window);
                     var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(handle);
                     var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
-
+                    
+                    // if(appWindow.Presenter is OverlappedPresenter presenter)
+                    // {
+                    //     presenter.IsMaximizable = false;
+                    //     presenter.IsMinimizable = false;
+                    //     presenter.IsResizable = true;
+                    //     presenter.SetBorderAndTitleBar(false, false);
+                    // } 
+                    
                     //When user execute the closing method, we can push a display alert. If user click Yes, close this application, if click the cancel, display alert will dismiss.
                     appWindow.Closing += async (s, e) =>
                     {
