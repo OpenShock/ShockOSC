@@ -31,7 +31,7 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Get Cache NuGet packages
+      - name: Cache NuGet packages
         uses: actions/cache@v3
         with:
           path: ~/.nuget/packages
@@ -79,4 +79,8 @@ jobs:
           name: ShockOsc
           path: publish/
 
-  
+      - name: Create nsis installer
+        uses: joncloud/makensis-action@publish
+        with:
+          arguments: ${{ github.workspace }}/Installer/installer.nsi
+          additional-plugin-paths: ${{ github.workspace }}/Installer/Plugins
