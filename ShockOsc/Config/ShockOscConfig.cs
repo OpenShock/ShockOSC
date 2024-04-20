@@ -9,5 +9,5 @@ public sealed class ShockOscConfig
     public IDictionary<Guid, Group> Groups { get; set; } = new Dictionary<Guid, Group>();
     public Version? LastIgnoredVersion { get; set; } = null;
     
-
+    public AppConfig App { get; set; } = new();
 }

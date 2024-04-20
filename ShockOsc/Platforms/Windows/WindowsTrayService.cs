@@ -72,6 +72,8 @@ public class WindowsTrayService : ITrayService
         var windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
         var appWindow = AppWindow.GetFromWindowId(windowId);
 
+        
+        
         if (appWindow.IsVisible) appWindow.Hide();
         else appWindow.Show();
     }

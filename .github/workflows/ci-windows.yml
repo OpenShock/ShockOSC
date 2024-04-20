@@ -1,0 +1,77 @@
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+    types: [opened, reopened, synchronize]
+  workflow_call:
+  workflow_dispatch:
+
+name: ci-windowsl
+
+env:
+  DOTNET_VERSION: 8.0.x
+  REGISTRY: ghcr.io
+
+jobs:
+
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install dependencies
+        run: dotnet restore
+        
+      - name: Install maui workload
+        run: dotnet workload install maui
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal
+
+      - name: Publish ShockOSC Windows
+        run: dotnet publish ShockOsc/ShockOsc.csproj -c Release -f net8.0-windows10.0.19041.0 -o ./publish/API
+
+      - name: Upload ShockOSC Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShockOsc
+          path: publish/ShockOsc/*
+          retention-days: 1
+          if-no-files-found: error
+  
+  instller:
+    runs-on: windows-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            Installer
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ShockOsc
+          path: publish/
+
+  
