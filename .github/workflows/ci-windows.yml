@@ -75,12 +75,18 @@ jobs:
         with:
           name: ShockOsc
           path: publish/
-          
-      - name: Debug LS
-        run: ls
+
 
       - name: Create nsis installer
         uses: joncloud/makensis-action@publish
         with:
           script-file: ${{ github.workspace }}/Installer/installer.nsi
           additional-plugin-paths: ${{ github.workspace }}/Installer/Plugins
+          
+      - name: Upload ShockOSC Windows Setup
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShockOsc_Setup
+          path: Installer/ShockOsc_Setup.exe
+          retention-days: 7
+          if-no-files-found: error
