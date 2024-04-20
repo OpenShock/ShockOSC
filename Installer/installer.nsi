@@ -49,13 +49,13 @@
 ;--------------------------------
 ;Icons
 
-    !define MUI_ICON "..\ShockOsc\Resources\openshock-icon.ico"
-    !define MUI_UNICON "..\ShockOsc\Resources\openshock-icon.ico"
+    !define MUI_ICON "..\publish\Resources\openshock-icon.ico"
+    !define MUI_UNICON "..\publish\Resources\openshock-icon.ico"
 
 ;--------------------------------
 ;Pages
 
-    !insertmacro MUI_PAGE_LICENSE "..\LICENSE"
+    !insertmacro MUI_PAGE_LICENSE "LICENSE"
     !define MUI_PAGE_CUSTOMFUNCTION_PRE dirPre
     !insertmacro MUI_PAGE_DIRECTORY
     !insertmacro MUI_PAGE_INSTFILES
