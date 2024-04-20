@@ -152,7 +152,7 @@ Section "Install" SecInstall
 
     SetOutPath "$INSTDIR"
 
-    File /r /x *.log /x *.pdb /x *.mui "publish\*.*"
+    File /r /x *.log /x *.pdb /x *.mui "..\publish\*.*"
 
     WriteRegStr HKLM "Software\ShockOSC" "InstallDir" $INSTDIR
     WriteUninstaller "$INSTDIR\Uninstall.exe"
