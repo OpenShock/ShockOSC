@@ -55,7 +55,7 @@
 ;--------------------------------
 ;Pages
 
-    !insertmacro MUI_PAGE_LICENSE "LICENSE"
+    !insertmacro MUI_PAGE_LICENSE "..\LICENSE"
     !define MUI_PAGE_CUSTOMFUNCTION_PRE dirPre
     !insertmacro MUI_PAGE_DIRECTORY
     !insertmacro MUI_PAGE_INSTFILES
