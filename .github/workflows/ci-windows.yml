@@ -77,7 +77,7 @@ jobs:
           path: publish/
           
       - name: Debug LS
-        run: ls -la
+        run: ls
 
       - name: Create nsis installer
         uses: joncloud/makensis-action@publish
