@@ -82,5 +82,5 @@ jobs:
       - name: Create nsis installer
         uses: joncloud/makensis-action@publish
         with:
-          arguments: ${{ github.workspace }}/Installer/installer.nsi
+          script-file: ${{ github.workspace }}/Installer/installer.nsi
           additional-plugin-paths: ${{ github.workspace }}/Installer/Plugins
