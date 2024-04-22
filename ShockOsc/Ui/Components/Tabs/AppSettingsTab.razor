@@ -1,0 +1,34 @@
+﻿@using OpenShock.ShockOsc.Config
+@inject ConfigManager ConfigManager
+
+
+
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding">
+    <MudText>ShockOSC App</MudText>
+    <MudDivider/>
+
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.App.CloseToTray" Label="Close to Tray" @bind-Value:after="OnSettingsValueChange"/>
+    
+</MudPaper>
+
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+    <MudText>OSC Options</MudText>
+    <MudDivider/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.QuestSupport" Label="Quest Support" @bind-Value:after="OnSettingsValueChange"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.OscQuery" Label="OSC Query (requires restart)" @bind-Value:after="OnSettingsValueChange"/>
+    @if (!ConfigManager.Config.Osc.OscQuery)
+    {
+    <br/>
+    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Osc.OscSendPort" Label="OSC Send Port" @bind-Value:after="OnSettingsValueChange"/>
+    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Osc.OscReceivePort" Label="OSC Receive Port" @bind-Value:after="OnSettingsValueChange"/>
+    }
+</MudPaper>
+
+@code {
+    
+    
+    private async Task OnSettingsValueChange()
+    {
+        await ConfigManager.SaveAsync();
+    }
+}

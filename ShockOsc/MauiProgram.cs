@@ -121,7 +121,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<ITrayService, WindowsTrayService>();
 #endif
 
-
+        builder.Services.AddSingleton<StatusHandler>();
+        
         builder.Services.AddMudServices();
         builder.Services.AddMauiBlazorWebView();
 

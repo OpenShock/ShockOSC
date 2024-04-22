@@ -1,18 +1,9 @@
-@using Microsoft.AspNetCore.SignalR.Client
-@using OpenShock.SDK.CSharp.Hub
-@using OpenShock.SDK.CSharp.Live.LiveControlModels
 @using OpenShock.ShockOsc.Logging
 @using OpenShock.ShockOsc.Ui.Components.Tabs
 @using OpenShock.ShockOsc.Ui.Utils
-@using OpenShock.ShockOsc.Backend
-@using OpenShock.ShockOsc.Services
-@using OpenShock.ShockOsc.Ui.Components.Parts
 @inject ISnackbar Snackbar
 @inherits LayoutComponentBase
-@inject OpenShockHubClient ApiHubClient
-@inject OpenShockApi Api
-@inject LiveControlManager LiveControlManager
-@implements IDisposable
+
 
 @page "/main"
 
@@ -30,114 +21,46 @@
 <MudLayout>
     <div class="d-flex" style="width: 100vw; height: 100vh">
 
-        <MudPaper Width="250px" Height="100%" Elevation="0" Class="flex-none">
-
-            <div class="d-flex childs-width-100" style="height: 100%; flex-direction: column">
-
-                <div style="align-self: flex-start;">
-                    <div class="d-flex" style="align-items: center">
-                        <MudImage Src="images/Icon.svg" Alt="Logo" Width="45" Height="45" Class="ma-4" Style="vertical-align: bottom;"/>
-                        <MudText Style="font-size: 22.5pt">ShockOSC</MudText>
-
-                    </div>
-                    <MudDivider Style="margin-bottom: 5px" DividerType="DividerType.Middle"/>
-                </div>
-
-
-                <MudNavMenu style="align-self: flex-start; flex-grow: 1" Margin="Margin.Dense" Color="Color.Primary" Bordered="true">
-
-                    <MudNavLinkFix Icon="@Icons.Material.Filled.Group" OnClick="() => NavigateTab(Tab.Groups)" IsActive="_currentTab == Tab.Groups">Groups</MudNavLinkFix>
-                    <MudNavLinkFix Icon="@Icons.Material.Filled.Settings" OnClick="() => NavigateTab(Tab.Config)" IsActive="_currentTab == Tab.Config">Config</MudNavLinkFix>
-                    <MudNavLinkFix Icon="@Icons.Material.Filled.Bolt" OnClick="() => NavigateTab(Tab.Shockers)" IsActive="_currentTab == Tab.Shockers">Shockers</MudNavLinkFix>
-                    <MudNavLinkFix Icon="@Icons.Material.Filled.BugReport" OnClick="() => NavigateTab(Tab.Debug)" IsActive="_currentTab == Tab.Debug">Debug</MudNavLinkFix>
-                    <MudNavLinkFix Icon="@Icons.Material.Filled.List" OnClick="() => NavigateTab(Tab.Logs)" IsActive="_currentTab == Tab.Logs">Logs</MudNavLinkFix>
-                </MudNavMenu>
-
-                <div style="align-self: flex-end">
-                    <MudDivider DividerType="DividerType.Middle"/>
-                    <div Class="pa-4">
-
-                        <MudText Style="font-size: 10pt">ShockOSC v@(Version)</MudText>
-
-                        <div class="d-flex gap-5" style="flex-wrap: wrap">
-                            <StatePart Text="Hub" Icon="@Icons.Material.Filled.Wifi" 
-                                       IconColor="@GetConnectionStateColor(ApiHubClient.State)"
-                                       Tooltip="@ApiHubClient.State.ToString()"></StatePart>
-
-                            @foreach (var device in Api.Devices)
-                            {
-                                if (LiveControlManager.LiveControlClients.TryGetValue(device.Id, out var client))
-                                {
-                                    <StatePart Text="@device.Name.Truncate(13)"
-                                               Icon="@Icons.Material.Filled.Wifi"
-                                               IconColor="@GetConnectionStateColor(client.State)"
-                                               Tooltip="@client.State.ToString()"/>
-                                }
-                                else
-                                {
-                                    <StatePart Text="@device.Name.Truncate(13)" Icon="@Icons.Material.Filled.Wifi" IconColor="@Color.Dark" Tooltip="Offline"/>
-                                }
-                            }
-
-
-                        </div>
-
-                        <UpdateLogout/>
-                    </div>
-                </div>
-
-            </div>
-        </MudPaper>
-
-
+        <SideBar @bind-CurrentTab="_currentTabType"/>
+        
         <MudDivider Vertical="true" FlexItem="true"/>
 
         <div Style="width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden" Class="pa-6">
-            @switch (_currentTab)
+            @switch (_currentTabType)
             {
-                case Tab.Groups:
+                case TabType.Dashboard:
+                    <DashboardTab/>
+                    break;
+                case TabType.Groups:
                     <GroupsTab/>
                     break;
-                case Tab.Config:
+                case TabType.Config:
                     <ConfigTab/>
                     break;
-                case Tab.Shockers:
+                case TabType.Chatbox:
+                    <ChatboxTab/>
+                    break;
+                case TabType.AppSettings:
+                    <AppSettingsTab/>
+                    break;
+                case TabType.Shockers:
                     <ShockersTab/>
                     break;
-                case Tab.Debug:
+                case TabType.Debug:
                     <DebugTab/>
                     break;
-                case Tab.Logs:
+                case TabType.Logs:
                     <LogsTab/>
                     break;
             }
         </div>
-
     </div>
-
-
 </MudLayout>
 
 @code {
 
-    private static readonly string Version = typeof(MainLayout).Assembly.GetName().Version!.ToString();
-
-    public enum Tab
-    {
-        Groups,
-        Config,
-        Shockers,
-        Debug,
-        Logs
-    }
-
-    private Tab _currentTab = Tab.Groups;
-
-    private void NavigateTab(Tab tab)
-    {
-        _currentTab = tab;
-    }
-
+    private TabType _currentTabType = TabType.Dashboard;
+    
     private void MsgNoty(string msg, Severity severity)
     {
         Snackbar.Add(msg, severity);
@@ -146,75 +69,6 @@
     protected override void OnInitialized()
     {
         UiLogSink.NotificationAction = MsgNoty;
-
-        ApiHubClient.Reconnecting += ApiHubClientOnReconnecting;
-        ApiHubClient.Reconnected += ApiHubClientOnReconnected;
-        ApiHubClient.Closed += ApiHubClientOnClosed;
-        ApiHubClient.Connected += AbiHubClientOnConnected;
-
-        LiveControlManager.OnStateUpdated += LiveControlManagerOnOnStateUpdated;
-    }
-
-    private Task AbiHubClientOnConnected(string? arg)=> InvokeAsync(() =>
-    {
-        StateHasChanged();
-        Snackbar.Add("Connected to hub", Severity.Warning);
-    });
-
-    private Task LiveControlManagerOnOnStateUpdated()
-    {
-        return InvokeAsync(StateHasChanged);
-    }
-
-    private Task ApiHubClientOnReconnected(string? arg) => InvokeAsync(() =>
-    {
-        StateHasChanged();
-        Snackbar.Add("Reconnected to hub", Severity.Success);
-    });
-
-
-    private Task ApiHubClientOnReconnecting(Exception? arg) => InvokeAsync(() =>
-    {
-        StateHasChanged();
-        Snackbar.Add("Reconnecting to hub...", Severity.Warning);
-    });
-
-    private Task ApiHubClientOnClosed(Exception? arg) => InvokeAsync(() =>
-    {
-        StateHasChanged();
-        Snackbar.Add("Disconnected from hub", Severity.Error);
-    });
-
-
-    private Color GetConnectionStateColor(HubConnectionState state) =>
-        state switch
-        {
-            HubConnectionState.Connected => Color.Success,
-            HubConnectionState.Reconnecting => Color.Warning,
-            HubConnectionState.Connecting => Color.Warning,
-            HubConnectionState.Disconnected => Color.Error,
-            _ => Color.Error
-        };
-
-    private Color GetConnectionStateColor(WebsocketConnectionState state) =>
-        state switch
-        {
-            WebsocketConnectionState.Connected => Color.Success,
-            WebsocketConnectionState.Reconnecting => Color.Warning,
-            WebsocketConnectionState.Connecting => Color.Warning,
-            WebsocketConnectionState.Disconnected => Color.Error,
-            _ => Color.Error
-        };
-
-    public void Dispose()
-    {
-        Snackbar?.Dispose();
-
-        ApiHubClient.Reconnecting -= ApiHubClientOnReconnecting;
-        ApiHubClient.Reconnected -= ApiHubClientOnReconnected;
-        ApiHubClient.Closed -= ApiHubClientOnClosed;
-
-        LiveControlManager.OnStateUpdated -= LiveControlManagerOnOnStateUpdated;
     }
 
 }

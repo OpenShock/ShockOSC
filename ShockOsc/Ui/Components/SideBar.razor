@@ -1,0 +1,134 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@using OpenShock.SDK.CSharp.Hub
+@using OpenShock.SDK.CSharp.Live.LiveControlModels
+@using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Services
+@using OpenShock.ShockOsc.Ui.Components.Tabs
+@using OpenShock.ShockOsc.Ui.Utils
+@inject OpenShockApi Api
+@inject OpenShockHubClient ApiHubClient
+@inject ISnackbar Snackbar
+@inject LiveControlManager LiveControlManager
+@inject StatusHandler StatusHandler
+
+<MudPaper Width="250px" Height="100%" Elevation="0" Class="flex-none">
+
+    <div class="d-flex childs-width-100" style="height: 100%; flex-direction: column">
+
+        <div class="flex-none" style="align-self: flex-start;">
+            <div class="d-flex" style="align-items: center">
+                <MudImage Src="images/Icon.svg" Alt="Logo" Width="45" Height="45" Class="ma-4" Style="vertical-align: bottom;"/>
+                <MudText Style="font-size: 22.5pt">ShockOSC</MudText>
+
+            </div>
+            <MudDivider Style="margin-bottom: 5px" DividerType="DividerType.Middle"/>
+        </div>
+
+
+        <MudNavMenu style="align-self: flex-start; overflow-y: auto" Class="flex-auto flex-grow-1" Margin="Margin.Dense" Color="Color.Primary" Bordered="true">
+
+            <MudNavLinkFix Icon="@Icons.Material.Filled.Dashboard" OnClick="() => NavigateTab(TabType.Dashboard)" IsActive="CurrentTab == TabType.Dashboard">Dashboard</MudNavLinkFix>
+
+            <MudNavLinkFix Icon="@Icons.Material.Filled.Group" OnClick="() => NavigateTab(TabType.Groups)" IsActive="CurrentTab == TabType.Groups">Groups</MudNavLinkFix>
+            <MudNavLinkFix Icon="@Icons.Material.Filled.Bolt" OnClick="() => NavigateTab(TabType.Shockers)" IsActive="CurrentTab == TabType.Shockers">Shockers</MudNavLinkFix>
+
+            <MudNavLinkFix Icon="@Icons.Material.Filled.Chat" OnClick="() => NavigateTab(TabType.Chatbox)" IsActive="CurrentTab == TabType.Chatbox">Chatbox</MudNavLinkFix>
+
+
+            <MudNavLinkFix Icon="@Icons.Material.Filled.BugReport" OnClick="() => NavigateTab(TabType.Debug)" IsActive="CurrentTab == TabType.Debug">Debug</MudNavLinkFix>
+            <MudNavLinkFix Icon="@Icons.Material.Filled.List" OnClick="() => NavigateTab(TabType.Logs)" IsActive="CurrentTab == TabType.Logs">Logs</MudNavLinkFix>
+
+            <MudNavLinkFix Icon="@Icons.Material.Filled.Settings" OnClick="() => NavigateTab(TabType.Config)" IsActive="CurrentTab == TabType.Config">Config</MudNavLinkFix>
+            <MudNavLinkFix Icon="@Icons.Material.Filled.SettingsApplications" OnClick="() => NavigateTab(TabType.AppSettings)" IsActive="CurrentTab == TabType.AppSettings">App Settings</MudNavLinkFix>
+        </MudNavMenu>
+
+        <div class="flex-none" style="align-self: flex-end">
+            <MudDivider DividerType="DividerType.Middle"/>
+            <div Class="pa-4">
+
+                <MudText Style="font-size: 10pt">ShockOSC v@(Version)</MudText>
+
+                <div class="d-flex gap-5" style="flex-wrap: wrap">
+                    <StatePart Text="Hub" Icon="@Icons.Material.Filled.Wifi"
+                               IconColor="@GetConnectionStateColor(ApiHubClient.State)"
+                               Tooltip="@ApiHubClient.State.ToString()">
+                    </StatePart>
+
+                    @foreach (var device in Api.Devices)
+                    {
+                        if (LiveControlManager.LiveControlClients.TryGetValue(device.Id, out var client))
+                        {
+                            <StatePart Text="@device.Name.Truncate(13)"
+                                       Icon="@Icons.Material.Filled.Wifi"
+                                       IconColor="@GetConnectionStateColor(client.State)"
+                                       Tooltip="@client.State.ToString()"/>
+                        }
+                        else
+                        {
+                            <StatePart Text="@device.Name.Truncate(13)" Icon="@Icons.Material.Filled.Wifi" IconColor="@Color.Dark" Tooltip="Offline"/>
+                        }
+                    }
+
+
+                </div>
+
+                <UpdateLogout/>
+            </div>
+        </div>
+
+    </div>
+</MudPaper>
+
+@code {
+
+    private static readonly string Version = typeof(MainLayout).Assembly.GetName().Version!.ToString();
+
+    [Parameter] public EventCallback<TabType> CurrentTabChanged { get; set; }
+
+    private TabType _currentTab = TabType.Dashboard;
+
+    [Parameter]
+    public TabType CurrentTab
+    {
+        get => _currentTab;
+        set
+        {
+            if(_currentTab == value) return;
+            CurrentTabChanged.InvokeAsync(value);
+            _currentTab = value;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        StatusHandler.OnWebsocketStatusChanged += () => InvokeAsync(StateHasChanged);
+    }
+
+    private void NavigateTab(TabType tab)
+    {
+        CurrentTab = tab;
+    }
+
+    private static Color GetConnectionStateColor(HubConnectionState state) =>
+        state switch
+        {
+            HubConnectionState.Connected => Color.Success,
+            HubConnectionState.Reconnecting => Color.Warning,
+            HubConnectionState.Connecting => Color.Warning,
+            HubConnectionState.Disconnected => Color.Error,
+            _ => Color.Error
+        };
+
+    private static Color GetConnectionStateColor(WebsocketConnectionState state) =>
+        state switch
+        {
+            WebsocketConnectionState.Connected => Color.Success,
+            WebsocketConnectionState.Reconnecting => Color.Warning,
+            WebsocketConnectionState.Connecting => Color.Warning,
+            WebsocketConnectionState.Disconnected => Color.Error,
+            _ => Color.Error
+        };
+
+
+
+}

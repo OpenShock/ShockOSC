@@ -141,9 +141,8 @@
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideIntensity" Label="Override Intensity Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
-        @if (CurrentGroup.OverrideIntensity)
-        {
-            <MudDivider/>
+        <MudDivider/>
+        <MudCollapse Expanded="CurrentGroup.OverrideIntensity">
             <br/>
 
             <div class="d-flex" style="justify-content: space-between">
@@ -158,33 +157,33 @@
             <br/>
             @if (!CurrentGroup.RandomIntensity)
             {
-                <DebouncedSlider T="byte" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedIntensity"
+                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedIntensity"
                                  OnSaveAction="_ => ConfigManager.SaveFnf()">
                     Intensity: @CurrentGroup.FixedIntensity%
                 </DebouncedSlider>
             }
             else
             {
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
+                <DebouncedSlider T="uint" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
                                  OnValueChanged="u => { if (CurrentGroup.IntensityRange.Max < u) CurrentGroup.IntensityRange.Max = u; }"
                                  OnSaveAction="_ => ConfigManager.SaveFnf()">
                     Min Intensity: @CurrentGroup.IntensityRange.Min%
                 </DebouncedSlider>
 
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
+                <DebouncedSlider T="uint" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
                                  OnValueChanged="u => { if (CurrentGroup.IntensityRange.Min > u) CurrentGroup.IntensityRange.Min = u; }"
                                  OnSaveAction="_ => ConfigManager.SaveFnf()">
                     Max Intensity: @CurrentGroup.IntensityRange.Max%
                 </DebouncedSlider>
             }
-        }
+
+        </MudCollapse>
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideDuration" Label="Override Duration Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
-        @if (CurrentGroup.OverrideDuration)
-        {
-            <MudDivider/>
+        <MudDivider/>
+        <MudCollapse Expanded="CurrentGroup.OverrideDuration">
             <br/>
 
             <div class="d-flex" style="justify-content: space-between">
@@ -221,18 +220,19 @@
                     Max Duration: @MathF.Round(CurrentGroup.DurationRange.Max / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
                 </DebouncedSlider>
             }
-        }
+
+        </MudCollapse>
     </MudPaper>
-    
+
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideCooldownTime" Label="Override Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
-        @if (CurrentGroup.OverrideCooldownTime)
-        {
-            <MudDivider/>
+        <MudDivider/>
+        <MudCollapse Expanded="CurrentGroup.OverrideCooldownTime">
             <br/>
-            
+
             <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="CurrentGroup.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
-        }
+
+        </MudCollapse>
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
