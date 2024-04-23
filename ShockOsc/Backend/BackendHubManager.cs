@@ -82,7 +82,7 @@ public sealed class BackendHubManager
     /// <param name="intensity"></param>
     /// <param name="type"></param>
     /// <returns></returns>
-    public async Task<bool> ControlGroup(Guid groupId, uint duration, byte intensity, ControlType type)
+    public async Task<bool> ControlGroup(Guid groupId, uint duration, byte intensity, ControlType type, bool exclusive = false)
     {
         if (groupId == Guid.Empty)
         {
@@ -93,7 +93,8 @@ public sealed class BackendHubManager
                     Id = x.Key,
                     Duration = duration,
                     Intensity = intensity,
-                    Type = type
+                    Type = type,
+                    Exclusive = exclusive
                 });
             await _openShockHubClient.Control(controlCommandsAll);
             return true;
@@ -107,7 +108,8 @@ public sealed class BackendHubManager
             Id = x,
             Duration = duration,
             Intensity = intensity,
-            Type = type
+            Type = type,
+            Exclusive = exclusive
         });
 
         await _openShockHubClient.Control(controlCommands);

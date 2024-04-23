@@ -380,7 +380,7 @@ public sealed class ShockOsc
         }
     }
 
-    private async Task InstantShock(ProgramGroup programGroup, uint duration, byte intensity)
+    private async Task InstantShock(ProgramGroup programGroup, uint duration, byte intensity, bool exclusive = false)
     {
         programGroup.LastExecuted = DateTime.UtcNow;
         programGroup.LastDuration = duration;
@@ -396,7 +396,7 @@ public sealed class ShockOsc
             "Sending shock to {GroupName} Intensity: {Intensity} IntensityPercentage: {IntensityPercentage}% Length:{Length}s",
             programGroup.Name, intensity, intensityPercentage, inSeconds);
 
-        await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock);
+        await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock, exclusive);
 
         if (!_configManager.Config.Osc.Chatbox) return;
         // Chatbox message local
@@ -511,7 +511,8 @@ public sealed class ShockOsc
             }
 
             byte intensity;
-
+            var exclusive = false;
+            
             if (programGroup.TriggerMethod == TriggerMethod.PhysBoneRelease)
             {
                 intensity = programGroup.ConfigGroup is { OverrideIntensity: true }
@@ -521,10 +522,12 @@ public sealed class ShockOsc
                     : (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max,
                         programGroup.LastStretchValue);
                 programGroup.LastStretchValue = 0;
+
+                exclusive = true;
             }
             else intensity = GetIntensity(programGroup);
 
-            InstantShock(programGroup, GetDuration(programGroup), intensity);
+            InstantShock(programGroup, GetDuration(programGroup), intensity, exclusive);
         }
     }
 
