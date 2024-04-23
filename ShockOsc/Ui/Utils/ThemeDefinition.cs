@@ -8,8 +8,8 @@ public static class ThemeDefinition
     {
         Palette = new PaletteDark
         {
-            Primary = "#8f38fd",
-            PrimaryDarken = "#722cca",
+            Primary = "#e14a6d",
+            PrimaryDarken = "#b31e40",
             Secondary = MudBlazor.Colors.Green.Accent4,
             AppbarBackground = MudBlazor.Colors.Red.Default,
             Background = "#2f2f2f",

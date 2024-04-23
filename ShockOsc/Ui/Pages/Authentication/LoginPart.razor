@@ -1,0 +1,149 @@
+﻿@using OneOf.Types
+@using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Config
+
+@inject ConfigManager ConfigManager
+@inject OpenShockApi ApiClient
+
+<MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+<br/>
+<MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary">Continue</MudButton>
+<br/>
+<br/>
+<br/>
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding d-flex" Style="flex-direction: column">
+    <div>
+        @if (_advancedSettingsExpanded)
+        {
+            <MudButton OnClick="OnAdvancedSettingsClick" EndIcon="@Icons.Material.Filled.KeyboardArrowUp">Advanced Settings</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="OnAdvancedSettingsClick" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">Advanced Settings</MudButton>
+        }
+    </div>
+
+    <MudCollapse Expanded="_advancedSettingsExpanded">
+        @if (!_useCustomServerDialog)
+        {
+            <MudSelect T="BackendServer" Label="Server" @bind-Value="Server" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                <MudSelectItem T="BackendServer" Value="BackendServer.Production"><span class="server-url-backdrop">https://api.shocklink.net/</span> (Production)</MudSelectItem>
+                <MudSelectItem T="BackendServer" Value="BackendServer.Staging"><span class="server-url-backdrop">https://api-staging.shocklink.net/</span> (Staging)</MudSelectItem>
+                @if (_customServerUri != null)
+                {
+                    <MudSelectItem T="BackendServer" Value="BackendServer.Custom"><span class="server-url-backdrop">@_customServerUri</span> (Custom)</MudSelectItem>
+                }
+            </MudSelect>
+            
+            <br/>
+            <MudButton OnClick="() => _useCustomServerDialog = true" Color="Color.Primary">Use custom server</MudButton>
+        }
+        else
+        {
+            <MudTextField @bind-Value="_server" Error="@ValidateCustomServerBool()" Label="Custom Server" Variant="Variant.Outlined"></MudTextField>
+            <br/>
+            
+            <MudButton OnClick="() => _useCustomServerDialog = false" Variant="Variant.Filled" Color="Color.Primary">Back</MudButton>
+            <MudButton OnClick="SaveCustomServer" Variant="Variant.Filled" Color="Color.Primary" Disabled="@ValidateCustomServerBool()">Save</MudButton>
+        }
+    </MudCollapse>
+
+</MudPaper>
+
+<style>
+    .server-url-backdrop {
+        background-color: rgba(66, 66, 66, 1);
+        border-radius: 5px;
+    }
+</style>
+
+@code {
+    private bool _useCustomServerDialog = false;
+
+    private bool _advancedSettingsExpanded = false;
+
+    private string? _server = null;
+
+    [Parameter] public Func<Task> ProceedAuthenticated { get; set; }
+
+    public async Task Login()
+    {
+        await ConfigManager.SaveAsync();
+        ApiClient.SetupApiClient();
+        await ProceedAuthenticated();
+    }
+
+    private bool ValidateCustomServerBool() => !ValídateCustomServer().IsT0;
+
+    private OneOf.OneOf<Success<Uri>, StringIsNull, UriIsNotValid> ValídateCustomServer()
+    {
+        if (string.IsNullOrEmpty(_server)) return new StringIsNull();
+        if (Uri.TryCreate(_server, UriKind.Absolute, out var uri))
+        {
+            if (uri.Scheme != "http" && uri.Scheme != "https") return new UriIsNotValid();
+            return new Success<Uri>(uri);
+        }
+
+        return new UriIsNotValid();
+    }
+
+    private void SaveCustomServer()
+    {
+        var validation = ValídateCustomServer();
+        if (validation.IsT0)
+        {
+            _customServerUri = validation.AsT0.Value;
+            Server = BackendServer.Custom;
+            _useCustomServerDialog = false;
+        }
+    }
+
+
+    private void OnAdvancedSettingsClick()
+    {
+        _advancedSettingsExpanded = !_advancedSettingsExpanded;
+    }
+
+    private enum BackendServer
+    {
+        Production,
+        Staging,
+        Custom
+    }
+
+    private Uri? _customServerUri = null;
+
+    private BackendServer Server
+    {
+        get => ConfigManager.Config.OpenShock.Backend.ToString() switch
+        {
+            ProductionServerString => BackendServer.Production,
+            StagingServerString => BackendServer.Staging,
+            _ => BackendServer.Custom
+        };
+        set => ConfigManager.Config.OpenShock.Backend = value switch
+        {
+            BackendServer.Production => _productionServer,
+            BackendServer.Staging => _stagingServer,
+            BackendServer.Custom => _customServerUri,
+        };
+    }
+
+    private struct WrongSchema;
+
+    private struct StringIsNull;
+
+    private struct UriIsNotValid;
+
+    private const string ProductionServerString = "https://api.shocklink.net/";
+    private const string StagingServerString = "https://staging-api.shocklink.net/";
+
+    private static Uri _productionServer = new(ProductionServerString);
+    private static Uri _stagingServer = new(StagingServerString);
+
+    protected override void OnInitialized()
+    {
+        if (Server == BackendServer.Custom) _customServerUri = ConfigManager.Config.OpenShock.Backend;
+    }
+
+}

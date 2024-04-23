@@ -1,5 +1,4 @@
 @using OpenShock.ShockOsc.Ui.Utils
-@using OpenShock.SDK.CSharp.Live
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
 @using Microsoft.Extensions.Logging
@@ -39,10 +38,7 @@
         @switch (_currentState)
         {
             case State.Login:
-                <MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
-                <br/>
-                <MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary" Style="float: right;">Continue</MudButton>
-                <br/>
+                <LoginPart ProceedAuthenticated="ProceedAuthenticated"/>
                 break;
             case State.Loading:
                 <MudProgressCircular Color="Color.Primary" Style="height:125px;width:125px;" Indeterminate="true"/>
@@ -67,7 +63,7 @@
         Authenticated,
         Failed
     }
-
+    
     private State _currentState = State.Login;
 
     private bool Loading { get; set; }
@@ -84,17 +80,11 @@
         _currentState = State.Login;
     }
 
-    public async Task Login()
-    {
-        await ConfigManager.SaveAsync();
-        ApiClient.SetupApiClient();
-        await ProceedAuthenticated();
-    }
-
     private async Task ProceedAuthenticated()
     {
         Loading = true;
         _currentState = State.Loading;
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -107,15 +97,16 @@
             await ApiClient.RefreshShockers();
 
             await LiveControlManager.RefreshConnections();
-
-
+            
             _currentState = State.Authenticated;
+            await InvokeAsync(StateHasChanged);
 
             NavigationManager.NavigateTo("main");
         }
         catch (Exception e)
         {
             _currentState = State.Failed;
+            await InvokeAsync(StateHasChanged);
             Snackbar.Add("Failed to authenticate", Severity.Error);
         }
     }

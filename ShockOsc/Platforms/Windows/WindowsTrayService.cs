@@ -71,11 +71,14 @@ public class WindowsTrayService : ITrayService
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
         var windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
         var appWindow = AppWindow.GetFromWindowId(windowId);
+        
+        appWindow.Show();
 
-        
-        
-        if (appWindow.IsVisible) appWindow.Hide();
-        else appWindow.Show();
+        if (appWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.IsAlwaysOnTop = true;
+            presenter.IsAlwaysOnTop = false;    
+        }
     }
 
     private static void OnQuitClick(object? sender, EventArgs eventArgs)
