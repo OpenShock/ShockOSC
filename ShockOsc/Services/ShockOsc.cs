@@ -293,7 +293,6 @@ public sealed class ShockOsc
         switch (action)
         {
             case "IShock":
-                // TODO: check Cooldowns
                 if (value is not true) return;
                 if (_underscoreConfig.KillSwitch)
                 {
@@ -306,6 +305,21 @@ public sealed class ShockOsc
                 {
                     programGroup.TriggerMethod = TriggerMethod.None;
                     await LogIgnoredAfk();
+                    return;
+                }
+                
+                var cooldownTime = _configManager.Config.Behaviour.CooldownTime;
+                if(programGroup.ConfigGroup is { OverrideCooldownTime: true }) 
+                    cooldownTime = programGroup.ConfigGroup.CooldownTime;
+                
+                var isActiveOrOnCooldown =
+                    programGroup.LastExecuted.AddMilliseconds(cooldownTime)
+                        .AddMilliseconds(programGroup.LastDuration) > DateTime.UtcNow;
+                
+                if (isActiveOrOnCooldown)
+                {
+                    programGroup.TriggerMethod = TriggerMethod.None;
+                    _logger.LogInformation("Ignoring IShock, group {Group} is on cooldown", programGroup.Name);
                     return;
                 }
 
