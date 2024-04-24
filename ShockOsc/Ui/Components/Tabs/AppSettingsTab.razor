@@ -12,10 +12,10 @@
 </MudPaper>
 
 <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-    <MudText>OSC Options</MudText>
+    <MudText>OSC Options (changing requires restart)</MudText>
     <MudDivider/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.QuestSupport" Label="Quest Support" @bind-Value:after="OnSettingsValueChange"/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.OscQuery" Label="OSC Query (requires restart)" @bind-Value:after="OnSettingsValueChange"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.OscQuery" Label="OSC Query" @bind-Value:after="OnSettingsValueChange"/>
     @if (!ConfigManager.Config.Osc.OscQuery)
     {
     <br/>

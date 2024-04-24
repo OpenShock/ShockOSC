@@ -48,8 +48,7 @@
             <div Class="pa-4">
 
                 <MudText Style="font-size: 10pt">ShockOSC v@(Version)</MudText>
-
-                <div class="d-flex gap-5" style="flex-wrap: wrap">
+                <div class="d-flex gap-5" style="flex-wrap: wrap; margin: 10px 0;">
                     <StatePart Text="Hub" Icon="@Icons.Material.Filled.Wifi"
                                IconColor="@GetConnectionStateColor(ApiHubClient.State)"
                                Tooltip="@ApiHubClient.State.ToString()">
@@ -72,7 +71,6 @@
 
 
                 </div>
-
                 <UpdateLogout/>
             </div>
         </div>
