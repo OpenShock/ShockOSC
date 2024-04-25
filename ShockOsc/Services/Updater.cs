@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
+using OpenShock.ShockOsc.Ui.Utils;
 
 namespace OpenShock.ShockOsc.Services;
 
@@ -11,19 +12,23 @@ public sealed class Updater
 {
     private const string GithubLatest = "https://api.github.com/repos/OpenShock/ShockOsc/releases/latest";
     private const string SetupFileName = "ShockOSC_Setup.exe"; // OpenShock.ShockOsc.exe
-    
+
     private static readonly HttpClient HttpClient = new();
-    
+
     private readonly string _setupFilePath = Path.Combine(Environment.CurrentDirectory, SetupFileName);
-    private readonly Version _currentVersion = Assembly.GetEntryAssembly()?.GetName().Version ?? throw new Exception("Could not determine ShockOsc version");
+
+    private readonly Version _currentVersion = Assembly.GetEntryAssembly()?.GetName().Version ??
+                                               throw new Exception("Could not determine ShockOsc version");
+
     private Uri? LatestDownloadUrl { get; set; }
-    
+
     private readonly ILogger<Updater> _logger;
     private readonly ConfigManager _configManager;
 
-    public bool UpdateAvailable { get; private set; }
+
+    public UpdateableVariable<bool> UpdateAvailable { get; } = new(false);
     public Version? LatestVersion { get; private set; }
-    
+
 
     public Updater(ILogger<Updater> logger, ConfigManager configManager)
     {
@@ -45,7 +50,7 @@ public sealed class Updater
             return false;
         }
     }
-    
+
     private async Task<(Version, GithubReleaseResponse.Asset)?> GetLatestRelease()
     {
         _logger.LogInformation("Checking GitHub for updates...");
@@ -55,18 +60,24 @@ public sealed class Updater
             var res = await HttpClient.GetAsync(GithubLatest);
             if (!res.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Failed to get latest version information from GitHub. {StatusCode}", res.StatusCode);
+                _logger.LogWarning("Failed to get latest version information from GitHub. {StatusCode}",
+                    res.StatusCode);
                 return null;
             }
 
-            var json = await JsonSerializer.DeserializeAsync<GithubReleaseResponse>(await res.Content.ReadAsStreamAsync());
+            var json =
+                await JsonSerializer.DeserializeAsync<GithubReleaseResponse>(await res.Content.ReadAsStreamAsync());
             if (json == null)
             {
                 _logger.LogWarning("Could not deserialize json");
                 return null;
             }
 
-            if (!Version.TryParse(json.TagName[1..], out var version))
+            var tagName = json.TagName;
+            if (!string.IsNullOrEmpty(tagName) && tagName[0] == 'v')
+                tagName = tagName[1..];
+
+            if (!Version.TryParse(tagName, out var version))
             {
                 _logger.LogWarning("Failed to parse version. Value: {Version}", json.TagName);
                 return null;
@@ -75,7 +86,8 @@ public sealed class Updater
             var asset = json.Assets.FirstOrDefault(x => x.Name == SetupFileName);
             if (asset == null)
             {
-                _logger.LogWarning("Could not find asset with {@SetupName}. Assets found: {@Assets}", SetupFileName, json.Assets);
+                _logger.LogWarning("Could not find asset with {@SetupName}. Assets found: {@Assets}", SetupFileName,
+                    json.Assets);
                 return null;
             }
 
@@ -88,32 +100,39 @@ public sealed class Updater
         }
     }
 
-    public async Task<bool> CheckUpdate()
+    public async Task CheckUpdate()
     {
         var latestVersion = await GetLatestRelease();
-        if (latestVersion is null) return false;
+        if (latestVersion == null)
+        {
+            UpdateAvailable.Value = false;
+            return;
+        }
         if (latestVersion.Value.Item1 <= _currentVersion)
         {
-            _logger.LogInformation("ShockOsc is up to date ([{Version}] >= [{LatestVersion}])", _currentVersion, latestVersion.Value.Item1);
-            UpdateAvailable = false;
-            return false;
+            _logger.LogInformation("ShockOsc is up to date ([{Version}] >= [{LatestVersion}])", _currentVersion,
+                latestVersion.Value.Item1);
+            UpdateAvailable.Value = false;
+            return;
         }
 
-        UpdateAvailable = true;
+        UpdateAvailable.Value = true;
         LatestVersion = latestVersion.Value.Item1;
         LatestDownloadUrl = latestVersion.Value.Item2.BrowserDownloadUrl;
         if (_configManager.Config.LastIgnoredVersion != null &&
             _configManager.Config.LastIgnoredVersion >= latestVersion.Value.Item1)
         {
-            _logger.LogInformation("ShockOsc is not up to date. Skipping update due to previous postpone. You can reenable the updater by setting 'LastIgnoredVersion' to null");
-            return false;
+            _logger.LogInformation(
+                "ShockOsc is not up to date. Skipping update due to previous postpone. You can reenable the updater by setting 'LastIgnoredVersion' to null");
+            UpdateAvailable.Value = false;
+            return;
         }
-        
+
         _logger.LogWarning(
             "ShockOsc is not up to date. Newest version is [{NewVersion}] but you are on [{CurrentVersion}]!",
             latestVersion.Value.Item1, _currentVersion);
 
-        return true;
+        UpdateAvailable.Value = true;
     }
 
     public async Task DoUpdate()

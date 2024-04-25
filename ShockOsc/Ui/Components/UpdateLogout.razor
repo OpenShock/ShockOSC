@@ -16,7 +16,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (await Updater.CheckUpdate()) OpenUpdateDialog();
+        Updater.UpdateAvailable.OnValueChanged += v =>
+        {
+            InvokeAsync(StateHasChanged);
+            OpenUpdateDialog();
+        };
+
+        await Updater.CheckUpdate();
     }
 
     private async Task Logout()
@@ -37,9 +43,9 @@
     </MudTooltip>
 
 
-    <MudTooltip Text="@(Updater.UpdateAvailable ? "Update" : "You are up-to-date!")">
-        <MudButton Disabled="!Updater.UpdateAvailable" Color="Color.Primary" @onclick="OpenUpdateDialog" Size="Size.Small" Variant="Variant.Filled" Class="mud-button-full-width">
-            <MudIcon Icon="@(Updater.UpdateAvailable ? Icons.Material.Filled.Update : Icons.Material.Filled.UpdateDisabled)"/>
+    <MudTooltip Text="@(Updater.UpdateAvailable.Value ? "Update" : "You are up-to-date!")">
+        <MudButton Disabled="!Updater.UpdateAvailable.Value" Color="Color.Primary" @onclick="OpenUpdateDialog" Size="Size.Small" Variant="Variant.Filled" Class="mud-button-full-width">
+            <MudIcon Icon="@(Updater.UpdateAvailable.Value ? Icons.Material.Filled.Update : Icons.Material.Filled.UpdateDisabled)"/>
         </MudButton>
     </MudTooltip>
 
