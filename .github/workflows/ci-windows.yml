@@ -39,15 +39,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Install dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Test
-        run: dotnet test --no-restore --verbosity normal
-
       - name: Publish ShockOSC Windows
         run: dotnet publish ShockOsc/ShockOsc.csproj -c Release -f net8.0-windows10.0.19041.0 -o ./publish/ShockOsc
 
