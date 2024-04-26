@@ -7,6 +7,7 @@ using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Logging;
 using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Services;
+using OpenShock.ShockOsc.Utils;
 using Serilog;
 using MauiApp = OpenShock.ShockOsc.Ui.MauiApp;
 
@@ -146,6 +147,9 @@ public static class MauiProgram
         // <---- Warmup ---->
         app.Services.GetRequiredService<Services.ShockOsc>();
         app.Services.GetRequiredService<OscQueryServer>().Start();
+
+        var updater = app.Services.GetRequiredService<Updater>();
+        OsTask.Run(updater.CheckUpdate);
 
         return app;
     }

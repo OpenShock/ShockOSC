@@ -1,4 +1,6 @@
-﻿namespace OpenShock.ShockOsc.Config;
+﻿using Semver;
+
+namespace OpenShock.ShockOsc.Config;
 
 public sealed class ShockOscConfig
 {
@@ -7,7 +9,7 @@ public sealed class ShockOscConfig
     public OpenShockConf OpenShock { get; set; } = new();
     public ChatboxConf Chatbox { get; set; } = new();
     public IDictionary<Guid, Group> Groups { get; set; } = new Dictionary<Guid, Group>();
-    public Version? LastIgnoredVersion { get; set; } = null;
+    public SemVersion? LastIgnoredVersion { get; set; } = null;
     
     public AppConfig App { get; set; } = new();
 }

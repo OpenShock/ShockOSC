@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using OpenShock.SDK.CSharp.Hub.Utils;
 using OpenShock.ShockOsc.Utils;
 
 namespace OpenShock.ShockOsc.Config;
@@ -31,7 +32,7 @@ public sealed class ConfigManager
                 {
                     config = JsonSerializer.Deserialize<ShockOscConfig>(json, Options);
                 }
-                catch (JsonException e)
+                catch (Exception e)
                 {
                     _logger.LogCritical(e, "Error during deserialization/loading of config");
                     _logger.LogWarning("Attempting to move old config and generate a new one");
@@ -55,7 +56,7 @@ public sealed class ConfigManager
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() }
+        Converters = { new JsonStringEnumConverter(), new SemVersionJsonConverter() }
     };
     
     private readonly SemaphoreSlim _saveLock = new(1, 1);

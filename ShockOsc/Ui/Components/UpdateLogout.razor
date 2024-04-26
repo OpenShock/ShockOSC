@@ -19,10 +19,11 @@
         Updater.UpdateAvailable.OnValueChanged += v =>
         {
             InvokeAsync(StateHasChanged);
-            OpenUpdateDialog();
+            if (v && !Updater.IsPostponed) OpenUpdateDialog();
         };
 
-        await Updater.CheckUpdate();
+        if (Updater.UpdateAvailable.Value && !Updater.IsPostponed) OpenUpdateDialog();
+        
     }
 
     private async Task Logout()

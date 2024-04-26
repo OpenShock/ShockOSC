@@ -16,6 +16,11 @@
         await ConfigManager.SaveAsync();
         MudDialog.Close(DialogResult.Ok(true));
     }
+    
+    private void Dismiss()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
 
     private void DownloadUpdate()
     {
@@ -44,6 +49,7 @@
     <DialogActions>
     @if (!_isDownloading)
     {
+        <MudButton Color="Color.Primary" OnClick="Dismiss">Dismiss</MudButton>
         <MudButton Color="Color.Primary" OnClick="Skip">Skip</MudButton>
         <MudButton Color="Color.Primary" OnClick="DownloadUpdate">Update</MudButton>
     }
