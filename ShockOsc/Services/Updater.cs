@@ -17,7 +17,7 @@ public sealed class Updater
 
     private static readonly HttpClient HttpClient = new();
 
-    private readonly string _setupFilePath = Path.Combine(Environment.CurrentDirectory, SetupFileName);
+    private readonly string _setupFilePath = Path.Combine(Path.GetTempPath(), SetupFileName);
 
     private static readonly SemVersion CurrentVersion = SemVersion.Parse(typeof(Updater).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, SemVersionStyles.Strict);
 
