@@ -12,7 +12,7 @@ namespace OpenShock.ShockOsc.Services;
 
 public sealed class Updater
 {
-    private const string GithubLatest = "https://api.github.com/repos/OpenShock/ShockOsc/releases/152715042";
+    private const string GithubLatest = "https://api.github.com/repos/OpenShock/ShockOsc/releases/latest";
     private const string SetupFileName = "ShockOSC_Setup.exe"; // OpenShock.ShockOsc.exe
 
     private static readonly HttpClient HttpClient = new();
