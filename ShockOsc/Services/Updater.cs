@@ -19,7 +19,7 @@ public sealed class Updater
 
     private readonly string _setupFilePath = Path.Combine(Environment.CurrentDirectory, SetupFileName);
 
-    private readonly SemVersion _currentVersion = SemVersion.Parse(typeof(Updater).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, SemVersionStyles.Strict);
+    private static readonly SemVersion CurrentVersion = SemVersion.Parse(typeof(Updater).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, SemVersionStyles.Strict);
 
     private Uri? LatestDownloadUrl { get; set; }
 
@@ -36,7 +36,7 @@ public sealed class Updater
     {
         _logger = logger;
         _configManager = configManager;
-        HttpClient.DefaultRequestHeaders.Add("User-Agent", $"ShockOsc/{_currentVersion}");
+        HttpClient.DefaultRequestHeaders.Add("User-Agent", $"ShockOsc/{CurrentVersion}");
     }
 
     private static bool TryDeleteFile(string fileName)
@@ -112,10 +112,10 @@ public sealed class Updater
             return;
         }
 
-        var comparison = _currentVersion.ComparePrecedenceTo(latestVersion.Value.Item1);
+        var comparison = CurrentVersion.ComparePrecedenceTo(latestVersion.Value.Item1);
         if (comparison >= 0)
         {
-            _logger.LogInformation("ShockOsc is up to date ([{Version}] >= [{LatestVersion}]) ({Comp})", _currentVersion,
+            _logger.LogInformation("ShockOsc is up to date ([{Version}] >= [{LatestVersion}]) ({Comp})", CurrentVersion,
                 latestVersion.Value.Item1, comparison);
             UpdateAvailable.Value = false;
             return;
@@ -134,7 +134,7 @@ public sealed class Updater
 
         _logger.LogWarning(
             "ShockOsc is not up to date. Newest version is [{NewVersion}] but you are on [{CurrentVersion}]!",
-            latestVersion.Value.Item1, _currentVersion);
+            latestVersion.Value.Item1, CurrentVersion);
     }
 
     public async Task DoUpdate()

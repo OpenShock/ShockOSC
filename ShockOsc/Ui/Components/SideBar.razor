@@ -1,11 +1,12 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
+﻿@using System.Reflection
+@using Microsoft.AspNetCore.SignalR.Client
 @using OpenShock.SDK.CSharp.Hub
-@using OpenShock.SDK.CSharp.Live.LiveControlModels
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Services
 @using OpenShock.ShockOsc.Ui.Components.Tabs
 @using OpenShock.ShockOsc.Ui.Utils
 @using OpenShock.ShockOsc.Ui.Components.Parts
+@using Semver
 @inject OpenShockApi Api
 @inject OpenShockHubClient ApiHubClient
 @inject ISnackbar Snackbar
@@ -47,7 +48,7 @@
             <MudDivider DividerType="DividerType.Middle"/>
             <div Class="pa-4">
 
-                <MudText Style="font-size: 10pt">ShockOSC v@(Version)</MudText>
+                <MudText Style="font-size: 10pt">ShockOSC v@(Version.WithoutMetadata().ToString())</MudText>
                 <div class="d-flex gap-5" style="flex-wrap: wrap; margin: 10px 0;">
 
                     <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
@@ -85,7 +86,7 @@
 
 @code {
 
-    private static readonly string Version = typeof(MainLayout).Assembly.GetName().Version!.ToString();
+    private static readonly SemVersion Version = SemVersion.Parse(typeof(SideBar).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, SemVersionStyles.Strict);
 
     [Parameter] public EventCallback<TabType> CurrentTabChanged { get; set; }
 
