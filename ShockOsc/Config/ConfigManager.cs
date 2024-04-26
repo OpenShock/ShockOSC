@@ -8,7 +8,7 @@ namespace OpenShock.ShockOsc.Config;
 
 public sealed class ConfigManager
 {
-    private static readonly string Path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\ShockOSC\config.json";
+    private static readonly string Path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\OpenShock\ShockOSC\config.json";
     
     private readonly ILogger<ConfigManager> _logger;
     public ShockOscConfig Config { get; }
