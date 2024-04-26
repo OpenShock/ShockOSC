@@ -1,6 +1,7 @@
 ﻿@using OpenShock.ShockOsc.Logging
 @using OpenShock.ShockOsc.Utils
 @using Serilog.Events
+@using OpenShock.ShockOsc.Ui.ErrorHandling
 @implements IDisposable
 
 <MudTable T="LogStore.LogEntry" RowClass="cursor-pointer" RowClassFunc="RowClassFunc" Items="LogStore.Logs.OrderByDescending(x => x.Time)" OnRowClick="LogRowClick" Breakpoint="Breakpoint.Sm" Hover="true" Dense="true" Height="100%">
@@ -17,8 +18,8 @@
     <ChildRowContent>
         @if (context.IsExpanded)
         {
-            <MudTr Style="pointer-events: none;">
-                <td colspan="12" style="padding: 0 10px">
+            <MudTr>
+                <td colspan="3" style="padding: 0 10px">
 
                     <br/>
                     <MudTextField ReadOnly Class="option-width" Variant="Variant.Filled" Value="@context.Time.ToString("HH:mm:ss")" Label="Time"></MudTextField>
@@ -27,9 +28,10 @@
 
                     <br/>
                     <br/>
-                    <MudPaper Class="rounded-lg" Style="padding: 10px 15px;  margin: 0 50px;">
-                        <MudText>@context.Message</MudText>
-                    </MudPaper>
+                    @* HACK, thank you html tables *@
+                    <div style="width: calc(100vw - 335px)">
+                        <CodeBlock Value="@context.Message"/>
+                    </div>
                     <br/>
                     <br/>
                 </td>
@@ -44,10 +46,12 @@
 
     private void LogRowClick(TableRowClickEventArgs<LogStore.LogEntry> rowClickEventArgs)
     {
+        if(rowClickEventArgs.Item == null) return;
         rowClickEventArgs.Item.IsExpanded = !rowClickEventArgs.Item.IsExpanded;
     }
     
-    private string RowClassFunc(LogStore.LogEntry? log, int arg2) => log == null ? string.Empty : GetLogClass(log.Level) + (log.IsExpanded ? " expanded" : "");
+    private string RowClassFunc(LogStore.LogEntry? log, int arg2) =>
+        log == null ? string.Empty : GetLogClass(log.Level) + (log.IsExpanded ? " expanded" : "");
 
     protected override void OnInitialized()
     {

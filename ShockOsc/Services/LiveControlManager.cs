@@ -101,7 +101,7 @@ public sealed class LiveControlManager
                         _configManager.Config.OpenShock.Token, _liveControlLogger);
                     LiveControlClients.Add(device.Id, client);
 
-                    client.OnStateUpdate += async (state) =>
+                    client.State.OnValueChanged += async state =>
                     {
                         _logger.LogTrace("Live control client for device [{DeviceId}] status updated {Status}",
                             device.Id, state);

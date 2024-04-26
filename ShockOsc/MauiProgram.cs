@@ -125,7 +125,7 @@ public static class MauiProgram
         
         builder.Services.AddMudServices();
         builder.Services.AddMauiBlazorWebView();
-
+        
         // <---- App ---->
 
         builder

@@ -49,23 +49,28 @@
 
                 <MudText Style="font-size: 10pt">ShockOSC v@(Version)</MudText>
                 <div class="d-flex gap-5" style="flex-wrap: wrap; margin: 10px 0;">
-                    <StatePart Text="Hub" Icon="@Icons.Material.Filled.Wifi"
-                               IconColor="@GetConnectionStateColor(ApiHubClient.State)"
-                               Tooltip="@ApiHubClient.State.ToString()">
-                    </StatePart>
+
+                    <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
+                        <MudText Style="font-size: 10pt">Hub</MudText>
+                        <MudTooltip Arrow="true" Placement="Placement.Top" Text="@ApiHubClient.State.ToString()">
+                            <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="@GetConnectionStateColor(ApiHubClient.State)"/>
+                        </MudTooltip>
+                    </div>
 
                     @foreach (var device in Api.Devices)
                     {
                         if (LiveControlManager.LiveControlClients.TryGetValue(device.Id, out var client))
                         {
-                            <StatePart Text="@device.Name.Truncate(13)"
-                                       Icon="@Icons.Material.Filled.Wifi"
-                                       IconColor="@GetConnectionStateColor(client.State)"
-                                       Tooltip="@client.State.ToString()"/>
+                            <StatePart Text="@device.Name.Truncate(13)" Client="client"/>
                         }
                         else
                         {
-                            <StatePart Text="@device.Name.Truncate(13)" Icon="@Icons.Material.Filled.Wifi" IconColor="@Color.Dark" Tooltip="Offline"/>
+                            <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
+                                <MudText Style="font-size: 10pt">@device.Name.Truncate(13)</MudText>
+                                <MudTooltip Arrow="true" Placement="Placement.Top" Text="Offline">
+                                    <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="@Color.Dark"/>
+                                </MudTooltip>
+                            </div>
                         }
                     }
 
@@ -92,7 +97,7 @@
         get => _currentTab;
         set
         {
-            if(_currentTab == value) return;
+            if (_currentTab == value) return;
             CurrentTabChanged.InvokeAsync(value);
             _currentTab = value;
         }
@@ -118,16 +123,5 @@
             _ => Color.Error
         };
 
-    private static Color GetConnectionStateColor(WebsocketConnectionState state) =>
-        state switch
-        {
-            WebsocketConnectionState.Connected => Color.Success,
-            WebsocketConnectionState.Reconnecting => Color.Warning,
-            WebsocketConnectionState.Connecting => Color.Warning,
-            WebsocketConnectionState.Disconnected => Color.Error,
-            _ => Color.Error
-        };
-
-
-
 }
+

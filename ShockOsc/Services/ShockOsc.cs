@@ -407,8 +407,8 @@ public sealed class ShockOsc
         programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(duration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
         _logger.LogInformation(
-            "Sending shock to {GroupName} Intensity: {Intensity} IntensityPercentage: {IntensityPercentage}% Length:{Length}s",
-            programGroup.Name, intensity, intensityPercentage, inSeconds);
+            "Sending shock to {GroupName} Intensity: {Intensity} IntensityPercentage: {IntensityPercentage}% Length:{Length}s Exclusive: {Exclusive}",
+            programGroup.Name, intensity, intensityPercentage, inSeconds, exclusive);
 
         await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock, exclusive);
 
