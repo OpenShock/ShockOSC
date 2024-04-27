@@ -85,7 +85,7 @@ public sealed class UnderscoreConfig
                     if (value is float durationFloat)
                     {
                         var currentDuration = MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedDuration / 10000f);
-                        if (durationFloat == currentDuration) return;
+                        if (Math.Abs(durationFloat - currentDuration) < 0.001) return;
 
                         _configManager.Config.Behaviour.FixedDuration = MathUtils.ClampUint((uint)Math.Round(durationFloat * 10000), 0, 10000);
                         ValidateSettings();
@@ -99,7 +99,7 @@ public sealed class UnderscoreConfig
                     if (value is float cooldownTimeFloat)
                     {
                         var currentCooldownTime = MathUtils.ClampFloat(_configManager.Config.Behaviour.CooldownTime / 100000f);
-                        if (cooldownTimeFloat == currentCooldownTime) return;
+                        if (Math.Abs(cooldownTimeFloat - currentCooldownTime) < 0.001) return;
 
                         _configManager.Config.Behaviour.CooldownTime = MathUtils.ClampUint((uint)Math.Round(cooldownTimeFloat * 100000), 0, 100000);
                         ValidateSettings();
@@ -114,7 +114,7 @@ public sealed class UnderscoreConfig
                     if (value is float holdTimeFloat)
                     {
                         var currentHoldTime = MathUtils.ClampFloat(_configManager.Config.Behaviour.HoldTime / 1000f);
-                        if (holdTimeFloat == currentHoldTime) return;
+                        if (Math.Abs(holdTimeFloat - currentHoldTime) < 0.001) return;
 
                         _configManager.Config.Behaviour.HoldTime = MathUtils.ClampUint((uint)Math.Round(holdTimeFloat * 1000), 0, 1000);
                         ValidateSettings();
@@ -133,6 +133,7 @@ public sealed class UnderscoreConfig
                     if (KillSwitch == stateBool) return;
 
                     KillSwitch = stateBool;
+                    OnConfigUpdate?.Invoke(); // update Ui
                     _logger.LogInformation("Paused state set to: {KillSwitch}", KillSwitch);
                 }
                 break;

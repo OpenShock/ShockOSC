@@ -12,7 +12,15 @@
 
 @code {
 
-    public Guid? Group { get; set; } = null;
+    private Guid? _group = null;
+    public Guid? Group
+    {
+        get => _group;
+        set
+        {
+            _group = value;
+            OnGroupSelect();
+        } }
 
     public async Task AddGroup()
     {
@@ -44,11 +52,11 @@
 
     private Task OnGroupSettingsValueChange() => ConfigManager.SaveAsync();
 
-    private async Task OnGroupSelect()
+    private void OnGroupSelect()
     {
         if (CurrentGroup != null) _selectedShockers = [..CurrentGroup.Shockers];
 
-        await InvokeAsync(StateHasChanged);
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task OnSelectedShockersUpdate()
@@ -122,7 +130,7 @@
 <MudButton OnClick="AddGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add New Group</MudButton>
 <MudButton OnClick="DeleteGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Delete Group</MudButton>
 <br/> <br/>
-<MudSelect Variant="Variant.Outlined" T="Guid?" Label="Select Group" Dense="true" Margin="Margin.Dense" @bind-Value="Group" @bind-Value:after="OnGroupSelect" Clearable>
+<MudSelect Variant="Variant.Outlined" T="Guid?" Label="Select Group" Dense="true" Margin="Margin.Dense" @bind-Value="Group" Clearable>
     @foreach (var group in ConfigManager.Config.Groups)
     {
         <MudSelectItem T="Guid?" Value="@group.Key">@group.Value.Name</MudSelectItem>
