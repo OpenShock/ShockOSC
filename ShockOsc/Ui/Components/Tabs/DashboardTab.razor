@@ -1,9 +1,164 @@
-﻿@using OpenShock.ShockOsc.Services
+﻿@using System.Diagnostics
+@using System.Reflection
+@using Microsoft.AspNetCore.SignalR.Client
+@using OpenShock.SDK.CSharp.Hub
+@using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Services
+@using Semver
+@using OpenShock.ShockOsc.Ui.Components.Parts
+@using OpenShock.ShockOsc.Ui.Utils
 @inject StatusHandler StatusHandler
+@inject LiveControlManager LiveControlManager
+@inject OpenShockApi Api
+@inject OpenShockHubClient ApiHubClient
+@inject ISnackbar Snackbar
+@implements IDisposable
 
-<h3>DashboardTab</h3>
+<div class="dashboard-box">
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
+        <MudText Typo="Typo.h6">Welcome to ShockOSC</MudText>
+        <MudText Typo="Typo.body2">Version @(Version.WithoutMetadata().ToString())</MudText>
+        <br/>
+        <br/>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Custom.Brands.GitHub" OnClick="OpenGithub">GitHub</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Bolt" OnClick="OpenOpenShock">OpenShock</MudButton>
+    </MudPaper>
 
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
+        <MudText Typo="Typo.h6">Connection Status</MudText>
+
+        <div class="d-flex gap-5" style="flex-wrap: wrap; margin: 10px 0;">
+
+            <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
+                <MudText Style="font-size: 10pt">Hub</MudText>
+                <MudTooltip Arrow="true" Placement="Placement.Top" Text="@ApiHubClient.State.ToString()">
+                    <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="@GetConnectionStateColor(ApiHubClient.State)"/>
+                </MudTooltip>
+            </div>
+
+            @foreach (var device in Api.Devices)
+            {
+                if (LiveControlManager.LiveControlClients.TryGetValue(device.Id, out var client))
+                {
+                    <StatePart Text="@device.Name.Truncate(13)" Client="client"/>
+                }
+                else
+                {
+                    <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
+                        <MudText Style="font-size: 10pt">@device.Name.Truncate(13)</MudText>
+                        <MudTooltip Arrow="true" Placement="Placement.Top" Text="Offline">
+                            <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="@Color.Dark"/>
+                        </MudTooltip>
+                    </div>
+                }
+            }
+        </div>
+    </MudPaper>
+
+    @* <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center"> *@
+    @*     <MudText Typo="Typo.h6">Discord</MudText> *@
+    @*     <iframe src="https://e.widgetbot.io/channels/383670897724358657/515696193851097109" allow="clipboard-write; fullscreen" height="600" width="800"></iframe> *@
+    @* *@
+    @* </MudPaper> *@
+
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item discord" Style="padding: 0">
+        <iframe src="https://discord.com/widget?id=1078124408775901204&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0"></iframe>
+
+    </MudPaper>
+
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
+        <MudText Typo="Typo.h6">Placeholder</MudText>
+        <MudText Typo="Typo.body2">Duo no lorem aliquyam dolor voluptua minim dolor diam sed dolores accusam est dolore voluptua takimata vel ullamcorper erat takimata erat at consectetuer amet magna</MudText>
+    </MudPaper>
+
+
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
+        <MudText Typo="Typo.h6">Placeholder</MudText>
+        <MudText Typo="Typo.body2">Duo no lorem aliquyam dolor voluptua minim dolor diam sed dolores accusam est dolore voluptua takimata vel ullamcorper erat takimata erat at consectetuer amet magna</MudText>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
+        <MudText Typo="Typo.h6">Placeholder</MudText>
+        <MudText Typo="Typo.body2">Duo no lorem aliquyam dolor voluptua minim dolor diam sed dolores accusam est dolore voluptua takimata vel ullamcorper erat takimata erat at consectetuer amet magna</MudText>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
+        <MudText Typo="Typo.h6">Placeholder</MudText>
+        <MudText Typo="Typo.body2">Duo no lorem aliquyam dolor voluptua minim dolor diam sed dolores accusam est dolore voluptua takimata vel ullamcorper erat takimata erat at consectetuer amet magna</MudText>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
+        <MudText Typo="Typo.h6">Placeholder</MudText>
+        <MudText Typo="Typo.body2">Duo no lorem aliquyam dolor voluptua minim dolor diam sed dolores accusam est dolore voluptua takimata vel ullamcorper erat takimata erat at consectetuer amet magna</MudText>
+    </MudPaper>
+</div>
+
+<style>
+    .dashboard-box {
+        display: grid;
+        
+
+        align-items: stretch;
+
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        
+        grid-gap: 10px;
+
+        justify-items: stretch;
+        
+        width: 100%;
+        height: 100%;
+    }
+    
+    .dashboard-box .item {
+
+    }
+    
+    .dashboard-box .discord {
+            grid-area: 1 / 3 / 3 / 3;
+        }
+
+    .dashboard-box .item:hover {
+        box-shadow: 0 0 10px 0 rgba(124, 124, 124, 0.39);
+    }
+</style>
 
 @code {
-    
+    private static readonly SemVersion Version = SemVersion.Parse(typeof(SideBar).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, SemVersionStyles.Strict);
+
+    private void OpenOpenShock() => OpenUrl("https://openshock.org");
+    private void OpenGithub() => OpenUrl("https://github.com/OpenShock/ShockOsc");
+
+    private void OpenUrl(string url)
+    {
+        Snackbar.Add("Opened URL in browser", Severity.Info);
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    protected override void OnInitialized()
+    {
+        StatusHandler.OnWebsocketStatusChanged += StatusHandlerOnWebsocketStatusChanged;
+    }
+
+    private Task StatusHandlerOnWebsocketStatusChanged()
+    {
+        return InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        StatusHandler.OnWebsocketStatusChanged -= StatusHandlerOnWebsocketStatusChanged;
+    }
+
+    private static Color GetConnectionStateColor(HubConnectionState state) =>
+        state switch
+        {
+            HubConnectionState.Connected => Color.Success,
+            HubConnectionState.Reconnecting => Color.Warning,
+            HubConnectionState.Connecting => Color.Warning,
+            HubConnectionState.Disconnected => Color.Error,
+            _ => Color.Error
+        };
+
 }
