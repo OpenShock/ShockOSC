@@ -3,6 +3,8 @@
 @inject OpenShockApi OpenShockApi
 @inject ConfigManager ConfigManager
 
+@page "/dash/shockers"
+
 <MudPaper Height="100%" Outlined="true" Class="rounded-lg mud-paper-padding d-flex" Style="position: relative; flex-direction: column">
 
     <MudButton OnClick="OpenShockApi.RefreshShockers" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Style="margin-right: 10px;">Refresh</MudButton>

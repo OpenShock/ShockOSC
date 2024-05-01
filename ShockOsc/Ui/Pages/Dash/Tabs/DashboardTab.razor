@@ -5,14 +5,16 @@
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Services
 @using Semver
-@using OpenShock.ShockOsc.Ui.Components.Parts
 @using OpenShock.ShockOsc.Ui.Utils
+@using OpenShock.ShockOsc.Ui.Pages.Dash.Components
 @inject StatusHandler StatusHandler
 @inject LiveControlManager LiveControlManager
 @inject OpenShockApi Api
 @inject OpenShockHubClient ApiHubClient
 @inject ISnackbar Snackbar
 @implements IDisposable
+
+@page "/dash/dashboard"
 
 <div class="dashboard-box">
     <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">

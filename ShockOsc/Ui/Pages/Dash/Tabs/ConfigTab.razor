@@ -1,15 +1,14 @@
 ﻿@using System.Globalization
-@using System.Reactive.Subjects
-@using OpenShock.ShockOsc.Utils
-@using OpenShock.ShockOsc.Ui.Components.Parts
-@using System.Reactive.Linq
 @using OpenShock.ShockOsc.Config
 @using OpenShock.ShockOsc.Services
+@using OpenShock.ShockOsc.Ui.Utils
 @implements IDisposable
 @inject UnderscoreConfig underscoreConfig
 @inject ConfigManager ConfigManager
 @inject ShockOsc ShockOsc
 @inject UnderscoreConfig UnderscoreConfig
+
+@page "/dash/config"
 
 <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding">
     <MudText>Global Shocker Options (_All Shocker)</MudText>

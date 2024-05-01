@@ -1,11 +1,8 @@
-@using OpenShock.ShockOsc.Ui.Utils
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
 @using Microsoft.Extensions.Logging
 @using OpenShock.SDK.CSharp.Hub
 @using OpenShock.ShockOsc.Services
-@inherits LayoutComponentBase
-
 @inject ConfigManager ConfigManager
 @inject NavigationManager NavigationManager
 @inject BackendHubManager HubManager
@@ -14,6 +11,8 @@
 @inject ILogger<Authenticate> Logger
 @inject LiveControlManager LiveControlManager
 @inject ISnackbar Snackbar
+@layout NotAuthedLayout
+@inherits LayoutComponentBase
 
 @page "/"
 
@@ -59,7 +58,7 @@
         Authenticated,
         Failed
     }
-    
+
     private State _currentState = State.Login;
 
     private bool Loading { get; set; }
@@ -93,11 +92,11 @@
             await ApiClient.RefreshShockers();
 
             await LiveControlManager.RefreshConnections();
-            
+
             _currentState = State.Authenticated;
             await InvokeAsync(StateHasChanged);
 
-            NavigationManager.NavigateTo("main");
+            NavigationManager.NavigateTo("dash/dashboard");
         }
         catch (Exception e)
         {

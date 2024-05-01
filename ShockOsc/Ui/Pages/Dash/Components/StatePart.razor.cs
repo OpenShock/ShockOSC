@@ -3,7 +3,7 @@ using OpenShock.SDK.CSharp.Live;
 using OpenShock.SDK.CSharp.Live.LiveControlModels;
 using Color = MudBlazor.Color;
 
-namespace OpenShock.ShockOsc.Ui.Components.Parts;
+namespace OpenShock.ShockOsc.Ui.Pages.Dash.Components;
 
 public partial class StatePart : ComponentBase, IDisposable
 {

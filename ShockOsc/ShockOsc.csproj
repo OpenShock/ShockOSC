@@ -83,4 +83,15 @@
       </None>
     </ItemGroup>
     
+    <ItemGroup>
+      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\AppSettingsTab.razor" />
+      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ChatboxTab.razor" />
+      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ConfigTab.razor" />
+      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DashboardTab.razor" />
+      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor" />
+      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor" />
+      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\LogsTab.razor" />
+      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ShockersTab.razor" />
+    </ItemGroup>
+    
 </Project>

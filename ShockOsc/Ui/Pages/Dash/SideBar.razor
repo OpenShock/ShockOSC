@@ -3,9 +3,8 @@
 @using OpenShock.SDK.CSharp.Hub
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Services
-@using OpenShock.ShockOsc.Ui.Components.Tabs
+@using OpenShock.ShockOsc.Ui.Pages.Dash.Components
 @using OpenShock.ShockOsc.Ui.Utils
-@using OpenShock.ShockOsc.Ui.Components.Parts
 @using Semver
 @inject OpenShockApi Api
 @inject OpenShockHubClient ApiHubClient
@@ -29,19 +28,19 @@
 
         <MudNavMenu style="align-self: flex-start; overflow-y: auto" Class="flex-auto flex-grow-1" Margin="Margin.Dense" Color="Color.Primary" Bordered="true">
 
-            <MudNavLinkFix Icon="@Icons.Material.Filled.Dashboard" OnClick="() => NavigateTab(TabType.Dashboard)" IsActive="CurrentTab == TabType.Dashboard">Dashboard</MudNavLinkFix>
+            <MudNavLink Icon="@Icons.Material.Filled.Dashboard" Href="/dash/dashboard">Dashboard</MudNavLink>
 
-            <MudNavLinkFix Icon="@Icons.Material.Filled.Group" OnClick="() => NavigateTab(TabType.Groups)" IsActive="CurrentTab == TabType.Groups">Groups</MudNavLinkFix>
-            <MudNavLinkFix Icon="@Icons.Material.Filled.Bolt" OnClick="() => NavigateTab(TabType.Shockers)" IsActive="CurrentTab == TabType.Shockers">Shockers</MudNavLinkFix>
+            <MudNavLink Icon="@Icons.Material.Filled.Group" Href="/dash/groups">Groups</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.Bolt" Href="/dash/shockers">Shockers</MudNavLink>
 
-            <MudNavLinkFix Icon="@Icons.Material.Filled.Chat" OnClick="() => NavigateTab(TabType.Chatbox)" IsActive="CurrentTab == TabType.Chatbox">Chatbox</MudNavLinkFix>
+            <MudNavLink Icon="@Icons.Material.Filled.Chat" Href="/dash/chatbox">Chatbox</MudNavLink>
 
 
-            <MudNavLinkFix Icon="@Icons.Material.Filled.BugReport" OnClick="() => NavigateTab(TabType.Debug)" IsActive="CurrentTab == TabType.Debug">Debug</MudNavLinkFix>
-            <MudNavLinkFix Icon="@Icons.Material.Filled.List" OnClick="() => NavigateTab(TabType.Logs)" IsActive="CurrentTab == TabType.Logs">Logs</MudNavLinkFix>
+            <MudNavLink Icon="@Icons.Material.Filled.BugReport" Href="/dash/debug">Debug</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.List" Href="/dash/logs">Logs</MudNavLink>
 
-            <MudNavLinkFix Icon="@Icons.Material.Filled.Settings" OnClick="() => NavigateTab(TabType.Config)" IsActive="CurrentTab == TabType.Config">Config</MudNavLinkFix>
-            <MudNavLinkFix Icon="@Icons.Material.Filled.SettingsApplications" OnClick="() => NavigateTab(TabType.AppSettings)" IsActive="CurrentTab == TabType.AppSettings">App Settings</MudNavLinkFix>
+            <MudNavLink Icon="@Icons.Material.Filled.Settings" Href="/dash/config">Config</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.SettingsApplications" Href="/dash/appsettings">App Settings</MudNavLink>
         </MudNavMenu>
 
         <div class="flex-none" style="align-self: flex-end">
@@ -87,31 +86,10 @@
 @code {
 
     private static readonly SemVersion Version = SemVersion.Parse(typeof(SideBar).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, SemVersionStyles.Strict);
-
-    [Parameter] public EventCallback<TabType> CurrentTabChanged { get; set; }
-
-    private TabType _currentTab = TabType.Dashboard;
-
-    [Parameter]
-    public TabType CurrentTab
-    {
-        get => _currentTab;
-        set
-        {
-            if (_currentTab == value) return;
-            CurrentTabChanged.InvokeAsync(value);
-            _currentTab = value;
-        }
-    }
-
+    
     protected override void OnInitialized()
     {
         StatusHandler.OnWebsocketStatusChanged += () => InvokeAsync(StateHasChanged);
-    }
-
-    private void NavigateTab(TabType tab)
-    {
-        CurrentTab = tab;
     }
 
     private static Color GetConnectionStateColor(HubConnectionState state) =>

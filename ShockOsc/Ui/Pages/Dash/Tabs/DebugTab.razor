@@ -1,9 +1,9 @@
 ﻿@using OpenShock.ShockOsc.Services
 @using OpenShock.ShockOsc.Utils
-@using Serilog.Sinks.SystemConsole.Themes
 @implements IAsyncDisposable
 @inject ShockOsc ShockOsc
 
+@page "/dash/debug"
 
 <MudPaper Outlined="true" Class="mud-paper-padding">
     <MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
