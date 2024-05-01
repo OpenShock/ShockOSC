@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using Microsoft.Maui.LifecycleEvents;
 using MudBlazor.Services;
 using OpenShock.SDK.CSharp.Hub;
@@ -10,11 +11,21 @@ using OpenShock.ShockOsc.Services;
 using OpenShock.ShockOsc.Utils;
 using Serilog;
 using MauiApp = OpenShock.ShockOsc.Ui.MauiApp;
+using Rect = OpenShock.ShockOsc.Utils.Rect;
 
 namespace OpenShock.ShockOsc;
 
 public static class MauiProgram
 {
+    private const int WS_CAPTION = 0x00C00000;
+    private const int WS_BORDER = 0x00800000;
+    private const int WS_SYSMENU = 0x00080000;
+    private const int WS_SIZEBOX = 0x00040000;
+    private const int WS_MINIMIZEBOX = 0x00020000;
+    private const int WS_MAXIMIZEBOX = 0x00010000;
+    private const int WS_THICKFRAME = 0x00040000;
+    
+    
     private static ShockOscConfig? _config;
 
     public static Microsoft.Maui.Hosting.MauiApp CreateMauiApp()
@@ -87,13 +98,30 @@ public static class MauiProgram
                     var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(handle);
                     var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
                     
-                    // if(appWindow.Presenter is OverlappedPresenter presenter)
+                    // var style = WindowUtils.GetWindowLongPtrA(handle, (int)WindowLongFlags.GWL_STYLE);
+                    //
+                    // style &= ~WS_CAPTION; // Remove the title bar
+                    // style |= WS_THICKFRAME; // Add thick frame for resizing
+                    //
+                    // WindowUtils.SetWindowLongPtrA(handle, (int)WindowLongFlags.GWL_STYLE,  style);
+                    //
+                    // var reff = new Rect();
+                    // WindowUtils.AdjustWindowRectEx(ref reff, style, false, 0);
+                    // reff.top = 6000;
+                    // reff.left *= -1;
+                    //
+                    // var margins = new Margins
                     // {
-                    //     presenter.IsMaximizable = false;
-                    //     presenter.IsMinimizable = false;
-                    //     presenter.IsResizable = true;
-                    //     presenter.SetBorderAndTitleBar(false, false);
-                    // } 
+                    //     cxLeftWidth = 0,
+                    //     cxRightWidth = 0,
+                    //     cyTopHeight = 0,
+                    //     cyBottomHeight = 0
+                    // };
+                    //
+                    // WindowUtils.DwmExtendFrameIntoClientArea(handle, ref margins);
+                    //
+                    // WindowUtils.SetWindowPos(handle,  0, 0, 0, 0, 0x0040 | 0x0002 | 0x0001 | 0x0020);
+                    //
                     
                     //When user execute the closing method, we can push a display alert. If user click Yes, close this application, if click the cancel, display alert will dismiss.
                     appWindow.Closing += async (s, e) =>
