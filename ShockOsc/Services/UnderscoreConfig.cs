@@ -193,6 +193,7 @@ public sealed class UnderscoreConfig
     public async Task SendUpdateForAll()
     {
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/Paused", KillSwitch);
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Paused", KillSwitch);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MinIntensity",
             MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Min / 100f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxIntensity",
