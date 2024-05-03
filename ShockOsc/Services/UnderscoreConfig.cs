@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using OpenShock.ShockOsc.Config;
+using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.Utils;
 
 namespace OpenShock.ShockOsc.Services;
@@ -29,141 +30,142 @@ public sealed class UnderscoreConfig
         var settingName = parameterName[8..];
 
         var settingPath = settingName.Split('/');
-        if (settingPath.Length > 2)
+        if (settingPath.Length is > 2 or <= 0)
         {
-            _logger.LogWarning("Invalid setting path: {SettingPath}", settingPath);
+            _logger.LogWarning("Invalid setting path: {SettingName}", settingName);
             return;
         }
 
-        if (settingPath.Length == 2)
+        var value = arguments.ElementAtOrDefault(0);
+
+        #region Legacy
+
+        // Legacy Paused setting
+        if (settingPath.Length == 1)
         {
-            var groupName = settingPath[0];
-            var action = settingPath[1];
-            if (!_dataLayer.ProgramGroups.Any(x =>
-                    x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase)) && groupName != "_All")
-            {
-                _logger.LogWarning("Unknown shocker {Shocker}", groupName);
-                _logger.LogDebug("Param: {Param}", action);
-                return;
-            }
+            if (settingName != "Paused" || value is not bool stateBool || KillSwitch == stateBool) return;
 
-            if (groupName == "_All")
-            {
-            }
-            else
-            {
-            }
-
-            var group = _dataLayer.ProgramGroups.First(x =>
-                x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase));
-            var value = arguments.ElementAtOrDefault(0);
-
-            // TODO: support groups
-
-            switch (action)
-            {
-                case "MinIntensity":
-                    // 0..100%
-                    if (value is float minIntensityFloat)
-                    {
-                        var currentMinIntensity =
-                            MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Min / 100f);
-                        if (minIntensityFloat == currentMinIntensity) return;
-
-                        _configManager.Config.Behaviour.IntensityRange.Min =
-                            MathUtils.ClampUint((uint)Math.Round(minIntensityFloat * 100), 0, 100);
-                        ValidateSettings();
-                        _configManager.Save();
-                        OnConfigUpdate?.Invoke(); // update Ui
-                    }
-
-                    break;
-
-                case "MaxIntensity":
-                    // 0..100%
-                    if (value is float maxIntensityFloat)
-                    {
-                        var currentMaxIntensity =
-                            MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Max / 100f);
-                        if (maxIntensityFloat == currentMaxIntensity) return;
-
-                        _configManager.Config.Behaviour.IntensityRange.Max =
-                            MathUtils.ClampUint((uint)Math.Round(maxIntensityFloat * 100), 0, 100);
-                        ValidateSettings();
-                        _configManager.Save();
-                        OnConfigUpdate?.Invoke(); // update Ui
-                    }
-
-                    break;
-
-                case "Duration":
-                    // 0..10sec
-                    if (value is float durationFloat)
-                    {
-                        var currentDuration =
-                            MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedDuration / 10000f);
-                        if (Math.Abs(durationFloat - currentDuration) < 0.001) return;
-
-                        _configManager.Config.Behaviour.FixedDuration =
-                            MathUtils.ClampUint((uint)Math.Round(durationFloat * 10000), 0, 10000);
-                        ValidateSettings();
-                        _configManager.Save();
-                        OnConfigUpdate?.Invoke(); // update Ui
-                    }
-
-                    break;
-
-                case "CooldownTime":
-                    // 0..100sec
-                    if (value is float cooldownTimeFloat)
-                    {
-                        var currentCooldownTime =
-                            MathUtils.ClampFloat(_configManager.Config.Behaviour.CooldownTime / 100000f);
-                        if (Math.Abs(cooldownTimeFloat - currentCooldownTime) < 0.001) return;
-
-                        _configManager.Config.Behaviour.CooldownTime =
-                            MathUtils.ClampUint((uint)Math.Round(cooldownTimeFloat * 100000), 0, 100000);
-                        ValidateSettings();
-                        _configManager.Save();
-                        OnConfigUpdate?.Invoke(); // update Ui
-                    }
-
-                    break;
-
-                case "HoldTime":
-                    // 0..1sec
-                    if (value is float holdTimeFloat)
-                    {
-                        var currentHoldTime = MathUtils.ClampFloat(_configManager.Config.Behaviour.HoldTime / 1000f);
-                        if (Math.Abs(holdTimeFloat - currentHoldTime) < 0.001) return;
-
-                        _configManager.Config.Behaviour.HoldTime =
-                            MathUtils.ClampUint((uint)Math.Round(holdTimeFloat * 1000), 0, 1000);
-                        ValidateSettings();
-                        _configManager.Save();
-                        OnConfigUpdate?.Invoke(); // update Ui
-                    }
-
-                    break;
-
-                case "Paused":
-                    if (value is bool stateBool)
-                    {
-                        if (KillSwitch == stateBool) return;
-
-                        KillSwitch = stateBool;
-                        OnConfigUpdate?.Invoke(); // update Ui
-                        _logger.LogInformation("Paused state set to: {KillSwitch}", KillSwitch);
-                    }
-
-                    break;
-            }
+            KillSwitch = stateBool;
+            OnConfigUpdate?.Invoke(); // update Ui
+            _logger.LogInformation("Paused state set to: {KillSwitch}", KillSwitch);
+            return;
         }
 
-        switch (settingName)
+        #endregion
+
+        var groupName = settingPath[0];
+        var action = settingPath[1];
+        if (!_dataLayer.ProgramGroups.Any(x =>
+                x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase)) && groupName != "_All")
         {
+            _logger.LogWarning("Unknown shocker {Shocker}", groupName);
+            _logger.LogDebug("Param: {Param}", action);
+            return;
+        }
+
+        // Handle global config commands
+        if (groupName == "_All")
+        {
+            HandleGlobalConfigCommand(action, value);
+            return;
+        }
+
+        var group = _dataLayer.ProgramGroups.First(x =>
+            x.Value.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase));
+
+        HandleGroupConfigCommand(group.Value, action, value);
+    }
+
+    private void HandleGlobalConfigCommand(string action, object? value)
+    {
+        switch (action)
+        {
+            case "MinIntensity":
+                // 0..100%
+                if (value is float minIntensityFloat)
+                {
+                    var currentMinIntensity =
+                        MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Min / 100f);
+                    if (Math.Abs(minIntensityFloat - currentMinIntensity) < 0.001) return;
+
+                    _configManager.Config.Behaviour.IntensityRange.Min =
+                        MathUtils.ClampUint((uint)Math.Round(minIntensityFloat * 100), 0, 100);
+                    ValidateSettings();
+                    _configManager.Save();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+
+                break;
+
+            case "MaxIntensity":
+                // 0..100%
+                if (value is float maxIntensityFloat)
+                {
+                    var currentMaxIntensity =
+                        MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Max / 100f);
+                    if (Math.Abs(maxIntensityFloat - currentMaxIntensity) < 0.001) return;
+
+                    _configManager.Config.Behaviour.IntensityRange.Max =
+                        MathUtils.ClampUint((uint)Math.Round(maxIntensityFloat * 100), 0, 100);
+                    ValidateSettings();
+                    _configManager.Save();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+
+                break;
+
+            case "Duration":
+                // 0..10sec
+                if (value is float durationFloat)
+                {
+                    var currentDuration =
+                        MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedDuration / 10000f);
+                    if (Math.Abs(durationFloat - currentDuration) < 0.001) return;
+
+                    _configManager.Config.Behaviour.FixedDuration =
+                        MathUtils.ClampUint((uint)Math.Round(durationFloat * 10000), 0, 10000);
+                    ValidateSettings();
+                    _configManager.Save();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+
+                break;
+
+            case "CooldownTime":
+                // 0..100sec
+                if (value is float cooldownTimeFloat)
+                {
+                    var currentCooldownTime =
+                        MathUtils.ClampFloat(_configManager.Config.Behaviour.CooldownTime / 100000f);
+                    if (Math.Abs(cooldownTimeFloat - currentCooldownTime) < 0.001) return;
+
+                    _configManager.Config.Behaviour.CooldownTime =
+                        MathUtils.ClampUint((uint)Math.Round(cooldownTimeFloat * 100000), 0, 100000);
+                    ValidateSettings();
+                    _configManager.Save();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+
+                break;
+
+            case "HoldTime":
+                // 0..1sec
+                if (value is float holdTimeFloat)
+                {
+                    var currentHoldTime = MathUtils.ClampFloat(_configManager.Config.Behaviour.HoldTime / 1000f);
+                    if (Math.Abs(holdTimeFloat - currentHoldTime) < 0.001) return;
+
+                    _configManager.Config.Behaviour.HoldTime =
+                        MathUtils.ClampUint((uint)Math.Round(holdTimeFloat * 1000), 0, 1000);
+                    ValidateSettings();
+                    _configManager.Save();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+
+                break;
+
             case "Paused":
-                if (arguments.ElementAtOrDefault(0) is bool stateBool)
+                if (value is bool stateBool)
                 {
                     if (KillSwitch == stateBool) return;
 
@@ -174,6 +176,11 @@ public sealed class UnderscoreConfig
 
                 break;
         }
+    }
+
+    private void HandleGroupConfigCommand(ProgramGroup group, string action, object? value)
+    {
+        // TODO: support groups
     }
 
     private void ValidateSettings()
