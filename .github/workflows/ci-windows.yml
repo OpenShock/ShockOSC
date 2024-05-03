@@ -11,7 +11,7 @@ on:
   workflow_call:
   workflow_dispatch:
 
-name: ci-windowsl
+name: ci-windows
 
 env:
   DOTNET_VERSION: 8.0.x
