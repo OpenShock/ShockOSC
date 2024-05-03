@@ -12,20 +12,37 @@
     <MudText>OSC Parameters</MudText>
     <MudDivider/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams" Label="Show all avatar parameters"/>
+    <MudTextField Variant="Variant.Outlined" @bind-Value="_search" Label="Search Parameter"/>
     <MudDivider/>
     <br/>
     @if (_showAllAvatarParams)
     {
-        @foreach (var param in ShockOsc.AllAvatarParams)
+        if (ShockOsc.AllAvatarParams.Count > 0)
         {
-            <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+            @foreach (var param in ShockOsc.AllAvatarParams
+                          .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+            }
+        }
+        else
+        {
+            <MudText Typo="Typo.body1">No parameters available</MudText>
         }
     }
     else
     {
-        @foreach (var param in ShockOsc.ShockOscParams)
+        if (ShockOsc.ShockOscParams.Count > 0)
         {
-            <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+            @foreach (var param in ShockOsc.ShockOscParams
+                          .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+            }
+        }
+        else
+        {
+            <MudText Typo="Typo.body1">No parameters available</MudText>
         }
     }
 
@@ -33,6 +50,7 @@
 
 @code {
     private bool _showAllAvatarParams = false;
+    private string _search = "";
 
     private void OnParamsChange(bool shockOscParam)
     {
