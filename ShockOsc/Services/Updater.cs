@@ -133,9 +133,9 @@ public sealed class Updater
             listOfValid.Add((release, version));
         }
 
-        var newestPreRelease = listOfValid.OrderByDescending(x => x.Item2).FirstOrDefault();
+        var newestPreRelease = listOfValid.OrderByDescending(x => x.Item2);
 
-        return newestPreRelease.Item1;
+        return newestPreRelease.FirstOrDefault().Item1;
     }
 
     private async Task<GithubReleaseResponse?> GetLatestRelease()
