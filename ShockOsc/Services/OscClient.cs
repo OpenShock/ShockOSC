@@ -49,6 +49,7 @@ public sealed class OscClient
     
     public ValueTask SendChatboxMessage(string message)
     {
+        if(!_configManager.Config.Chatbox.Enabled) return ValueTask.CompletedTask;
         if (_configManager.Config.Osc.Hoscy) return _hoscySenderChannel.Writer.WriteAsync(new OscMessage("/hoscy/message", message));
 
         return _gameSenderChannel.Writer.WriteAsync(new OscMessage("/chatbox/input", message, true));

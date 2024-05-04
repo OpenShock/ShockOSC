@@ -2,7 +2,6 @@
 
 public sealed class OscConf
 {
-    public bool Chatbox { get; set; } = true;
     public bool Hoscy { get; set; } = false;
     public ushort HoscySendPort { get; set; } = 9001;
     public bool QuestSupport { get; set; } = false;

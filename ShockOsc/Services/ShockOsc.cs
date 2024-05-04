@@ -414,7 +414,7 @@ public sealed class ShockOsc
 
         await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock, exclusive);
 
-        if (!_configManager.Config.Osc.Chatbox) return;
+        if (!_configManager.Config.Chatbox.Enabled) return;
         // Chatbox message local
         var dat = new
         {

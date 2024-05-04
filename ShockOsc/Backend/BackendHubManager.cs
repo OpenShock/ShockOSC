@@ -141,7 +141,7 @@ public sealed class BackendHubManager
                 log.Type, log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
 
         var template = _configManager.Config.Chatbox.Types[log.Type];
-        if (_configManager.Config.Osc.Chatbox &&
+        if (_configManager.Config.Chatbox.Enabled &&
             _configManager.Config.Chatbox.DisplayRemoteControl && template.Enabled)
         {
             // Chatbox message remote

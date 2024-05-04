@@ -7,7 +7,7 @@
 <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding">
     <MudText>Chatbox Options</MudText>
     <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.Chatbox" Label="Chatbox" @bind-Value:after="OnSettingsValueChange"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Chatbox.Enabled" Label="Chatbox" @bind-Value:after="OnSettingsValueChange"/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Chatbox.DisplayRemoteControl" Label="Display Remote Control" @bind-Value:after="OnSettingsValueChange"/>
     <br/>
     <br/>

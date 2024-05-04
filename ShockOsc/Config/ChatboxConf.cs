@@ -4,6 +4,7 @@ namespace OpenShock.ShockOsc.Config;
 
 public sealed class ChatboxConf
 {
+    public bool Enabled { get; set; } = true;
     public string Prefix { get; set; } = "[ShockOsc] ";
     public bool DisplayRemoteControl { get; set; } = true;
 
