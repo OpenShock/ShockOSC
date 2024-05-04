@@ -12,7 +12,7 @@
     <MudText>OSC Parameters</MudText>
     <MudDivider/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams" Label="Show all avatar parameters"/>
-    <MudTextField Variant="Variant.Outlined" @bind-Value="_search" Label="Search Parameter"/>
+    <MudTextField DebounceInterval="50" Variant="Variant.Outlined" @bind-Value="_search" Label="Search Parameter"/>
     <MudDivider/>
     <br/>
     @if (_showAllAvatarParams)
