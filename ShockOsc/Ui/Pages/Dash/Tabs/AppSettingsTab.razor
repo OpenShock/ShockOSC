@@ -1,5 +1,8 @@
 ﻿@using OpenShock.ShockOsc.Config
+@using OpenShock.ShockOsc.Services
 @inject ConfigManager ConfigManager
+@inject Updater Updater
+@implements IDisposable
 
 @page "/dash/appsettings"
 
@@ -7,8 +10,26 @@
     <MudText>ShockOSC App</MudText>
     <MudDivider/>
 
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.App.CloseToTray" Label="Close to Tray" @bind-Value:after="OnSettingsValueChange"/>
-    
+    <div class="d-flex gap-5" style="align-items: center">
+
+        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.App.CloseToTray" Label="Close to Tray" @bind-Value:after="OnSettingsValueChange"/>
+
+        <div style="width: 200px">
+            <MudSelect Disabled="Updater.CheckingForUpdate.Value" Variant="Variant.Outlined" @bind-Value="ConfigManager.Config.App.UpdateChannel" Label="Update Channel" @bind-Value:after="UpdateChannelChanged">
+                @foreach (UpdateChannel channel in Enum.GetValues(typeof(UpdateChannel)))
+                {
+                    <MudSelectItem Value="@channel">@channel</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+
+        @if (Updater.CheckingForUpdate.Value)
+        {
+            <MudTooltip Text="Checking for updates...">
+                <MudProgressCircular Style="margin-top: 10px" Color="Color.Primary" Indeterminate="true"/>
+            </MudTooltip>
+        }
+    </div>
 </MudPaper>
 
 <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
@@ -18,17 +39,38 @@
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Osc.OscQuery" Label="OSC Query" @bind-Value:after="OnSettingsValueChange"/>
     @if (!ConfigManager.Config.Osc.OscQuery)
     {
-    <br/>
-    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Osc.OscSendPort" Label="OSC Send Port" @bind-Value:after="OnSettingsValueChange"/>
-    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Osc.OscReceivePort" Label="OSC Receive Port" @bind-Value:after="OnSettingsValueChange"/>
+        <br/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Osc.OscSendPort" Label="OSC Send Port" @bind-Value:after="OnSettingsValueChange"/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Osc.OscReceivePort" Label="OSC Receive Port" @bind-Value:after="OnSettingsValueChange"/>
     }
 </MudPaper>
 
 @code {
-    
-    
+
+    protected override void OnInitialized()
+    {
+        Updater.CheckingForUpdate.OnValueChanged += OnCheckingForUpdateChange;
+    }
+
+    private void OnCheckingForUpdateChange(bool value)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     private async Task OnSettingsValueChange()
     {
         await ConfigManager.SaveAsync();
     }
+
+    private async Task UpdateChannelChanged()
+    {
+        await OnSettingsValueChange();
+        await Updater.CheckUpdate();
+    }
+
+    public void Dispose()
+    {
+        Updater.CheckingForUpdate.OnValueChanged -= OnCheckingForUpdateChange;
+    }
+
 }

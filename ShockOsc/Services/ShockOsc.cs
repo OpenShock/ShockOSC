@@ -129,6 +129,8 @@ public sealed class ShockOsc
 
         _logger.LogInformation("Ready");
         OsTask.Run(_underscoreConfig.SendUpdateForAll);
+        
+        _oscClient.SendChatboxMessage($"{_configManager.Config.Chatbox.Prefix} Game Connected");
     }
 
     public async Task OnAvatarChange(Dictionary<string, object?> parameters, string avatarId)

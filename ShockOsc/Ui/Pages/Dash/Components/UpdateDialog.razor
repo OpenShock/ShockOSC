@@ -3,20 +3,31 @@
 @using OpenShock.ShockOsc.Utils
 @inject ConfigManager ConfigManager
 @inject Updater Updater
+@implements IDisposable
 
 @code {
-    [CascadingParameter]
-    MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     private bool _isDownloading = false;
 
+    protected override void OnInitialized()
+    {
+        Updater.DownloadProgress.OnValueChanged += OnDownloadProgressChanged;
+        base.OnInitialized();
+    }
+
+    private void OnDownloadProgressChanged(double progress)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     private async Task Skip()
     {
-        ConfigManager.Config.LastIgnoredVersion = Updater.LatestVersion;
+        ConfigManager.Config.App.LastIgnoredVersion = Updater.LatestVersion;
         await ConfigManager.SaveAsync();
         MudDialog.Close(DialogResult.Ok(true));
     }
-    
+
     private void Dismiss()
     {
         MudDialog.Close(DialogResult.Ok(true));
@@ -27,31 +38,46 @@
         _isDownloading = true;
         OsTask.Run(Updater.DoUpdate);
     }
+
+    public void Dispose()
+    {
+        Updater.DownloadProgress.OnValueChanged -= OnDownloadProgressChanged;
+    }
+
 }
 
 <MudDialog>
     <DialogContent>
-        @if (!_isDownloading)
-        {
-            <MudText Typo="Typo.h3">Update Available</MudText>
-            <br />
-            <MudText Typo="Typo.body1">A new version of ShockOSC is available. Would you like to update?</MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h3">Downloading Update</MudText>
-            <br />
-            <MudText Typo="Typo.body1">Please wait while the update is downloaded.</MudText>
-            <br />
-            <MudProgressCircular Color="Color.Primary" Style="height:60px;width:60px;" Indeterminate="true" />
-        }
+        <div style="text-align: center">
+            @if (!_isDownloading)
+            {
+                <MudText Typo="Typo.h3">Update Available</MudText>
+                <MudText Typo="Typo.h5">@Updater.LatestVersion?.ToString()</MudText>
+
+                <br />
+                <MudText Typo="Typo.body1"> A new version of ShockOSC is available.Would you like to update ?</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.h3">Downloading Update</MudText>
+                <br/>
+                <MudText Typo="Typo.body1">Please wait while the update is downloaded.</MudText>
+                <br/>
+                <MudProgressLinear  Color="Color.Primary" Style="width: 100%" Value="@Updater.DownloadProgress.Value"/>
+                
+                @if (Math.Abs(Updater.DownloadProgress.Value - 100) < 0.0001)
+                {
+                    <MudText Typo="Typo.body1">Update downloaded successfully. Restarting in one second...</MudText>
+                } 
+            }
+        </div >
     </DialogContent>
     <DialogActions>
-    @if (!_isDownloading)
-    {
-        <MudButton Color="Color.Primary" OnClick="Dismiss">Dismiss</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Skip">Skip</MudButton>
-        <MudButton Color="Color.Primary" OnClick="DownloadUpdate">Update</MudButton>
-    }
+        @if (!_isDownloading)
+        {
+            <MudButton Color="Color.Primary" OnClick="Dismiss">Dismiss</MudButton>
+            <MudButton Color="Color.Primary" OnClick="Skip">Skip</MudButton>
+            <MudButton Color="Color.Primary" OnClick="DownloadUpdate">Update</MudButton>
+        }
     </DialogActions>
 </MudDialog>
