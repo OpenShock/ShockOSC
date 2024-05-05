@@ -29,7 +29,6 @@ public sealed class ShockOsc
 
     private bool _oscServerActive;
     private bool _isAfk;
-    private bool _isMuted;
     public string AvatarId = string.Empty;
     private readonly Random Random = new();
 
@@ -244,8 +243,8 @@ public sealed class ShockOsc
                 _logger.LogDebug("Afk: {State}", _isAfk);
                 return;
             case "/avatar/parameters/MuteSelf":
-                _isMuted = received.Arguments.ElementAtOrDefault(0) is true;
-                _logger.LogDebug("Muted: {State}", _isMuted);
+                _dataLayer.IsMuted = received.Arguments.ElementAtOrDefault(0) is true;
+                _logger.LogDebug("Muted: {State}", _dataLayer.IsMuted);
                 return;
         }
 
@@ -400,7 +399,7 @@ public sealed class ShockOsc
     {
         programGroup.LastExecuted = DateTime.UtcNow;
         programGroup.LastDuration = duration;
-        var intensityPercentage = Math.Round(MathUtils.ClampFloat(intensity) * 100f);
+        var intensityPercentage = MathF.Round(MathUtils.ClampFloat(intensity) * 100f);
         programGroup.LastIntensity = intensity;
 
         _oscHandler.ForceUnmute();

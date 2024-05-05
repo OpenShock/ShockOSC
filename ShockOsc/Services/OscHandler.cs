@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.OscChangeTracker;
 using OpenShock.ShockOsc.Utils;
@@ -63,7 +63,7 @@ public sealed class OscHandler
         await _oscClient.SendGameMessage("/input/Voice", false)
             .ConfigureAwait(false);
     }
-    
+
     /// <summary>
     /// Send parameter updates to osc
     /// </summary>
@@ -84,8 +84,8 @@ public sealed class OscHandler
             if (!isActiveOrOnCooldown && shocker.LastIntensity > 0)
                 shocker.LastIntensity = 0;
 
+            var intensity = MathUtils.ClampFloat(shocker.LastIntensity / 100f);
             var onCoolDown = !isActive && isActiveOrOnCooldown;
-
             var cooldownPercentage = 0f;
             if (onCoolDown)
                 cooldownPercentage = MathUtils.ClampFloat(1 -
@@ -97,12 +97,12 @@ public sealed class OscHandler
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);
             await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
-            await shocker.ParamIntensity.SetValue(MathUtils.ClampFloat(shocker.LastIntensity));
+            await shocker.ParamIntensity.SetValue(intensity);
 
             if (isActive) anyActive = true;
             if (onCoolDown) anyCooldown = true;
-            anyCooldownPercentage = Math.Max(anyCooldownPercentage, cooldownPercentage);
-            anyIntensity = Math.Max(anyIntensity, MathUtils.ClampFloat(shocker.LastIntensity));
+            anyCooldownPercentage = MathF.Max(anyCooldownPercentage, cooldownPercentage);
+            anyIntensity = MathF.Max(anyIntensity, intensity);
         }
 
         await _paramAnyActive.SetValue(anyActive);
