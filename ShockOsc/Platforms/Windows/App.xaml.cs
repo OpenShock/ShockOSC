@@ -1,8 +1,9 @@
-﻿
+﻿#if WINDOWS
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
-#if WINDOWS
+
+using Microsoft.Windows.AppLifecycle;
 namespace OpenShock.ShockOsc.Platforms.Windows;
 
 /// <summary>

@@ -1,16 +1,9 @@
-@using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
-@using Microsoft.Extensions.Logging
-@using OpenShock.SDK.CSharp.Hub
 @using OpenShock.ShockOsc.Services
 @inject ConfigManager ConfigManager
 @inject NavigationManager NavigationManager
-@inject BackendHubManager HubManager
-@inject OpenShockHubClient HubClient
-@inject OpenShockApi ApiClient
-@inject ILogger<Authenticate> Logger
-@inject LiveControlManager LiveControlManager
 @inject ISnackbar Snackbar
+@inject AuthService AuthService
 @layout NotAuthedLayout
 @inherits LayoutComponentBase
 
@@ -83,15 +76,7 @@
 
         try
         {
-            Logger.LogInformation("Setting up live client");
-            await HubManager.SetupLiveClient();
-            Logger.LogInformation("Starting live client");
-            await HubClient.StartAsync();
-
-            Logger.LogInformation("Refreshing shockers");
-            await ApiClient.RefreshShockers();
-
-            await LiveControlManager.RefreshConnections();
+            await AuthService.Authenticate();
 
             _currentState = State.Authenticated;
             await InvokeAsync(StateHasChanged);

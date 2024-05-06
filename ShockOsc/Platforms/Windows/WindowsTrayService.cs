@@ -49,10 +49,14 @@ public class WindowsTrayService : ITrayService
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Restart", null, Restart);
         menu.Items.Add("Quit ShockOSC", null, OnQuitClick);
-
+        
         tray.ContextMenuStrip = menu;
 
         tray.Click += OnMainClick;
+        menu.Opened += async (sender, args) =>
+        {
+            var aa = menu;
+        };
 
         tray.Visible = true;
     }
