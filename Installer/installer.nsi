@@ -173,7 +173,7 @@ Section "Install" SecInstall
     WriteRegExpandStr HKCU "Software\Classes\ShockOSC\DefaultIcon" "" "$INSTDIR\Resources\openshock-icon.ico"
     WriteRegStr HKCU "Software\Classes\ShockOSC\shell" "" "open"
     WriteRegStr HKCU "Software\Classes\ShockOSC\shell\open" "FriendlyAppName" "ShockOSC"
-    WriteRegStr HKCU "Software\Classes\ShockOSC\shell\open\command" "" '"$INSTDIR\OpenShock.ShockOsc.exe" /uri="%1" /params="%2 %3 %4"'
+    WriteRegStr HKCU "Software\Classes\ShockOSC\shell\open\command" "" '"$INSTDIR\OpenShock.ShockOsc.exe" --uri="%1"'
 
     ${If} ${Silent}
         SetOutPath $INSTDIR
