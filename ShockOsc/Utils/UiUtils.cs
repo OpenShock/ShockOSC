@@ -1,4 +1,7 @@
-﻿namespace OpenShock.ShockOsc.Utils;
+﻿using System.Diagnostics;
+using MudBlazor;
+
+namespace OpenShock.ShockOsc.Utils;
 
 public static class UiUtils
 {
@@ -20,5 +23,11 @@ public static class UiUtils
         var max = Math.Min(input.Length, length);
 
         return $"{input[..max].Trim()}...";
+    }
+    
+    public static void OpenUrl(string url, ISnackbar? snackbar = null)
+    {
+        snackbar?.Add("Opened URL in browser", Severity.Info);
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 }

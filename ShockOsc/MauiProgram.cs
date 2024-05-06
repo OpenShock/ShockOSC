@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿#if WINDOWS
+using System.Diagnostics;
 using System.Net;
 using Microsoft.Maui.LifecycleEvents;
 using MudBlazor.Services;
@@ -12,6 +13,14 @@ using OpenShock.ShockOsc.Utils;
 using Serilog;
 using MauiApp = OpenShock.ShockOsc.Ui.MauiApp;
 using Rect = OpenShock.ShockOsc.Utils.Rect;
+
+
+using Microsoft.UI;
+
+
+#if M
+
+#endif
 
 namespace OpenShock.ShockOsc;
 
@@ -61,6 +70,8 @@ public static class MauiProgram
 
         builder.Services.AddSerilog(Log.Logger);
 
+        builder.Services.AddMemoryCache();
+
         builder.Services.AddSingleton<ShockOscData>();
 
         builder.Services.AddSingleton<ConfigManager>();
@@ -86,7 +97,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<Services.ShockOsc>();
         builder.Services.AddSingleton<UnderscoreConfig>();
 
-#if WINDOWS
         builder.ConfigureLifecycleEvents(lifecycleBuilder =>
         {
             lifecycleBuilder.AddWindows(windowsLifecycleBuilder =>
@@ -148,7 +158,6 @@ public static class MauiProgram
 
 
         builder.Services.AddSingleton<ITrayService, WindowsTrayService>();
-#endif
 
         builder.Services.AddSingleton<StatusHandler>();
         
@@ -182,3 +191,4 @@ public static class MauiProgram
         return app;
     }
 }
+#endif

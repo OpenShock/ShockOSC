@@ -1,4 +1,5 @@
-﻿namespace OpenShock.ShockOsc.Ui;
+﻿#if WINDOWS
+namespace OpenShock.ShockOsc.Ui;
 
 public partial class MauiApp
 {
@@ -18,3 +19,4 @@ public partial class MauiApp
         return window;
     }
 }
+#endif

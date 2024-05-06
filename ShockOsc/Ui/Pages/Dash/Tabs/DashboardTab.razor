@@ -3,15 +3,18 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using OpenShock.SDK.CSharp.Hub
 @using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Config
 @using OpenShock.ShockOsc.Services
 @using Semver
 @using OpenShock.ShockOsc.Ui.Utils
 @using OpenShock.ShockOsc.Ui.Pages.Dash.Components
+@using OpenShock.ShockOsc.Utils
 @inject StatusHandler StatusHandler
 @inject LiveControlManager LiveControlManager
 @inject OpenShockApi Api
 @inject OpenShockHubClient ApiHubClient
 @inject ISnackbar Snackbar
+@inject ConfigManager ConfigManager
 @implements IDisposable
 
 @page "/dash/dashboard"
@@ -57,25 +60,20 @@
         </div>
     </MudPaper>
 
-    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item discord" Style="padding: 0">
-        <iframe src="https://e.widgetbot.io/channels/1078124408775901204/1236453005746896898" allowtransparency="true"></iframe>
+    @if (ConfigManager.Config.App.DiscordPreview)
+    {
+        <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item discord" Style="padding: 0; height: calc(100% - 4px)">
+            <iframe src="https://e.widgetbot.io/channels/1078124408775901204/1236453005746896898" allowtransparency="true"></iframe>
+        </MudPaper>
+    }
 
-    </MudPaper>
-
-    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
-        <MudText Typo="Typo.h6">Placeholder</MudText>
-        <MudText Typo="Typo.body2">Duo no lorem aliquyam dolor voluptua minim dolor diam sed dolores accusam est dolore voluptua takimata vel ullamcorper erat takimata erat at consectetuer amet magna</MudText>
-    </MudPaper>
-
-
-    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
-        <MudText Typo="Typo.h6">Placeholder</MudText>
-        <MudText Typo="Typo.body2">Duo no lorem aliquyam dolor voluptua minim dolor diam sed dolores accusam est dolore voluptua takimata vel ullamcorper erat takimata erat at consectetuer amet magna</MudText>
-    </MudPaper>
-
-    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item" Style="text-align: center">
-        <MudText Typo="Typo.h6">Placeholder</MudText>
-        <MudText Typo="Typo.body2">Duo no lorem aliquyam dolor voluptua minim dolor diam sed dolores accusam est dolore voluptua takimata vel ullamcorper erat takimata erat at consectetuer amet magna</MudText>
+    <MudPaper Outlined="true" Elevation="1" Class="rounded-lg mud-paper-padding item d-flex"
+              Style="text-align: center; flex-direction: column; align-items: center">
+        <MudText Typo="Typo.h6">Discord</MudText>
+        <div style="flex-grow: 1"></div>
+        <div>
+            <DiscordInvite InviteCode="OpenShock"/>
+        </div>
     </MudPaper>
 </div>
 
@@ -83,7 +81,6 @@
     .dashboard-box {
         display: grid;
         
-
         align-items: stretch;
 
         grid-template-columns: repeat(3, 1fr);
@@ -95,6 +92,9 @@
         
         width: 100%;
         height: 100%;
+        
+        overflow: auto;
+        
     }
     
     .dashboard-box .item {
@@ -113,14 +113,8 @@
 @code {
     private static readonly SemVersion Version = SemVersion.Parse(typeof(SideBar).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, SemVersionStyles.Strict);
 
-    private void OpenOpenShock() => OpenUrl("https://openshock.org");
-    private void OpenGithub() => OpenUrl("https://github.com/OpenShock/ShockOsc");
-
-    private void OpenUrl(string url)
-    {
-        Snackbar.Add("Opened URL in browser", Severity.Info);
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-    }
+    private void OpenOpenShock() => UiUtils.OpenUrl("https://openshock.org", Snackbar);
+    private void OpenGithub() => UiUtils.OpenUrl("https://github.com/OpenShock/ShockOsc", Snackbar);
 
     protected override void OnInitialized()
     {

@@ -2,16 +2,15 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <!-- <TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst</TargetFrameworks> -->
+        <TargetFrameworks>net8.0</TargetFrameworks>
         <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0</TargetFrameworks>
-        <UseMaui>true</UseMaui>
+
         <SingleProject>true</SingleProject>
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
         <ApplicationTitle>ShockOsc</ApplicationTitle>
-        <ApplicationId>org.openshock.shockosc</ApplicationId>
-        <ApplicationIdGuid>2C147618-324E-4C37-B4B6-C50C8A9BD5ED</ApplicationIdGuid>
+
         <AssemblyName>OpenShock.ShockOsc</AssemblyName>
         <RootNamespace>OpenShock.ShockOsc</RootNamespace>
         <Company>OpenShock</Company>
@@ -21,14 +20,6 @@
         <SelfContained>true</SelfContained>
         <Product>ShockOsc</Product>
 
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
-        <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
-
-		<WindowsPackageType Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">None</WindowsPackageType>
 		<PackageIcon>Resources\Icon512.png</PackageIcon>
 
         <ResourceLanguages>en</ResourceLanguages>
@@ -36,62 +27,75 @@
         <IsPackable>false</IsPackable>
     </PropertyGroup>
     
+    <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+        <UseMaui>true</UseMaui>
+        <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+        <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+        <WindowsPackageType>None</WindowsPackageType>
+    </PropertyGroup>
+    
+    <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == ''">
+        <StartupObject>OpenShock.ShockOsc.Linux.LinuxApp</StartupObject>
+    </PropertyGroup>
+    
     <ItemGroup>
-      <None Include="wwwroot\app.css" />
-      <None Include="wwwroot\fonts\poppins-latin-400-normal.405055dd..woff2" />
-      <None Include="wwwroot\fonts\poppins-latin-400-normal.cda9c93f..woff" />
-      <None Include="wwwroot\images\Icon.svg" />
-      <None Include="wwwroot\images\Icon512.png" />
-      <None Include="wwwroot\images\Icon64.png" />
-      <None Include="wwwroot\images\IconLoadingSpin.svg" />
-      <None Include="wwwroot\images\Logo512.png" />
-      <None Include="wwwroot\index.html" />
+        <None Include="wwwroot\app.css"/>
+        <None Include="wwwroot\fonts\poppins-latin-400-normal.405055dd..woff2"/>
+        <None Include="wwwroot\fonts\poppins-latin-400-normal.cda9c93f..woff"/>
+        <None Include="wwwroot\images\Icon.svg"/>
+        <None Include="wwwroot\images\Icon512.png"/>
+        <None Include="wwwroot\images\Icon64.png"/>
+        <None Include="wwwroot\images\IconLoadingSpin.svg"/>
+        <None Include="wwwroot\images\IconSlowSpin.svg"/>
+        <None Include="wwwroot\images\Logo512.png"/>
+        <None Include="wwwroot\index.html"/>
+        <None Update="Resources\Icon512.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Resources\Logo512.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Resources\openshock-icon.ico">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="8.0.21" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
-      <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.21" />
-      <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.21" />
-      <PackageReference Include="MudBlazor" Version="6.19.1" />
-      <PackageReference Include="EmbedIO" Version="3.5.2" />
-      <PackageReference Include="LucHeart.CoreOSC" Version="1.2.1" />
-      <PackageReference Include="MeaMod.DNS" Version="1.0.70" />
-      <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.19" />
-      <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.19" />
-      <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.20" />
-      <PackageReference Include="Semver" Version="2.3.0" />
-      <PackageReference Include="Serilog" Version="3.1.1" />
-      <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.4" />
-      <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
-      <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
-      <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
-      <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
-      <PackageReference Include="SmartFormat.NET" Version="3.3.2" />
-      <PackageReference Include="System.Reactive" Version="6.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="8.0.21"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0"/>
+        <PackageReference Include="MudBlazor" Version="6.19.1"/>
+        <PackageReference Include="EmbedIO" Version="3.5.2"/>
+        <PackageReference Include="LucHeart.CoreOSC" Version="1.2.1"/>
+        <PackageReference Include="MeaMod.DNS" Version="1.0.70"/>
+        <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.19"/>
+        <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.19"/>
+        <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.20"/>
+        <PackageReference Include="Semver" Version="2.3.0"/>
+        <PackageReference Include="Serilog" Version="3.1.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.4"/>
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
+        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1"/>
+        <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0"/>
+        <PackageReference Include="SmartFormat.NET" Version="3.3.2"/>
+        <PackageReference Include="System.Reactive" Version="6.0.0"/>
+    </ItemGroup>
+    
+    <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.21"/>
+        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.21"/>
     </ItemGroup>
     
     <ItemGroup>
-      <None Update="Resources\Icon512.png">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\Logo512.png">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\openshock-icon.ico">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\AppSettingsTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ChatboxTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ConfigTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DashboardTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\LogsTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ShockersTab.razor"/>
     </ItemGroup>
-    
-    <ItemGroup>
-      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\AppSettingsTab.razor" />
-      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ChatboxTab.razor" />
-      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ConfigTab.razor" />
-      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DashboardTab.razor" />
-      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor" />
-      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor" />
-      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\LogsTab.razor" />
-      <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ShockersTab.razor" />
-    </ItemGroup>
-    
+
 </Project>

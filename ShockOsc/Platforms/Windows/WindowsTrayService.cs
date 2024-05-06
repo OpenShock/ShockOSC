@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿#if WINDOWS
+
+using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -86,3 +88,5 @@ public class WindowsTrayService : ITrayService
         Application.Current?.Quit();
     }
 }
+
+#endif

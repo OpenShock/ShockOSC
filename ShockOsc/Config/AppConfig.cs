@@ -5,6 +5,7 @@ namespace OpenShock.ShockOsc.Config;
 public sealed class AppConfig
 {
     public bool CloseToTray { get; set; } = true;
+    public bool DiscordPreview { get; set; } = true;
     
     public UpdateChannel UpdateChannel { get; set; } = UpdateChannel.Release;
     public SemVersion? LastIgnoredVersion { get; set; } = null;

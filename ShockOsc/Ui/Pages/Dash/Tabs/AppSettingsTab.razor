@@ -13,6 +13,7 @@
     <div class="d-flex gap-5" style="align-items: center">
 
         <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.App.CloseToTray" Label="Close to Tray" @bind-Value:after="OnSettingsValueChange"/>
+        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.App.DiscordPreview" Label="Discord Preview" @bind-Value:after="OnSettingsValueChange"/>
 
         <div style="width: 200px">
             <MudSelect Disabled="Updater.CheckingForUpdate.Value" Variant="Variant.Outlined" @bind-Value="ConfigManager.Config.App.UpdateChannel" Label="Update Channel" @bind-Value:after="UpdateChannelChanged">

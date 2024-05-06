@@ -38,7 +38,9 @@
 
     private async Task CopyTextToClipboard()
     {
+#if WINDOWS
         await Clipboard.SetTextAsync(Value);
+#endif
         Snackbar.Add("Copied to clipboard", Severity.Success);
     }
 

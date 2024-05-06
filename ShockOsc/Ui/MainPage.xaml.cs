@@ -1,4 +1,5 @@
-﻿namespace OpenShock.ShockOsc.Ui;
+﻿#if WINDOWS
+namespace OpenShock.ShockOsc.Ui;
 
 public partial class MainPage : ContentPage
 {
@@ -7,3 +8,4 @@ public partial class MainPage : ContentPage
         InitializeComponent();
     }
 }
+#endif
