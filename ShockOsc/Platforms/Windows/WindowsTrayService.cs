@@ -89,7 +89,13 @@ public class WindowsTrayService : ITrayService
 
     private static void OnQuitClick(object? sender, EventArgs eventArgs)
     {
-        Application.Current?.Quit();
+        if (Application.Current != null)
+        {
+            Application.Current.Quit();
+            return;
+        }
+        
+        Environment.Exit(0);
     }
 }
 

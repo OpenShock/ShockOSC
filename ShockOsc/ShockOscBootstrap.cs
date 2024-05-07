@@ -7,6 +7,7 @@ using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Logging;
 using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Services;
+using OpenShock.ShockOsc.Services.Pipes;
 using OpenShock.ShockOsc.Utils;
 using Serilog;
 
@@ -45,6 +46,8 @@ public static class ShockOscBootstrap
 
         services.AddMemoryCache();
 
+        services.AddSingleton<PipeServerService>();
+        
         services.AddSingleton<ShockOscData>();
 
         services.AddSingleton<ConfigManager>();
@@ -107,6 +110,7 @@ public static class ShockOscBootstrap
         // <---- Warmup ---->
         services.GetRequiredService<Services.ShockOsc>();
         services.GetRequiredService<OscQueryServer>().Start();
+        services.GetRequiredService<PipeServerService>().StartServer();
 
         var updater = services.GetRequiredService<Updater>();
         OsTask.Run(updater.CheckUpdate);
