@@ -17,7 +17,7 @@ public sealed class PipeServerService
         _logger = logger;
     }
 
-    public ConcurrentQueue<PipeMessage> MessageQueue { get; } = new();
+    public string? Token { get; set; }
     public event Func<Task>? OnMessageReceived;
 
     public void StartServer()
@@ -61,7 +61,16 @@ public sealed class PipeServerService
                     continue;
                 }
 
-                MessageQueue.Enqueue(jsonObj);
+                switch (jsonObj.Type)
+                {
+                    case PipeMessageType.Token:
+                        Token = jsonObj.Data?.ToString();
+                        break;
+                }
+                {
+                    
+                }
+                
                 await OnMessageReceived.Raise();
                 _logger.LogInformation("[{Id}], Received pipe message of type: {Type}", id, jsonObj.Type);
             }

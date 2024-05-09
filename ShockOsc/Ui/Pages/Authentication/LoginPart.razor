@@ -1,10 +1,12 @@
 ﻿@using OneOf.Types
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
+@using OpenShock.ShockOsc.Utils
 
 @inject ConfigManager ConfigManager
 @inject OpenShockApi ApiClient
 
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GetToken">Get Token</MudButton>
 <MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
 <br/>
 <MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary">Continue</MudButton>
@@ -144,6 +146,11 @@
     protected override void OnInitialized()
     {
         if (Server == BackendServer.Custom) _customServerUri = ConfigManager.Config.OpenShock.Backend;
+    }
+
+    private async Task GetToken()
+    {
+        UiUtils.OpenUrl("https://shockl.ink/t/?redirect_uri=shockosc:token/%&permissions=shockers.use");
     }
 
 }

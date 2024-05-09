@@ -57,6 +57,7 @@ public static class WindowsEntryPoint
         
         if (PipeHelper.EnumeratePipes().Any(x => x.Equals(pipeName, StringComparison.InvariantCultureIgnoreCase)))
         {
+            // TODO: Refactor this
             if (!string.IsNullOrEmpty(config.Uri))
             {
                 using var pipeClientStream = new NamedPipeClientStream(".", "OpenShock.ShockOsc", PipeDirection.Out);
@@ -72,7 +73,7 @@ public static class WindowsEntryPoint
                     writer.WriteLine(JsonSerializer.Serialize(new PipeMessage
                     {
                         Type = PipeMessageType.Token,
-                        Data = parsedUri.Arguments
+                        Data = string.Join('/', parsedUri.Arguments)
                     }));
                 }
 
@@ -83,7 +84,6 @@ public static class WindowsEntryPoint
             Environment.Exit(1);
             return;
         }
-
 
         if (config.Headless)
         {

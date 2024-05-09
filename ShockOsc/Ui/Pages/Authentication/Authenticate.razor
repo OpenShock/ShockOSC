@@ -1,11 +1,14 @@
 @using OpenShock.ShockOsc.Config
 @using OpenShock.ShockOsc.Services
+@using OpenShock.ShockOsc.Services.Pipes
 @inject ConfigManager ConfigManager
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject AuthService AuthService
+@inject PipeServerService PipeService
 @layout NotAuthedLayout
 @inherits LayoutComponentBase
+
 
 @page "/"
 
@@ -54,13 +57,24 @@
 
     private State _currentState = State.Login;
 
-    private bool Loading { get; set; }
-
     protected override async Task OnInitializedAsync()
     {
+        if (await CheckTokenReceived()) return;
+        
+        PipeService.OnMessageReceived += CheckTokenReceived;
+        
         if (string.IsNullOrEmpty(ConfigManager.Config.OpenShock.Token)) return;
-
         await ProceedAuthenticated();
+    }
+
+    private async Task<bool> CheckTokenReceived()
+    {
+        if (string.IsNullOrEmpty(PipeService.Token) || _currentState != State.Login) return false;
+        ConfigManager.Config.OpenShock.Token = PipeService.Token;
+        await ConfigManager.SaveAsync();
+        PipeService.Token = null;
+        await ProceedAuthenticated();
+        return true;
     }
 
     public void ReLogin()
@@ -70,7 +84,6 @@
 
     private async Task ProceedAuthenticated()
     {
-        Loading = true;
         _currentState = State.Loading;
         await InvokeAsync(StateHasChanged);
 

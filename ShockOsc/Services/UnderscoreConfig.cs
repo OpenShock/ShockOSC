@@ -80,6 +80,41 @@ public sealed class UnderscoreConfig
     {
         switch (action)
         {
+            case "ModeIntensity":
+                if (value is bool modeIntensity)
+                {
+                    _configManager.Config.Behaviour.RandomIntensity = modeIntensity;
+                    _configManager.SaveFnf();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+                break;
+            
+            case "ModeDuration":
+                if (value is bool modeDuration)
+                {
+                    _configManager.Config.Behaviour.RandomDuration = modeDuration;
+                    _configManager.SaveFnf();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+                break;
+            
+            case "Intensity":
+                // 0..10sec
+                if (value is float intensityFloat)
+                {
+                    var currentIntensity =
+                        MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedIntensity / 100f);
+                    if (Math.Abs(intensityFloat - currentIntensity) < 0.001) return;
+
+                    _configManager.Config.Behaviour.FixedIntensity =
+                        Math.Clamp((byte)Math.Round(intensityFloat * 100), (byte)0, (byte)100);
+                    ValidateSettings();
+                    _configManager.SaveFnf();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+
+                break;
+
             case "MinIntensity":
                 // 0..100%
                 if (value is float minIntensityFloat)
@@ -91,7 +126,7 @@ public sealed class UnderscoreConfig
                     _configManager.Config.Behaviour.IntensityRange.Min =
                         MathUtils.ClampUint((uint)Math.Round(minIntensityFloat * 100), 0, 100);
                     ValidateSettings();
-                    _configManager.Save();
+                    _configManager.SaveFnf();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -108,7 +143,39 @@ public sealed class UnderscoreConfig
                     _configManager.Config.Behaviour.IntensityRange.Max =
                         MathUtils.ClampUint((uint)Math.Round(maxIntensityFloat * 100), 0, 100);
                     ValidateSettings();
-                    _configManager.Save();
+                    _configManager.SaveFnf();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+
+                break;
+
+            case "MinDuration":
+                // 0..10sec
+                if (value is float minDurationFloat)
+                {
+                    var currentMinDuration = _configManager.Config.Behaviour.DurationRange.Min / 10_000f;
+                    if (Math.Abs(minDurationFloat - currentMinDuration) < 0.001) return;
+
+                    _configManager.Config.Behaviour.DurationRange.Min =
+                        MathUtils.ClampUint((uint)Math.Round(minDurationFloat * 100), 300, 30_000);
+                    ValidateSettings();
+                    _configManager.SaveFnf();
+                    OnConfigUpdate?.Invoke(); // update Ui
+                }
+
+                break;
+
+            case "MaxDuration":
+                // 0..10sec
+                if (value is float maxDurationFloat)
+                {
+                    var currentMaxDuration = _configManager.Config.Behaviour.DurationRange.Max / 10_000f;
+                    if (Math.Abs(maxDurationFloat - currentMaxDuration) < 0.001) return;
+
+                    _configManager.Config.Behaviour.DurationRange.Max =
+                        MathUtils.ClampUint((uint)Math.Round(maxDurationFloat * 10_000), 300, 30_000);
+                    ValidateSettings();
+                    _configManager.SaveFnf();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -118,14 +185,13 @@ public sealed class UnderscoreConfig
                 // 0..10sec
                 if (value is float durationFloat)
                 {
-                    var currentDuration =
-                        MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedDuration / 10000f);
+                    var currentDuration = _configManager.Config.Behaviour.FixedDuration / 10000f;
                     if (Math.Abs(durationFloat - currentDuration) < 0.001) return;
 
                     _configManager.Config.Behaviour.FixedDuration =
-                        MathUtils.ClampUint((uint)Math.Round(durationFloat * 10000), 0, 10000);
+                        MathUtils.ClampUint((uint)Math.Round(durationFloat * 10_000), 300, 10_000);
                     ValidateSettings();
-                    _configManager.Save();
+                    _configManager.SaveFnf();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -142,7 +208,7 @@ public sealed class UnderscoreConfig
                     _configManager.Config.Behaviour.CooldownTime =
                         MathUtils.ClampUint((uint)Math.Round(cooldownTimeFloat * 100000), 0, 100000);
                     ValidateSettings();
-                    _configManager.Save();
+                    _configManager.SaveFnf();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -158,7 +224,7 @@ public sealed class UnderscoreConfig
                     _configManager.Config.Behaviour.HoldTime =
                         MathUtils.ClampUint((uint)Math.Round(holdTimeFloat * 1000), 0, 1000);
                     ValidateSettings();
-                    _configManager.Save();
+                    _configManager.SaveFnf();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -188,6 +254,10 @@ public sealed class UnderscoreConfig
         var intensityRange = _configManager.Config.Behaviour.IntensityRange;
         if (intensityRange.Min > intensityRange.Max) intensityRange.Max = intensityRange.Min;
         if (intensityRange.Max < intensityRange.Min) intensityRange.Min = intensityRange.Max;
+        
+        var durationRange = _configManager.Config.Behaviour.DurationRange;
+        if (durationRange.Min > durationRange.Max) durationRange.Max = durationRange.Min;
+        if (durationRange.Max < durationRange.Min) durationRange.Min = durationRange.Max;
     }
 
     public async Task SendUpdateForAll()
@@ -204,5 +274,15 @@ public sealed class UnderscoreConfig
             MathUtils.ClampFloat(_configManager.Config.Behaviour.CooldownTime / 100000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/HoldTime",
             MathUtils.ClampFloat(_configManager.Config.Behaviour.HoldTime / 1000f));
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/ModeIntensity",
+            _configManager.Config.Behaviour.RandomIntensity);
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/ModeDuration",
+            _configManager.Config.Behaviour.RandomDuration);
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Intensity",
+            MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedIntensity / 100f));
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MinDuration",
+            MathUtils.ClampFloat(_configManager.Config.Behaviour.DurationRange.Min / 10_000f));
+        await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxDuration",
+            MathUtils.ClampFloat(_configManager.Config.Behaviour.DurationRange.Max / 10_000f));
     }
 }
