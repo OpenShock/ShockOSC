@@ -1,4 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
+#if WINDOWS
+using OpenShock.ShockOsc.Platforms.Windows;
+#endif
 
 namespace OpenShock.ShockOsc;
 

@@ -37,7 +37,9 @@ public partial class DebouncedSlider<T> : ComponentBase
     private T _sliderValue = default!;
     
     [Parameter]
+#pragma warning disable BL0007
     public T SliderValue
+#pragma warning restore BL0007
     {
         get => _sliderValue;
         set

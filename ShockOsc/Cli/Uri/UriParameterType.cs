@@ -2,5 +2,6 @@
 
 public enum UriParameterType
 {
+    Show,
     Token
 }

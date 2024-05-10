@@ -2,20 +2,22 @@
 
 using System.Drawing;
 using System.Windows.Forms;
-using Microsoft.UI;
-using Microsoft.UI.Windowing;
 using OpenShock.SDK.CSharp.Hub;
 using OpenShock.ShockOsc.Services;
 using Application = Microsoft.Maui.Controls.Application;
-using Color = System.Drawing.Color;
 using Image = System.Drawing.Image;
 
-namespace OpenShock.ShockOsc;
+// ReSharper disable once CheckNamespace
+namespace OpenShock.ShockOsc.Platforms.Windows;
 
 public class WindowsTrayService : ITrayService
 {
     private readonly OpenShockHubClient _apiHubClient;
 
+    /// <summary>
+    /// Windows Tray Service
+    /// </summary>
+    /// <param name="apiHubClient"></param>
     public WindowsTrayService(OpenShockHubClient apiHubClient)
     {
         _apiHubClient = apiHubClient;
@@ -61,7 +63,7 @@ public class WindowsTrayService : ITrayService
         tray.Visible = true;
     }
 
-    private void Restart(object? sender, EventArgs e)
+    private static void Restart(object? sender, EventArgs e)
     {
         Application.Current?.Quit();
     }
@@ -73,18 +75,10 @@ public class WindowsTrayService : ITrayService
         var window = Application.Current?.Windows[0];
         var nativeWindow = window?.Handler?.PlatformView;
         if (nativeWindow == null) return;
-
-        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
-        var windowId = Win32Interop.GetWindowIdFromWindow(windowHandle);
-        var appWindow = AppWindow.GetFromWindowId(windowId);
         
-        appWindow.Show();
-
-        if (appWindow.Presenter is OverlappedPresenter presenter)
-        {
-            presenter.IsAlwaysOnTop = true;
-            presenter.IsAlwaysOnTop = false;    
-        }
+        var appWindow = WindowUtils.GetAppWindow(nativeWindow);
+        
+        appWindow.ShowOnTop();
     }
 
     private static void OnQuitClick(object? sender, EventArgs eventArgs)

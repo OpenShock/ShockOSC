@@ -2,5 +2,6 @@
 
 public enum PipeMessageType
 {
+    Show,
     Token
 }

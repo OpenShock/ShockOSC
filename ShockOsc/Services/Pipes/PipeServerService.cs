@@ -66,11 +66,11 @@ public sealed class PipeServerService
                     case PipeMessageType.Token:
                         Token = jsonObj.Data?.ToString();
                         break;
+                    case PipeMessageType.Show:
+                    default:
+                        break;
                 }
-                {
-                    
-                }
-                
+
                 await OnMessageReceived.Raise();
                 _logger.LogInformation("[{Id}], Received pipe message of type: {Type}", id, jsonObj.Type);
             }

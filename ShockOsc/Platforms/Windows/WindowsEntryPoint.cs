@@ -1,12 +1,10 @@
 ﻿#if WINDOWS
-using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using CommandLine;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
-using Microsoft.Windows.AppLifecycle;
 using OpenShock.ShockOsc.Cli;
 using OpenShock.ShockOsc.Cli.Uri;
 using OpenShock.ShockOsc.Services;
@@ -16,6 +14,7 @@ using WinRT;
 using Application = Microsoft.UI.Xaml.Application;
 using UriParser = OpenShock.ShockOsc.Cli.Uri.UriParser;
 
+// ReSharper disable once CheckNamespace
 namespace OpenShock.ShockOsc.Platforms.Windows;
 
 public static class WindowsEntryPoint
@@ -54,7 +53,7 @@ public static class WindowsEntryPoint
         }
 
         const string pipeName = @"\\.\pipe\OpenShock.ShockOSC";
-        
+
         if (PipeHelper.EnumeratePipes().Any(x => x.Equals(pipeName, StringComparison.InvariantCultureIgnoreCase)))
         {
             // TODO: Refactor this
@@ -63,19 +62,22 @@ public static class WindowsEntryPoint
                 using var pipeClientStream = new NamedPipeClientStream(".", "OpenShock.ShockOsc", PipeDirection.Out);
                 pipeClientStream.Connect(500);
 
+                var parsedUri = UriParser.Parse(config.Uri);
+
                 using var writer = new StreamWriter(pipeClientStream);
                 writer.AutoFlush = true;
 
-                var parsedUri = UriParser.Parse(config.Uri);
-
-                if (parsedUri.Type == UriParameterType.Token)
+                var pipeMessage = parsedUri.Type switch
                 {
-                    writer.WriteLine(JsonSerializer.Serialize(new PipeMessage
+                    UriParameterType.Show => new PipeMessage { Type = PipeMessageType.Show },
+                    UriParameterType.Token => new PipeMessage
                     {
-                        Type = PipeMessageType.Token,
-                        Data = string.Join('/', parsedUri.Arguments)
-                    }));
-                }
+                        Type = PipeMessageType.Token, Data = string.Join('/', parsedUri.Arguments)
+                    },
+                    _ => null
+                };
+
+                if (pipeMessage != null) writer.WriteLine(JsonSerializer.Serialize(pipeMessage));
 
                 return;
             }

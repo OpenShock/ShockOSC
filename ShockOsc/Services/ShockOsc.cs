@@ -70,14 +70,17 @@ public sealed class ShockOsc
         _dataLayer = dataLayer;
         _oscHandler = oscHandler;
         _liveControlManager = liveControlManager;
-
-
-        OnGroupsChanged += SetupGroups;
+        
+        OnGroupsChanged += () =>
+        {
+            SetupGroups();
+            return Task.CompletedTask;
+        };
         
         oscQueryServer.FoundVrcClient += FoundVrcClient;
         oscQueryServer.ParameterUpdate += OnAvatarChange;
-        
-        SetupGroups().Wait();
+
+        SetupGroups();
 
         if (!_configManager.Config.Osc.OscQuery)
         {
@@ -87,7 +90,7 @@ public sealed class ShockOsc
         _logger.LogInformation("Started ShockOsc.cs");
     }
 
-    private async Task SetupGroups()
+    private void SetupGroups()
     {
         _dataLayer.ProgramGroups.Clear();
         _dataLayer.ProgramGroups[Guid.Empty] = new ProgramGroup(Guid.Empty, "_All", _oscClient, null);
@@ -101,7 +104,7 @@ public sealed class ShockOsc
         OnParamsChange?.Invoke(shockOscParam);
     }
 
-    public async Task FoundVrcClient(IPEndPoint? oscClient)
+    private async Task FoundVrcClient(IPEndPoint? oscClient)
     {
         _logger.LogInformation("Found VRC client");
         // stop tasks
@@ -129,7 +132,7 @@ public sealed class ShockOsc
         _logger.LogInformation("Ready");
         OsTask.Run(_underscoreConfig.SendUpdateForAll);
         
-        _oscClient.SendChatboxMessage($"{_configManager.Config.Chatbox.Prefix} Game Connected");
+        await _oscClient.SendChatboxMessage($"{_configManager.Config.Chatbox.Prefix} Game Connected");
     }
 
     public async Task OnAvatarChange(Dictionary<string, object?> parameters, string avatarId)

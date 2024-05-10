@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿#if WINDOWS
+using System.Collections;
 
-namespace OpenShock.ShockOsc;
+// ReSharper disable once CheckNamespace
+namespace OpenShock.ShockOsc.Platforms.Windows;
 
 public static class PipeHelper
 {
@@ -30,3 +32,4 @@ public static class PipeHelper
         }
     }
 }
+#endif

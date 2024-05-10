@@ -79,7 +79,7 @@
 
     private string? _server = null;
 
-    [Parameter] public Func<Task> ProceedAuthenticated { get; set; }
+    [Parameter] public required Func<Task> ProceedAuthenticated { get; set; }
 
     public async Task Login()
     {
@@ -141,7 +141,8 @@
             BackendServer.Production => _productionServer,
             BackendServer.Staging => _stagingServer,
             BackendServer.Custom => _customServerUri,
-        };
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        } ?? throw new InvalidOperationException();
     }
 
     private struct WrongSchema;

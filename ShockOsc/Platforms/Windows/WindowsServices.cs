@@ -1,7 +1,8 @@
 ﻿#if WINDOWS
 using OpenShock.ShockOsc.Services;
 
-namespace OpenShock.ShockOsc;
+// ReSharper disable once CheckNamespace
+namespace OpenShock.ShockOsc.Platforms.Windows;
 
 public static class WindowsServices
 {
