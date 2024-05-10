@@ -1,0 +1,87 @@
+@using OpenShock.ShockOsc.Config
+@using OpenShock.ShockOsc.Services
+@inject IDialogService Dialog
+@inject IDialogService DialogService
+@inject ConfigManager ConfigManager
+@inject Updater Updater
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+@code {
+    private readonly DialogOptions _dialogOptions = new() { NoHeader = true, DisableBackdropClick = true };
+
+    private void OpenUpdateDialog()
+    {
+        DialogService.Show<UpdateDialog>("Update", _dialogOptions);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Updater.UpdateAvailable.OnValueChanged += UpdateAvailableOnValueChanged;
+        Updater.CheckingForUpdate.OnValueChanged += CheckingForUpdateOnValueChanged;
+
+        if (Updater.UpdateAvailable.Value && !Updater.IsPostponed) OpenUpdateDialog();
+    }
+
+    private void UpdateAvailableOnValueChanged(bool v)
+    {
+        InvokeAsync(StateHasChanged);
+        if (v && !Updater.IsPostponed) OpenUpdateDialog();
+    }
+
+    private void CheckingForUpdateOnValueChanged(bool v)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Logout()
+    {
+        ConfigManager.Config.OpenShock.Token = string.Empty;
+        await ConfigManager.SaveAsync();
+
+        NavigationManager.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        Updater.CheckingForUpdate.OnValueChanged -= CheckingForUpdateOnValueChanged;
+        Updater.UpdateAvailable.OnValueChanged -= UpdateAvailableOnValueChanged;
+    }
+
+    private string GetUpdateTooltip()
+    {
+        if(Updater.CheckingForUpdate.Value) return "Checking for updates...";
+        return Updater.UpdateAvailable.Value ? "Update available!" : "You are up-to-date!";
+    }
+
+}
+
+<div class="d-flex flex-childs-full-width gap-5">
+
+    <MudTooltip Text="Logout">
+        <MudButton Color="Color.Primary" @onclick="Logout" Size=" Size.Small" Variant="Variant.Filled" Class="mud-button-full-width">
+            <MudIcon Icon="@Icons.Material.Filled.Logout"/>
+        </MudButton>
+    </MudTooltip>
+
+
+    <MudTooltip Text="@GetUpdateTooltip()">
+        <MudButton Disabled="!Updater.UpdateAvailable.Value" Color="Color.Primary" @onclick="OpenUpdateDialog" Size="Size.Small" Variant="Variant.Filled" Class="mud-button-full-width">
+            @if (Updater.CheckingForUpdate.Value)
+            {
+                <MudProgressCircular Size="Size.Small" Color="Color.Primary" Indeterminate="true"/>
+            }
+            else
+            {
+                <MudIcon Icon="@(Updater.UpdateAvailable.Value ? Icons.Material.Filled.Update : Icons.Material.Filled.UpdateDisabled)"/>
+            }
+        </MudButton>
+    </MudTooltip>
+
+</div>
+
+<style>
+    .flex-childs-full-width >* {
+        width:  100%;
+    }
+</style>

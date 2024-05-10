@@ -52,4 +52,22 @@ public class OscQueryModels
         public string? TYPE { get; set; }
         public List<object>? VALUE { get; set; }
     }
+
+    public class HostInfo
+    {
+        public string NAME { get; set; }
+        public string OSC_IP { get; set; }
+        public int OSC_PORT { get; set; }
+        public string OSC_TRANSPORT { get; set; }
+        public Extensions EXTENSIONS { get; set; }
+    }
+    
+    public class Extensions
+    {
+        public bool ACCESS { get; set; }
+        public bool CLIPMODE { get; set; }
+        public bool RANGE { get; set; }
+        public bool TYPE { get; set; }
+        public bool VALUE { get; set; }
+    }
 }

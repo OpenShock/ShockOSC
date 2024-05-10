@@ -1,0 +1,106 @@
+﻿@using System.Reflection
+@using Microsoft.AspNetCore.SignalR.Client
+@using OpenShock.SDK.CSharp.Hub
+@using OpenShock.ShockOsc.Backend
+@using OpenShock.ShockOsc.Services
+@using OpenShock.ShockOsc.Ui.Pages.Dash.Components
+@using OpenShock.ShockOsc.Ui.Utils
+@using Semver
+@inject OpenShockApi Api
+@inject OpenShockHubClient ApiHubClient
+@inject ISnackbar Snackbar
+@inject LiveControlManager LiveControlManager
+@inject StatusHandler StatusHandler
+
+<MudPaper Width="250px" Height="100%" Elevation="0" Class="flex-none">
+
+    <div class="d-flex childs-width-100" style="height: 100%; flex-direction: column">
+
+        <div class="flex-none" style="align-self: flex-start;">
+            <div class="d-flex" style="align-items: center">
+                <MudImage Src="images/IconSlowSpin.svg" Alt="Logo" Width="45" Height="45" Class="ma-4" Style="vertical-align: bottom;"/>
+                <MudText Style="font-size: 22.5pt">ShockOSC</MudText>
+
+            </div>
+            <MudDivider Style="margin-bottom: 5px" DividerType="DividerType.Middle"/>
+        </div>
+
+
+        <MudNavMenu style="align-self: flex-start; overflow-y: auto" Class="flex-auto flex-grow-1" Margin="Margin.Dense" Color="Color.Primary" Bordered="true">
+
+            <MudNavLink Icon="@Icons.Material.Filled.Dashboard" Href="/dash/dashboard">Dashboard</MudNavLink>
+
+            <MudNavLink Icon="@Icons.Material.Filled.Group" Href="/dash/groups">Groups</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.Bolt" Href="/dash/shockers">Shockers</MudNavLink>
+
+            <MudNavLink Icon="@Icons.Material.Filled.Chat" Href="/dash/chatbox">Chatbox</MudNavLink>
+
+
+            <MudNavLink Icon="@Icons.Material.Filled.BugReport" Href="/dash/debug">Debug</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.List" Href="/dash/logs">Logs</MudNavLink>
+
+            <MudNavLink Icon="@Icons.Material.Filled.Settings" Href="/dash/config">Config</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.SettingsApplications" Href="/dash/appsettings">App Settings</MudNavLink>
+        </MudNavMenu>
+
+        <div class="flex-none" style="align-self: flex-end">
+            <MudDivider DividerType="DividerType.Middle"/>
+            <div Class="pa-4">
+
+                <MudText Style="font-size: 10pt">ShockOSC v@(Version.WithoutMetadata().ToString())</MudText>
+                <div class="d-flex gap-5" style="flex-wrap: wrap; margin: 10px 0;">
+
+                    <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
+                        <MudText Style="font-size: 10pt">Hub</MudText>
+                        <MudTooltip Arrow="true" Placement="Placement.Top" Text="@ApiHubClient.State.ToString()">
+                            <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="@GetConnectionStateColor(ApiHubClient.State)"/>
+                        </MudTooltip>
+                    </div>
+
+                    @foreach (var device in Api.Devices)
+                    {
+                        if (LiveControlManager.LiveControlClients.TryGetValue(device.Id, out var client))
+                        {
+                            <StatePart Text="@device.Name.Truncate(13)" Client="client"/>
+                        }
+                        else
+                        {
+                            <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
+                                <MudText Style="font-size: 10pt">@device.Name.Truncate(13)</MudText>
+                                <MudTooltip Arrow="true" Placement="Placement.Top" Text="Offline">
+                                    <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="@Color.Dark"/>
+                                </MudTooltip>
+                            </div>
+                        }
+                    }
+
+
+                </div>
+                <UpdateLogout/>
+            </div>
+        </div>
+
+    </div>
+</MudPaper>
+
+@code {
+
+    private static readonly SemVersion Version = SemVersion.Parse(typeof(SideBar).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion, SemVersionStyles.Strict);
+    
+    protected override void OnInitialized()
+    {
+        StatusHandler.OnWebsocketStatusChanged += () => InvokeAsync(StateHasChanged);
+    }
+
+    private static Color GetConnectionStateColor(HubConnectionState state) =>
+        state switch
+        {
+            HubConnectionState.Connected => Color.Success,
+            HubConnectionState.Reconnecting => Color.Warning,
+            HubConnectionState.Connecting => Color.Warning,
+            HubConnectionState.Disconnected => Color.Error,
+            _ => Color.Error
+        };
+
+}
+

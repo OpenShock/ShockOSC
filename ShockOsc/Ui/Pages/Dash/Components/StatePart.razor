@@ -1,0 +1,19 @@
+﻿<div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
+    <MudText Style="font-size: 10pt">@Text</MudText>
+    <MudTooltip Arrow="true" Placement="Placement.Top">
+        <ChildContent>
+            <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="GetConnectionStateColor()"/>
+        </ChildContent>
+        <TooltipContent>
+            <MudText Typo="Typo.body2">@Client.State.Value.ToString()</MudText>
+            <MudText Typo="Typo.caption">@Client.Gateway</MudText><br/>
+            <MudText Typo="Typo.caption">Latency: @(Client.Latency.Value)ms</MudText>
+        </TooltipContent>
+    </MudTooltip>
+</div>
+
+<style>
+    .child-div-align-center > div {
+        align-self: center;
+    }
+</style>

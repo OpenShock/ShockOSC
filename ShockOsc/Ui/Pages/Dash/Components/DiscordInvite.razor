@@ -1,0 +1,154 @@
+﻿@namespace OpenShock.ShockOsc.Ui.Pages.Dash.Components
+
+<div class="discord-invite">
+    @if(!_loading) {
+    @if(_invite != null) {
+    <div class="splash">
+        <img src="https://cdn.discordapp.com/splashes/@(_invite.Guild.Id)/@(_invite.Guild.Splash)?size=480"
+             alt="Splash"/>
+    </div>
+    <h3 class="blurb grey-text">Join the @(_invite.Guild.Name) Discord Server!</h3>
+
+    <div class="main-area">
+        <div class="left">
+            <img class="server-icon" src="https://cdn.discordapp.com/icons/@(_invite.Guild.Id)/@(_invite.Guild.Icon)"
+                 alt="Discord Server Icon"/>
+            <div class="name-and-members">
+                <h4 class="guild-name">@(_invite.Guild.Name)</h4>
+                <div class="members grey-text">
+                    <div class="members-part">
+                        <i class="dot green"></i>
+                        <span>@(_invite.ApproximatePresenceCount) Online</span>
+                    </div>
+                    <div class="members-part">
+                        <i class="dot grey"></i>
+                        <span>@(_invite.ApproximateMemberCount) Members</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <MudButton Class="join-button" Color="Color.Primary" Variant="Variant.Filled" OnClick="JoinDiscord">Join</MudButton>
+    </div>
+
+    } else {
+    <p>Failed to load invite</p>
+    }
+
+    } else {
+    <div class="splash">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" />
+    </div>
+    <MudSkeleton Class="blurb grey-text" Animation="Animation.Wave" />
+
+    <div class="main-area">
+        <div class="left">
+            <MudSkeleton Class="server-icon" Style="width: 64px" SkeletonType="SkeletonType.Circle" Animation="Animation.Wave"/>
+            <div class="name-and-members">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" />
+                <div class="members grey-text">
+                    <div class="members-part" style="width: 100px">
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Style="width: 100%" />
+                    </div>
+                    <div class="members-part" style="width: 100px">
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Style="width: 100%" />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <MudButton Class="join-button" Color="Color.Primary" Disabled="true" Variant="Variant.Filled" OnClick="JoinDiscord">Join</MudButton>
+    </div>
+    }
+</div>
+
+<style>
+    .discord-invite {
+        width: 432px;
+        height: 174px;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+
+        text-align: start;
+        background-color: #1e2233;
+    }
+
+    .discord-invite .splash {
+        position: relative;
+        height: 64px;
+        margin: -16px -16px 16px;
+    }
+
+    .discord-invite .splash > * {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .discord-invite .blurb {
+        font-size: 12px;
+        margin-bottom: 12px;
+        text-overflow: ellipsis;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .discord-invite .main-area {
+        display: flex;
+        flex-flow: row wrap;
+        gap: 16px;
+    }
+
+
+    .discord-invite .left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-grow: 1;
+    }
+
+    .discord-invite .left .server-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+
+    .discord-invite .left .name-and-members {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .discord-invite .left .name-and-members .guild-name {
+        font-size: 16px;
+    }
+
+    .discord-invite .left .name-and-members .members {
+        display: flex;
+        flex-direction: row;
+        column-gap: 12px;
+    }
+    .discord-invite .members-part {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-flow: nowrap;
+    }
+    
+    .discord-invite .members-part .dot {
+        display: block;
+        border-radius: 50%;
+        margin-right: 4px;
+        width: 8px;
+        height: 8px;
+    }
+    
+    .discord-invite .join-button {
+        height: 100%;
+        padding: 0 22px;
+    }
+
+</style>

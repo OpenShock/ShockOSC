@@ -1,0 +1,18 @@
+{
+  "profiles": {
+    "ShockOsc": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    },
+    "ShockOscHeadless": {
+      "commandName": "Project",
+      "nativeDebugging": false,
+      "commandLineArgs": "--headless"
+    },
+    "ShockOscUriShow": {
+      "commandName": "Project",
+      "nativeDebugging": false,
+      "commandLineArgs": "--uri=shockosc:show"
+    }
+  }
+}

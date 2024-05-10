@@ -6,6 +6,16 @@ public class GithubReleaseResponse
 {
     [JsonPropertyName("tag_name")]
     public required string TagName { get; set; }
+    
+    [JsonPropertyName("id")]
+    public required ulong Id { get; set; }
+    
+    [JsonPropertyName("draft")]
+    public required bool Draft { get; set; }
+    
+    [JsonPropertyName("prerelease")]
+    public required bool Prerelease { get; set; }
+    
     [JsonPropertyName("assets")]
     public required ICollection<Asset> Assets { get; set; }
 

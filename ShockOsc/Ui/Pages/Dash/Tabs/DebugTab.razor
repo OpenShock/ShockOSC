@@ -1,0 +1,94 @@
+﻿@using OpenShock.ShockOsc.Services
+@using OpenShock.ShockOsc.Utils
+@implements IAsyncDisposable
+@inject ShockOsc ShockOsc
+
+@page "/dash/debug"
+
+<MudPaper Outlined="true" Class="mud-paper-padding">
+    <MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
+</MudPaper>
+<MudPaper Outlined="true" Class="mud-paper-padding-margin">
+    <MudText>OSC Parameters</MudText>
+    <MudDivider/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams" Label="Show all avatar parameters"/>
+    <MudTextField DebounceInterval="50" Variant="Variant.Outlined" @bind-Value="_search" Label="Search Parameter"/>
+    <MudDivider/>
+    <br/>
+    @if (_showAllAvatarParams)
+    {
+        if (ShockOsc.AllAvatarParams.Count > 0)
+        {
+            @foreach (var param in ShockOsc.AllAvatarParams
+                          .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+            }
+        }
+        else
+        {
+            <MudText Typo="Typo.body1">No parameters available</MudText>
+        }
+    }
+    else
+    {
+        if (ShockOsc.ShockOscParams.Count > 0)
+        {
+            @foreach (var param in ShockOsc.ShockOscParams
+                          .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
+            }
+        }
+        else
+        {
+            <MudText Typo="Typo.body1">No parameters available</MudText>
+        }
+    }
+
+</MudPaper>
+
+@code {
+    private bool _showAllAvatarParams = false;
+    private string _search = "";
+
+    private void OnParamsChange(bool shockOscParam)
+    {
+        // only redraw page when needed
+        if (!_showAllAvatarParams && !shockOscParam)
+            return;
+
+        _updateQueued = true;
+    }
+
+    private bool _updateQueued = true;
+
+    protected override void OnInitialized()
+    {
+        ShockOsc.OnParamsChange = OnParamsChange;
+        OsTask.Run(UpdateParams);
+    }
+
+    private async Task UpdateParams()
+    {
+        while (!_cts.IsCancellationRequested)
+        {
+            if (!_updateQueued)
+                continue;
+            _updateQueued = false;
+
+            await InvokeAsync(StateHasChanged);
+
+            await Task.Delay(200);
+        }
+    }
+
+    private CancellationTokenSource _cts = new CancellationTokenSource();
+
+
+    public async ValueTask DisposeAsync()
+    {
+        await _cts.CancelAsync();
+    }
+
+}

@@ -5,49 +5,69 @@ using System.Text.Json;
 using MeaMod.DNS.Model;
 using MeaMod.DNS.Multicast;
 using Serilog;
+using EmbedIO;
+using EmbedIO.Actions;
+using Microsoft.Extensions.Hosting;
+using OpenShock.SDK.CSharp.Live.Utils;
+using OpenShock.SDK.CSharp.Utils;
+using OpenShock.ShockOsc.Config;
+using OpenShock.ShockOsc.Utils;
 
 namespace OpenShock.ShockOsc.OscQueryLibrary;
 
 public class OscQueryServer : IDisposable
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(OscQueryServer));
+
+    private static readonly HttpClient Client = new();
     
-    private readonly ushort _httpPort; // TODO: remove when switching httpServer library for proper random port support
-    private readonly string _ipAddress;
-    public static ushort OscPort;
+    private readonly ushort _httpPort;
+    private readonly IPAddress _ipAddress;
+    private readonly ConfigManager _configManager;
+    public readonly ushort ShockOscReceivePort;
     private const string OscHttpServiceName = "_oscjson._tcp";
     private const string OscUdpServiceName = "_osc._udp";
-    private readonly HttpListener _httpListener;
     private readonly MulticastService _multicastService;
     private readonly ServiceDiscovery _serviceDiscovery;
     private readonly string _serviceName;
-    private object? _hostInfo;
+    private OscQueryModels.HostInfo? _hostInfo;
     private object? _queryData;
 
-    private static readonly HashSet<string> FoundServices = new();
-    private static IPEndPoint? _lastVrcHttpServer;
-    private static event Action<Dictionary<string, object?>>? ParameterUpdate;
-    private static readonly Dictionary<string, object?> ParameterList = new();
+    private readonly HashSet<string> FoundServices = new();
+    private IPEndPoint? _lastVrcHttpServer;
+    
 
-    public OscQueryServer(string serviceName, string ipAddress,
-        Action<Dictionary<string, object?>>? parameterUpdate = null)
+    public event Func<IPEndPoint, Task>? FoundVrcClient;
+    public event Func<Dictionary<string, object?>, string, Task>? ParameterUpdate;
+    
+    private readonly Dictionary<string, object?> ParameterList = new();
+    
+    private readonly WebServer _httpServer;
+    private readonly string _httpServerUrl;
+
+    public OscQueryServer(string serviceName, IPAddress ipAddress, ConfigManager configManager)
     {
+        Swan.Logging.Logger.NoLogging();
+
         _serviceName = serviceName;
         _ipAddress = ipAddress;
-        OscPort = FindAvailableUdpPort();
+        _configManager = configManager;
+        ShockOscReceivePort = FindAvailableUdpPort();
         _httpPort = FindAvailableTcpPort();
-        ParameterUpdate = parameterUpdate;
         SetupJsonObjects();
         // ignore our own service
         FoundServices.Add($"{_serviceName.ToLower()}.{OscHttpServiceName}.local:{_httpPort}");
 
         // HTTP Server
-        _httpListener = new HttpListener();
-        var prefix = $"http://{_ipAddress}:{_httpPort}/";
-        _httpListener.Prefixes.Add(prefix);
-        _httpListener.Start();
-        _httpListener.BeginGetContext(OnHttpRequest, null);
-        Logger.Debug("OSCQueryHttpServer: Listening at {Prefix}", prefix);
+        _httpServerUrl = $"http://{_ipAddress}:{_httpPort}/";
+        _httpServer = new WebServer(o => o
+                .WithUrlPrefix(_httpServerUrl)
+                .WithMode(HttpListenerMode.EmbedIO))
+            .WithModule(new ActionModule("/", HttpVerbs.Get,
+                ctx => ctx.SendStringAsync(
+                    ctx.Request.RawUrl.Contains("HOST_INFO")
+                        ? JsonSerializer.Serialize(_hostInfo)
+                        : JsonSerializer.Serialize(_queryData), "application/json", Encoding.UTF8)));
 
         // mDNS
         _multicastService = new MulticastService
@@ -56,19 +76,31 @@ public class OscQueryServer : IDisposable
             IgnoreDuplicateMessages = true
         };
         _serviceDiscovery = new ServiceDiscovery(_multicastService);
+    }
+
+    public void Start()
+    {
+        if (!_configManager.Config.Osc.OscQuery)
+        {
+            Logger.Debug("OSCQuery: Disabled");
+            return;
+        }
+        OsTask.Run(() => _httpServer.RunAsync());
+        Logger.Debug("OSCQueryHttpServer: Listening at {Prefix}", _httpServerUrl);
+        
         ListenForServices();
         _multicastService.Start();
         AdvertiseOscQueryServer();
     }
-
+    
     private void AdvertiseOscQueryServer()
     {
         var httpProfile =
             new ServiceProfile(_serviceName, OscHttpServiceName, _httpPort,
-                new[] { IPAddress.Parse(_ipAddress) });
+                new[] { _ipAddress });
         var oscProfile =
-            new ServiceProfile(_serviceName, OscUdpServiceName, OscPort,
-                new[] { IPAddress.Parse(_ipAddress) });
+            new ServiceProfile(_serviceName, OscUdpServiceName, ShockOscReceivePort,
+                new[] { _ipAddress });
         _serviceDiscovery.Advertise(httpProfile);
         _serviceDiscovery.Advertise(oscProfile);
     }
@@ -85,7 +117,7 @@ public class OscQueryServer : IDisposable
         _multicastService.AnswerReceived += OnAnswerReceived;
     }
 
-    private static void OnAnswerReceived(object? sender, MessageEventArgs args)
+    private void OnAnswerReceived(object? sender, MessageEventArgs args)
     {
         var response = args.Message;
         try
@@ -117,8 +149,7 @@ public class OscQueryServer : IDisposable
 
                 if (instanceName.StartsWith("VRChat-Client-") && ipAddress != null)
                 {
-                    _lastVrcHttpServer = new IPEndPoint(ipAddress, record.Port);
-                    FetchJsonFromVrc(ipAddress, record.Port).GetAwaiter();
+                    FoundNewVrcClient(ipAddress, record.Port).GetAwaiter();
                 }
             }
         }
@@ -127,24 +158,63 @@ public class OscQueryServer : IDisposable
             Logger.Debug("Failed to parse from {ArgsRemoteEndPoint}: {ExMessage}", args.RemoteEndPoint, ex.Message);
         }
     }
+    
+    private async Task FoundNewVrcClient(IPAddress ipAddress, int port)
+    {
+        _lastVrcHttpServer = new IPEndPoint(ipAddress, port);
+        var oscEndpoint = await FetchOscSendPortFromVrc(ipAddress, port);
+        if(oscEndpoint == null) return;
+        FoundVrcClient?.Raise(oscEndpoint);
+        await FetchJsonFromVrc(ipAddress, port);
+    }
+    
+    private async Task<IPEndPoint?> FetchOscSendPortFromVrc(IPAddress ipAddress, int port)
+    {
+        var url = $"http://{ipAddress}:{port}?HOST_INFO";
+        Logger.Debug("OSCQueryHttpClient: Fetching OSC send port from {Url}", url);
+        var response = string.Empty;
+
+        try
+        {
+            response = await Client.GetStringAsync(url);
+            var rootNode = JsonSerializer.Deserialize<OscQueryModels.HostInfo>(response);
+            if (rootNode?.OSC_PORT == null)
+            {
+                Logger.Error("OSCQueryHttpClient: Error no OSC port found");
+                return null;
+            }
+
+            return new IPEndPoint(IPAddress.Parse(rootNode.OSC_IP), (ushort)rootNode.OSC_PORT);
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.Error("OSCQueryHttpClient: Error {ExMessage}", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("OSCQueryHttpClient: Error {ExMessage}\\n{Response}", ex.Message, response);
+        }
+
+        return null;
+    }
 
     private static bool _fetchInProgress;
 
-    private static async Task FetchJsonFromVrc(IPAddress ipAddress, int port)
+    private async Task FetchJsonFromVrc(IPAddress ipAddress, int port)
     {
         if (_fetchInProgress) return;
         _fetchInProgress = true;
         var url = $"http://{ipAddress}:{port}/";
         Logger.Debug("OSCQueryHttpClient: Fetching new parameters from {Url}", url);
         var response = string.Empty;
-        var client = new HttpClient();
+        var avatarId = string.Empty;
         try
         {
-            response = await client.GetStringAsync(url);
+            response = await Client.GetStringAsync(url);
             var rootNode = JsonSerializer.Deserialize<OscQueryModels.RootNode>(response);
             if (rootNode?.CONTENTS?.avatar?.CONTENTS?.parameters?.CONTENTS == null)
             {
-                Logger.Error("OSCQueryHttpClient: Error no parameters found");
+                Logger.Debug("OSCQueryHttpClient: Error no parameters found");
                 return;
             }
 
@@ -154,18 +224,19 @@ public class OscQueryServer : IDisposable
                 RecursiveParameterLookup(node);
             }
 
-            ParameterUpdate?.Invoke(ParameterList);
+            avatarId = rootNode.CONTENTS.avatar.CONTENTS.change.VALUE?[0]?.ToString() ?? string.Empty;
+            if(ParameterUpdate != null) await ParameterUpdate.Raise(ParameterList, avatarId);
         }
         catch (HttpRequestException ex)
         {
             _lastVrcHttpServer = null;
             ParameterList.Clear();
-            ParameterUpdate?.Invoke(ParameterList);
+            ParameterUpdate?.Raise(ParameterList, avatarId);
             Logger.Error("OSCQueryHttpClient: Error {ExMessage}", ex.Message);
         }
         catch (Exception ex)
         {
-            Logger.Error("OSCQueryHttp: Error {ExMessage}\\n{Response}", ex.Message, response);
+            Logger.Error("OSCQueryHttpClient: Error {ExMessage}\\n{Response}", ex.Message, response);
         }
         finally
         {
@@ -173,7 +244,7 @@ public class OscQueryServer : IDisposable
         }
     }
 
-    private static void RecursiveParameterLookup(OscQueryModels.Node node)
+    private void RecursiveParameterLookup(OscQueryModels.Node node)
     {
         if (node.CONTENTS == null)
         {
@@ -187,36 +258,7 @@ public class OscQueryServer : IDisposable
         }
     }
 
-    private async void OnHttpRequest(IAsyncResult result)
-    {
-        var context = _httpListener.EndGetContext(result);
-        _httpListener.BeginGetContext(OnHttpRequest, null);
-        var request = context.Request;
-        var response = context.Response;
-        var path = request.Url?.AbsolutePath;
-        if (path == null || request.RawUrl == null)
-            return;
-
-        if (!request.RawUrl.Contains("HOST_INFO") && path != "/")
-        {
-            response.StatusCode = 404;
-            response.StatusDescription = "Not Found";
-            response.Close();
-            return;
-        }
-
-        Logger.Debug("OSCQueryHttp request: {Path}", path);
-
-        var json = JsonSerializer.Serialize(request.RawUrl.Contains("HOST_INFO") ? _hostInfo : _queryData);
-        response.Headers.Add("pragma:no-cache");
-        response.ContentType = "application/json";
-        var buffer = Encoding.UTF8.GetBytes(json);
-        response.ContentLength64 = buffer.Length;
-        await response.OutputStream.WriteAsync(buffer);
-        response.OutputStream.Close();
-    }
-
-    public static async Task GetParameters()
+    public async Task GetParameters()
     {
         if (_lastVrcHttpServer == null)
             return;
@@ -227,7 +269,7 @@ public class OscQueryServer : IDisposable
     private ushort FindAvailableTcpPort()
     {
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        socket.Bind(new IPEndPoint(IPAddress.Parse(_ipAddress), port: 0));
+        socket.Bind(new IPEndPoint(_ipAddress, port: 0));
         ushort port = 0;
         if (socket.LocalEndPoint != null)
             port = (ushort)((IPEndPoint)socket.LocalEndPoint).Port;
@@ -237,7 +279,7 @@ public class OscQueryServer : IDisposable
     private ushort FindAvailableUdpPort()
     {
         using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        socket.Bind(new IPEndPoint(IPAddress.Parse(_ipAddress), port: 0));
+        socket.Bind(new IPEndPoint(_ipAddress, port: 0));
         ushort port = 0;
         if (socket.LocalEndPoint != null)
             port = (ushort)((IPEndPoint)socket.LocalEndPoint).Port;
@@ -261,13 +303,13 @@ public class OscQueryServer : IDisposable
             }
         };
 
-        _hostInfo = new
+        _hostInfo = new OscQueryModels.HostInfo
         {
             NAME = _serviceName,
-            OSC_PORT = (int)OscPort,
-            OSC_IP = _ipAddress,
+            OSC_PORT = ShockOscReceivePort,
+            OSC_IP = _ipAddress.ToString(),
             OSC_TRANSPORT = "UDP",
-            EXTENSIONS = new
+            EXTENSIONS = new OscQueryModels.Extensions
             {
                 ACCESS = true,
                 CLIPMODE = true,
@@ -283,8 +325,6 @@ public class OscQueryServer : IDisposable
         GC.SuppressFinalize(this);
         _multicastService.Dispose();
         _serviceDiscovery.Dispose();
-        _httpListener.Stop();
-        _httpListener.Close();
     }
 
     ~OscQueryServer()

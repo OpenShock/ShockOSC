@@ -1,0 +1,107 @@
+@using OpenShock.ShockOsc.Config
+@using OpenShock.ShockOsc.Services
+@using OpenShock.ShockOsc.Services.Pipes
+@inject ConfigManager ConfigManager
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject AuthService AuthService
+@inject PipeServerService PipeService
+@layout NotAuthedLayout
+@inherits LayoutComponentBase
+
+
+@page "/"
+
+<MudContainer Class="d-flex align-content-center" Style="padding: 0 0 15px 0;">
+    <MudContainer Style="width: 600px; padding: 0;">
+        <MudImage Src="images/Icon.svg" Alt="Logo" Width="75" Height="75" Class="ma-4" Style="vertical-align: bottom;"/>
+        <MudContainer Class="d-inline-block" Style="width: 485px; padding: 0;">
+            <MudText Typo="Typo.h1">ShockOSC</MudText>
+        </MudContainer>
+    </MudContainer>
+</MudContainer>
+
+
+<MudContainer Class="align-content-center" MaxWidth="MaxWidth.Small" Style="padding-top: 30px">
+    <MudPaper Class="rounded-lg" Elevation="0" Style="padding: 40px 20px; text-align: center;" Outlined="true">
+        <MudText Typo="Typo.h2">Login</MudText>
+        <br/>
+        @switch (_currentState)
+        {
+            case State.Login:
+                <LoginPart ProceedAuthenticated="ProceedAuthenticated"/>
+                break;
+            case State.Loading:
+                <MudProgressCircular Color="Color.Primary" Style="height:125px;width:125px;" Indeterminate="true"/>
+                break;
+            case State.Failed:
+                <MudText Typo="Typo.h6">Failed to authenticate</MudText>
+                <MudButton OnClick="ReLogin" Variant="Variant.Filled" Color="Color.Primary">Re-login</MudButton>
+                break;
+            case State.Authenticated:
+                <MudText Typo="Typo.h6">Successful, redirecting...</MudText>
+                break;
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+
+    private enum State
+    {
+        Login,
+        Loading,
+        Authenticated,
+        Failed
+    }
+
+    private State _currentState = State.Login;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await CheckTokenReceived()) return;
+        
+        PipeService.OnMessageReceived += CheckTokenReceived;
+        
+        if (string.IsNullOrEmpty(ConfigManager.Config.OpenShock.Token)) return;
+        await ProceedAuthenticated();
+    }
+
+    private async Task<bool> CheckTokenReceived()
+    {
+        if (string.IsNullOrEmpty(PipeService.Token) || _currentState != State.Login) return false;
+        ConfigManager.Config.OpenShock.Token = PipeService.Token;
+        await ConfigManager.SaveAsync();
+        PipeService.Token = null;
+        await ProceedAuthenticated();
+        return true;
+    }
+
+    public void ReLogin()
+    {
+        _currentState = State.Login;
+    }
+
+    private async Task ProceedAuthenticated()
+    {
+        _currentState = State.Loading;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await AuthService.Authenticate();
+
+            _currentState = State.Authenticated;
+            await InvokeAsync(StateHasChanged);
+
+            NavigationManager.NavigateTo("dash/dashboard");
+        }
+        catch (Exception e)
+        {
+            _currentState = State.Failed;
+            await InvokeAsync(StateHasChanged);
+            Snackbar.Add("Failed to authenticate", Severity.Error);
+        }
+    }
+
+}

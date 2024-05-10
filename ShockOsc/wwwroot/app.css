@@ -1,0 +1,65 @@
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400;
+    src: url(fonts/poppins-latin-400-normal.405055dd..woff2) format('woff2'), url(fonts/poppins-latin-400-normal.cda9c93f..woff) format('woff');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html, body {
+    font-family: 'Poppins', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-user-select: none;
+}
+
+body {
+    --mud-palette-background: #212121;
+    background-color: #212121;
+    min-width: 600px;
+}
+
+.mud-tabs-toolbar {
+    background-color: #1f1f1f !important;
+}
+
+.mud-tabs-panels {
+    background-color: #272727 !important;
+}
+
+.option-width {
+    display: inline-flex !important;
+    padding: 0 10px 0 0 !important;
+}
+
+.option-checkbox-height {
+    padding-top: 10px !important;
+}
+
+.mud-paper-padding-margin {
+    padding: 10px 15px;
+    margin: 20px 0;
+}
+
+.mud-paper-padding {
+    padding: 10px 15px;
+}
+
+.openshock-slider-length {
+    width: 300px !important;
+    margin-left: 30px;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+
+.column {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 100%;
+    flex: 1;
+}
