@@ -1,13 +1,20 @@
-﻿@using OneOf.Types
+﻿@using System.Net.Http.Json
+@using Microsoft.Extensions.Logging
+@using OneOf.Types
+@using OpenShock.SDK.CSharp.Models
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
 @using OpenShock.ShockOsc.Utils
 
 @inject ConfigManager ConfigManager
 @inject OpenShockApi ApiClient
+@inject ISnackbar Snackbar
+@inject ILogger<LoginPart> Logger
 
-<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GetToken">Get Token</MudButton>
+<div class="d-flex">
+<MudButton Class="get-token-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="GetToken">Get Token</MudButton>
 <MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+</div>
 <br/>
 <MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary">Continue</MudButton>
 <br/>
@@ -56,6 +63,12 @@
     .server-url-backdrop {
         background-color: rgba(66, 66, 66, 1);
         border-radius: 5px;
+    }
+    
+    .get-token-button {
+        margin-top: 8px;
+        margin-bottom: 2px;
+        margin-right: 10px;
     }
 </style>
 
@@ -150,7 +163,37 @@
 
     private async Task GetToken()
     {
-        UiUtils.OpenUrl("https://shockl.ink/t/?redirect_uri=shockosc:token/%&permissions=shockers.use");
+        Logger.LogTrace("Get API info");
+        var httpClient = new HttpClient();
+        httpClient.BaseAddress = ConfigManager.Config.OpenShock.Backend;
+        var response = await httpClient.GetAsync("1");
+        if (!response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Failed to reach API", Severity.Error);
+            return;
+        }
+        
+        var root = await response.Content.ReadFromJsonAsync<BaseResponse<RootResponse>>();
+        
+        if (root == null)
+        {
+            Snackbar.Add("Failed to reach API", Severity.Error);
+            return;
+        }
+        
+        Logger.LogTrace("Open browser for token");
+
+        var requestUri = new Uri(root.Data!.ShortLinkUrl, "/t/?name=ShockOSC&redirect_uri=shockosc:token/%&permissions=shockers.use");
+        UiUtils.OpenUrl(requestUri.ToString());
     }
 
+    public sealed class RootResponse
+    {
+        public required string Version { get; set; }
+        public required string Commit { get; set; }
+        public required DateTimeOffset CurrentTime { get; set; }
+        public required Uri FrontendUrl { get; set; }
+        public required Uri ShortLinkUrl { get; set; }
+    }
+    
 }
