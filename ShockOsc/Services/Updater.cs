@@ -77,22 +77,16 @@ public sealed class Updater
                 return null;
             }
 
-            if (!SemVersion.TryParse(release.TagName, SemVersionStyles.AllowV, out var version))
-            {
-                _logger.LogWarning("Failed to parse version. Value: {Version}", release.TagName);
-                return null;
-            }
-
-            var asset = release.Assets.FirstOrDefault(x =>
+            var asset = release.Value.Item1.Assets.FirstOrDefault(x =>
                 x.Name.Equals(SetupFileName, StringComparison.InvariantCultureIgnoreCase));
             if (asset == null)
             {
                 _logger.LogWarning("Could not find asset with {@SetupName}. Assets found: {@Assets}", SetupFileName,
-                    release.Assets);
+                    release.Value.Item1.Assets);
                 return null;
             }
 
-            return (version, asset);
+            return (release.Value.Item2, asset);
         }
         catch (Exception e)
         {
@@ -101,7 +95,7 @@ public sealed class Updater
         }
     }
 
-    private async Task<GithubReleaseResponse?> GetPreRelease()
+    private async Task<(GithubReleaseResponse, SemVersion)?> GetPreRelease()
     {
         using var res = await HttpClient.GetAsync(GithubReleasesUrl);
         if (!res.IsSuccessStatusCode)
@@ -133,12 +127,37 @@ public sealed class Updater
             listOfValid.Add((release, version));
         }
 
-        var newestPreRelease = listOfValid.OrderByDescending(x => x.Item2);
+        (GithubReleaseResponse, SemVersion)? newestPreRelease = listOfValid.OrderByDescending(x => x.Item2).FirstOrDefault();
+        var latestRelease = await GetLatestRelease();
+        if (newestPreRelease == null && latestRelease == null)
+        {
+            _logger.LogWarning("Could not find any valid pre-releases or releases");
+            return null;
+        }
 
-        return newestPreRelease.FirstOrDefault().Item1;
+        if (newestPreRelease == null)
+        {
+            _logger.LogWarning("Could not find any valid pre-releases, using latest release");
+            return latestRelease;
+        }
+
+        if (latestRelease == null)
+        {
+            _logger.LogWarning("Could not find any valid releases, using latest pre-release without comparing to latest release");
+            return newestPreRelease;
+        }
+        
+        
+        if (latestRelease.Value.Item2.ComparePrecedenceTo(newestPreRelease.Value.Item2) >= 0)
+        {
+            _logger.LogInformation("Latest release is newer than or the same as latest pre-release. Using latest release");
+            return latestRelease;
+        }
+        
+        return newestPreRelease;
     }
 
-    private async Task<GithubReleaseResponse?> GetLatestRelease()
+    private async Task<(GithubReleaseResponse, SemVersion)?> GetLatestRelease()
     {
         using var res = await HttpClient.GetAsync(GithubLatest);
         if (!res.IsSuccessStatusCode)
@@ -155,8 +174,14 @@ public sealed class Updater
             _logger.LogWarning("Could not deserialize json");
             return null;
         }
+        
+        if (!SemVersion.TryParse(json.TagName, SemVersionStyles.AllowV, out var version))
+        {
+            _logger.LogWarning("Failed to parse version. Value: {Version}", json.TagName);
+            return null;
+        }
 
-        return json;
+        return (json, version);
     }
 
     private readonly SemaphoreSlim _updateLock = new(1, 1);
