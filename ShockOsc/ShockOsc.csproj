@@ -15,7 +15,7 @@
         <RootNamespace>OpenShock.ShockOsc</RootNamespace>
         <Company>OpenShock</Company>
         <AssemblyVersion>2.0.0</AssemblyVersion>
-        <Version>2.0.0-rc.5</Version>
+        <Version>2.0.0</Version>
         <ApplicationIcon>Resources\openshock-icon.ico</ApplicationIcon>
         <SelfContained>true</SelfContained>
         <Product>ShockOsc</Product>
