@@ -83,6 +83,7 @@ public sealed class UnderscoreConfig
             case "ModeIntensity":
                 if (value is bool modeIntensity)
                 {
+                    if (_configManager.Config.Behaviour.RandomIntensity == modeIntensity) return;
                     _configManager.Config.Behaviour.RandomIntensity = modeIntensity;
                     _configManager.SaveFnf();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -92,6 +93,7 @@ public sealed class UnderscoreConfig
             case "ModeDuration":
                 if (value is bool modeDuration)
                 {
+                    if(_configManager.Config.Behaviour.RandomDuration == modeDuration) return;
                     _configManager.Config.Behaviour.RandomDuration = modeDuration;
                     _configManager.SaveFnf();
                     OnConfigUpdate?.Invoke(); // update Ui
