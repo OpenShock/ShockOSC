@@ -8,6 +8,11 @@
       "commandName": "Project",
       "nativeDebugging": false,
       "commandLineArgs": "--headless"
+    },
+    "ShockOscUriShow": {
+      "commandName": "Project",
+      "nativeDebugging": false,
+      "commandLineArgs": "--uri=shockosc:show"
     }
   }
 }
