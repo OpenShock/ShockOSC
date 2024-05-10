@@ -420,6 +420,7 @@ public sealed class ShockOsc
         // Chatbox message local
         var dat = new
         {
+            GroupName = programGroup.Name,
             ShockerName = programGroup.Name,
             Intensity = intensity,
             IntensityPercentage = intensityPercentage,

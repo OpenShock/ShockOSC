@@ -20,7 +20,7 @@ public sealed class ChatboxConf
                 ControlType.Stop, new ControlTypeConf
                 {
                     Enabled = true,
-                    Local = "⏸ '{ShockerName}'",
+                    Local = "⏸ '{GroupName}'",
                     Remote = "⏸ '{ShockerName}' by {Name}",
                     RemoteWithCustomName = "⏸ '{ShockerName}' by {CustomName} [{Name}]"
                 }
@@ -29,7 +29,7 @@ public sealed class ChatboxConf
                 ControlType.Shock, new ControlTypeConf
                 {
                     Enabled = true,
-                    Local = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+                    Local = "⚡ '{GroupName}' {Intensity}%:{DurationSeconds}s",
                     Remote = "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
                     RemoteWithCustomName =
                         "⚡ '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
@@ -39,7 +39,7 @@ public sealed class ChatboxConf
                 ControlType.Vibrate, new ControlTypeConf
                 {
                     Enabled = true,
-                    Local = "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+                    Local = "〜 '{GroupName}' {Intensity}%:{DurationSeconds}s",
                     Remote = "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
                     RemoteWithCustomName =
                         "〜 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
@@ -49,7 +49,7 @@ public sealed class ChatboxConf
                 ControlType.Sound, new ControlTypeConf
                 {
                     Enabled = true,
-                    Local = "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s",
+                    Local = "🔈 '{GroupName}' {Intensity}%:{DurationSeconds}s",
                     Remote = "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {Name}",
                     RemoteWithCustomName =
                         "🔈 '{ShockerName}' {Intensity}%:{DurationSeconds}s by {CustomName} [{Name}]"
