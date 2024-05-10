@@ -105,7 +105,7 @@ public sealed class UnderscoreConfig
                 if (value is float intensityFloat)
                 {
                     var currentIntensity =
-                        MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedIntensity / 100f);
+                        MathUtils.Saturate(_configManager.Config.Behaviour.FixedIntensity / 100f);
                     if (Math.Abs(intensityFloat - currentIntensity) < 0.001) return;
 
                     _configManager.Config.Behaviour.FixedIntensity =
@@ -122,7 +122,7 @@ public sealed class UnderscoreConfig
                 if (value is float minIntensityFloat)
                 {
                     var currentMinIntensity =
-                        MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Min / 100f);
+                        MathUtils.Saturate(_configManager.Config.Behaviour.IntensityRange.Min / 100f);
                     if (Math.Abs(minIntensityFloat - currentMinIntensity) < 0.001) return;
 
                     _configManager.Config.Behaviour.IntensityRange.Min =
@@ -139,7 +139,7 @@ public sealed class UnderscoreConfig
                 if (value is float maxIntensityFloat)
                 {
                     var currentMaxIntensity =
-                        MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Max / 100f);
+                        MathUtils.Saturate(_configManager.Config.Behaviour.IntensityRange.Max / 100f);
                     if (Math.Abs(maxIntensityFloat - currentMaxIntensity) < 0.001) return;
 
                     _configManager.Config.Behaviour.IntensityRange.Max =
@@ -204,7 +204,7 @@ public sealed class UnderscoreConfig
                 if (value is float cooldownTimeFloat)
                 {
                     var currentCooldownTime =
-                        MathUtils.ClampFloat(_configManager.Config.Behaviour.CooldownTime / 100000f);
+                        MathUtils.Saturate(_configManager.Config.Behaviour.CooldownTime / 100000f);
                     if (Math.Abs(cooldownTimeFloat - currentCooldownTime) < 0.001) return;
 
                     _configManager.Config.Behaviour.CooldownTime =
@@ -220,7 +220,7 @@ public sealed class UnderscoreConfig
                 // 0..1sec
                 if (value is float holdTimeFloat)
                 {
-                    var currentHoldTime = MathUtils.ClampFloat(_configManager.Config.Behaviour.HoldTime / 1000f);
+                    var currentHoldTime = MathUtils.Saturate(_configManager.Config.Behaviour.HoldTime / 1000f);
                     if (Math.Abs(holdTimeFloat - currentHoldTime) < 0.001) return;
 
                     _configManager.Config.Behaviour.HoldTime =
@@ -267,24 +267,24 @@ public sealed class UnderscoreConfig
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/Paused", KillSwitch);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Paused", KillSwitch);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MinIntensity",
-            MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Min / 100f));
+            MathUtils.Saturate(_configManager.Config.Behaviour.IntensityRange.Min / 100f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxIntensity",
-            MathUtils.ClampFloat(_configManager.Config.Behaviour.IntensityRange.Max / 100f));
+            MathUtils.Saturate(_configManager.Config.Behaviour.IntensityRange.Max / 100f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Duration",
-            MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedDuration / 10000f));
+            MathUtils.Saturate(_configManager.Config.Behaviour.FixedDuration / 10000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/CooldownTime",
-            MathUtils.ClampFloat(_configManager.Config.Behaviour.CooldownTime / 100000f));
+            MathUtils.Saturate(_configManager.Config.Behaviour.CooldownTime / 100000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/HoldTime",
-            MathUtils.ClampFloat(_configManager.Config.Behaviour.HoldTime / 1000f));
+            MathUtils.Saturate(_configManager.Config.Behaviour.HoldTime / 1000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/ModeIntensity",
             _configManager.Config.Behaviour.RandomIntensity);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/ModeDuration",
             _configManager.Config.Behaviour.RandomDuration);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Intensity",
-            MathUtils.ClampFloat(_configManager.Config.Behaviour.FixedIntensity / 100f));
+            MathUtils.Saturate(_configManager.Config.Behaviour.FixedIntensity / 100f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MinDuration",
-            MathUtils.ClampFloat(_configManager.Config.Behaviour.DurationRange.Min / 10_000f));
+            MathUtils.Saturate(_configManager.Config.Behaviour.DurationRange.Min / 10_000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxDuration",
-            MathUtils.ClampFloat(_configManager.Config.Behaviour.DurationRange.Max / 10_000f));
+            MathUtils.Saturate(_configManager.Config.Behaviour.DurationRange.Max / 10_000f));
     }
 }

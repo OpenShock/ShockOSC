@@ -84,11 +84,11 @@ public sealed class OscHandler
             if (!isActiveOrOnCooldown && shocker.LastIntensity > 0)
                 shocker.LastIntensity = 0;
 
-            var intensity = MathUtils.ClampFloat(shocker.LastIntensity / 100f);
+            var intensity = MathUtils.Saturate(shocker.LastIntensity / 100f);
             var onCoolDown = !isActive && isActiveOrOnCooldown;
             var cooldownPercentage = 0f;
             if (onCoolDown)
-                cooldownPercentage = MathUtils.ClampFloat(1 -
+                cooldownPercentage = MathUtils.Saturate(1 -
                                                           (float)(DateTime.UtcNow -
                                                                   shocker.LastExecuted.AddMilliseconds(shocker.LastDuration))
                                                           .TotalMilliseconds /

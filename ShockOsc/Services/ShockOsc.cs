@@ -402,7 +402,7 @@ public sealed class ShockOsc
     {
         programGroup.LastExecuted = DateTime.UtcNow;
         programGroup.LastDuration = duration;
-        var intensityPercentage = MathF.Round(MathUtils.ClampFloat(intensity) * 100f);
+        var intensityPercentage = MathF.Round(MathUtils.Saturate(intensity) * 100f);
         programGroup.LastIntensity = intensity;
 
         _oscHandler.ForceUnmute();
@@ -447,29 +447,7 @@ public sealed class ShockOsc
             await Task.Delay(20);
         }
     }
-
-    private byte GetIntensity(ProgramGroup programGroup)
-    {
-        if (programGroup.ConfigGroup is not { OverrideDuration: true })
-        {
-            // Use global config
-            var config = _configManager.Config.Behaviour;
-
-            if (!config.RandomIntensity) return config.FixedIntensity;
-            var rir = config.IntensityRange;
-            var intensityValue = Random.Next((int)rir.Min, (int)rir.Max);
-            return (byte)intensityValue;
-        }
-        
-        // Use groupConfig
-        var groupConfig = programGroup.ConfigGroup;
-
-        if (!groupConfig.RandomIntensity) return groupConfig.FixedIntensity;
-        var groupRir = groupConfig.IntensityRange;
-        var groupIntensityValue = Random.Next((int)groupRir.Min, (int)groupRir.Max);
-        return (byte)groupIntensityValue;
-    }
-
+    
     private async Task CheckLogic()
     {
         var config = _configManager.Config.Behaviour;
@@ -533,12 +511,7 @@ public sealed class ShockOsc
             
             if (programGroup.TriggerMethod == TriggerMethod.PhysBoneRelease)
             {
-                intensity = programGroup.ConfigGroup is { OverrideIntensity: true }
-                    ? (byte)MathUtils.LerpFloat(programGroup.ConfigGroup.IntensityRange.Min,
-                        programGroup.ConfigGroup.IntensityRange.Max,
-                        programGroup.LastStretchValue)
-                    : (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max,
-                        programGroup.LastStretchValue);
+                intensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
                 programGroup.LastStretchValue = 0;
 
                 exclusive = true;
@@ -547,6 +520,25 @@ public sealed class ShockOsc
 
             InstantShock(programGroup, GetDuration(programGroup), intensity, exclusive);
         }
+    }
+
+    private byte GetPhysbonePullIntensity(ProgramGroup programGroup, float stretch)
+    {
+        stretch = MathUtils.Saturate(stretch);
+        if (programGroup.ConfigGroup is not { OverrideIntensity: true })
+        {
+            // Use global config
+            var config = _configManager.Config.Behaviour;
+
+            if (!config.RandomIntensity) return config.FixedIntensity;
+            return (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, stretch);
+        }
+
+        // Use group config
+        var groupConfig = programGroup.ConfigGroup;
+
+        if (!groupConfig.RandomIntensity) return groupConfig.FixedIntensity;
+        return (byte)MathUtils.LerpFloat(groupConfig.IntensityRange.Min, groupConfig.IntensityRange.Max, stretch);
     }
 
     private uint GetDuration(ProgramGroup programGroup)
@@ -570,5 +562,28 @@ public sealed class ShockOsc
         return (uint)(Random.Next((int)(groupRdr.Min / groupConfig.RandomDurationStep), 
             (int)(groupRdr.Max / groupConfig.RandomDurationStep)) * groupConfig.RandomDurationStep);
     }
+    
+    private byte GetIntensity(ProgramGroup programGroup)
+    {
+        if (programGroup.ConfigGroup is not { OverrideDuration: true })
+        {
+            // Use global config
+            var config = _configManager.Config.Behaviour;
+
+            if (!config.RandomIntensity) return config.FixedIntensity;
+            var rir = config.IntensityRange;
+            var intensityValue = Random.Next((int)rir.Min, (int)rir.Max);
+            return (byte)intensityValue;
+        }
+        
+        // Use groupConfig
+        var groupConfig = programGroup.ConfigGroup;
+
+        if (!groupConfig.RandomIntensity) return groupConfig.FixedIntensity;
+        var groupRir = groupConfig.IntensityRange;
+        var groupIntensityValue = Random.Next((int)groupRir.Min, (int)groupRir.Max);
+        return (byte)groupIntensityValue;
+    }
+
 
 }
