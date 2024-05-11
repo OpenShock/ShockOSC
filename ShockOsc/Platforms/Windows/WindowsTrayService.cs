@@ -1,5 +1,6 @@
 ﻿#if WINDOWS
 
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using OpenShock.SDK.CSharp.Hub;
@@ -49,23 +50,13 @@ public class WindowsTrayService : ITrayService
         _stateLabel = new ToolStripLabel($"State: {_apiHubClient.State}");
         menu.Items.Add(_stateLabel);
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Restart", null, Restart);
         menu.Items.Add("Quit ShockOSC", null, OnQuitClick);
         
         tray.ContextMenuStrip = menu;
 
         tray.Click += OnMainClick;
-        menu.Opened += async (sender, args) =>
-        {
-            var aa = menu;
-        };
 
         tray.Visible = true;
-    }
-
-    private static void Restart(object? sender, EventArgs e)
-    {
-        Application.Current?.Quit();
     }
 
     private static void OnMainClick(object? sender, EventArgs eventArgs)
