@@ -54,19 +54,19 @@ public static class WindowsEntryPoint
 
         const string pipeName = @"\\.\pipe\OpenShock.ShockOSC";
 
+        // TODO: Refactor this
         if (PipeHelper.EnumeratePipes().Any(x => x.Equals(pipeName, StringComparison.InvariantCultureIgnoreCase)))
         {
-            // TODO: Refactor this
+            using var pipeClientStream = new NamedPipeClientStream(".", "OpenShock.ShockOsc", PipeDirection.Out);
+            pipeClientStream.Connect(500);
+
+            var parsedUri = UriParser.Parse(config.Uri);
+
+            using var writer = new StreamWriter(pipeClientStream);
+            writer.AutoFlush = true;
+
             if (!string.IsNullOrEmpty(config.Uri))
             {
-                using var pipeClientStream = new NamedPipeClientStream(".", "OpenShock.ShockOsc", PipeDirection.Out);
-                pipeClientStream.Connect(500);
-
-                var parsedUri = UriParser.Parse(config.Uri);
-
-                using var writer = new StreamWriter(pipeClientStream);
-                writer.AutoFlush = true;
-
                 var pipeMessage = parsedUri.Type switch
                 {
                     UriParameterType.Show => new PipeMessage { Type = PipeMessageType.Show },
@@ -81,6 +81,9 @@ public static class WindowsEntryPoint
 
                 return;
             }
+            
+            // Send show message
+            writer.WriteLine(JsonSerializer.Serialize(new PipeMessage { Type = PipeMessageType.Show }));
 
             Console.WriteLine("Another instance of ShockOSC is already running.");
             Environment.Exit(1);
