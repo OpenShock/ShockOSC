@@ -84,7 +84,6 @@
     public async Task Login()
     {
         await ConfigManager.SaveAsync();
-        ApiClient.SetupApiClient();
         await ProceedAuthenticated();
     }
 

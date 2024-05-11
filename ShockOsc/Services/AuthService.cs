@@ -23,6 +23,8 @@ public sealed class AuthService
 
     public async Task Authenticate()
     {
+        _logger.LogInformation("Setting up api client");
+        _apiClient.SetupApiClient();
         _logger.LogInformation("Setting up live client");
         await _backendHubManager.SetupLiveClient();
         _logger.LogInformation("Starting live client");
