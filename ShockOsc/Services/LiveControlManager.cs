@@ -7,6 +7,7 @@ using OpenShock.SDK.CSharp.Models;
 using OpenShock.SDK.CSharp.Utils;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
+using OpenShock.ShockOsc.Models;
 
 namespace OpenShock.ShockOsc.Services;
 
@@ -158,9 +159,9 @@ public sealed class LiveControlManager
         await OnStateUpdated.Raise();
     }
     
-    public Task ControlGroupFrame(Guid groupId, float intensity)
+    public Task ControlGroupFrame(ProgramGroup group, float intensity)
     {
-        if (groupId == Guid.Empty)
+        if (group.Id == Guid.Empty)
         {
             var controlTasks = LiveControlClients
                 .Select(clientPair =>
@@ -169,17 +170,36 @@ public sealed class LiveControlManager
                         .FirstOrDefault(x => x.Id == clientPair.Key);
                     if (apiDevice == null) return Task.CompletedTask;
 
-                    return ControlFrame(apiDevice.Shockers.Where(x => _configManager.Config.OpenShock.Shockers.Any(y => y.Key == x.Id && y.Value.Enabled)).Select(x => x.Id), clientPair.Value, intensity);
+                    return ControlFrame(apiDevice.Shockers
+                        .Where(x => _configManager.Config.OpenShock.Shockers
+                            .Any(y => y.Key == x.Id && y.Value.Enabled))
+                        .Select(x => x.Id), clientPair.Value, intensity);
                 });
 
             return Task.WhenAll(controlTasks);
         }
 
-        if (LiveControlClients.TryGetValue(groupId, out var client) &&
-            _configManager.Config.Groups.TryGetValue(groupId, out var group))
-            return ControlFrame(group.Shockers, client, intensity);
+        if (group.ConfigGroup == null)
+        {
+            _logger.LogWarning("Group [{GroupId}] does not have a config group", group.Id);
+            return Task.CompletedTask;
+        }
 
-        return Task.CompletedTask;
+        var enabledShockers = group.ConfigGroup.Shockers.Where(x =>
+            _configManager.Config.OpenShock.Shockers.Any(y => y.Key == x && y.Value.Enabled));
+        
+        var shockersByDevice = enabledShockers.GroupBy(
+            x => _apiClient.Devices.FirstOrDefault(y => y.Shockers.Any(z => z.Id == x))?.Id);
+
+        var controlTasksByDevice = shockersByDevice.Select(deviceShockers =>
+        {
+            if (deviceShockers.Key == null) return Task.CompletedTask;
+            if (!LiveControlClients.TryGetValue(deviceShockers.Key.Value, out var client)) return Task.CompletedTask;
+
+            return ControlFrame(deviceShockers.Select(x => x), client, intensity);
+        });
+
+        return Task.WhenAll(controlTasksByDevice);
     }
 
     private async Task ControlFrame(IEnumerable<Guid> shockers, IOpenShockLiveControlClient client,

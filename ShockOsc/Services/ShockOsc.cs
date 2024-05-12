@@ -476,7 +476,7 @@ public sealed class ShockOsc
 
                 _logger.LogDebug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
 
-                await _liveControlManager.ControlGroupFrame(programGroup.Id, vibrationIntensity);
+                await _liveControlManager.ControlGroupFrame(programGroup, vibrationIntensity);
             }
 
             if (programGroup.TriggerMethod == TriggerMethod.None)
