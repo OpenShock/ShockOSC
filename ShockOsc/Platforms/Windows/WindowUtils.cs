@@ -14,6 +14,7 @@ public static class WindowUtils
         if (appWindow.Presenter is not OverlappedPresenter presenter) return;
         presenter.IsAlwaysOnTop = true;
         presenter.IsAlwaysOnTop = false;
+        presenter.Restore();
     }
     
     public static AppWindow GetAppWindow(object window)
