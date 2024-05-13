@@ -74,12 +74,15 @@ public static class ShockOscBootstrap
 
         services.AddSingleton<Services.ShockOsc>();
         services.AddSingleton<UnderscoreConfig>();
+        
+        services.AddSingleton<StatusHandler>();
+    }
 
+    public static void AddCommonBlazorServices(this IServiceCollection services)
+    {
 #if DEBUG
         services.AddBlazorWebViewDeveloperTools();
 #endif
-
-        services.AddSingleton<StatusHandler>();
 
         services.AddMudServices();
         services.AddMauiBlazorWebView();

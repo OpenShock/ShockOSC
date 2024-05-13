@@ -1,5 +1,6 @@
-﻿namespace OpenShock.ShockOsc.Platforms.Linux;
-#if !WINDOWS
+﻿#if LINUX
+namespace OpenShock.ShockOsc.Platforms.Linux;
+
 public static class LinuxEntryPoint
 {
     public static void Main(string[] args)

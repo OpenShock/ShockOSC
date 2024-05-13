@@ -7,15 +7,26 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShockOsc", "ShockOsc\ShockO
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Release-Linux|Any CPU = Release-Linux|Any CPU
+		Release-Cross|Any CPU = Release-Cross|Any CPU
+		Release-Windows|Any CPU = Release-Windows|Any CPU
+		Debug-Linux|Any CPU = Debug-Linux|Any CPU
+		Debug-Windows|Any CPU = Debug-Windows|Any CPU
+		Debug-Cross|Any CPU = Debug-Cross|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Linux|Any CPU.ActiveCfg = Release-Linux|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Linux|Any CPU.Build.0 = Release-Linux|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Cross|Any CPU.ActiveCfg = Release-Cross|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Cross|Any CPU.Build.0 = Release-Cross|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Windows|Any CPU.ActiveCfg = Release-Windows|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Windows|Any CPU.Build.0 = Release-Windows|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Linux|Any CPU.ActiveCfg = Debug-Linux|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Linux|Any CPU.Build.0 = Debug-Linux|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Windows|Any CPU.ActiveCfg = Debug-Windows|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Windows|Any CPU.Build.0 = Debug-Windows|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Cross|Any CPU.ActiveCfg = Debug-Cross|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Cross|Any CPU.Build.0 = Debug-Cross|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

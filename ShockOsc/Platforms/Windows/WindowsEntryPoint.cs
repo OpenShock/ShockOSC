@@ -34,13 +34,7 @@ public static class WindowsEntryPoint
     [STAThread]
     private static void Main(string[] args)
     {
-        var parsed = Parser.Default.ParseArguments<CliOptions>(args);
-        parsed.WithParsed(Start);
-        parsed.WithNotParsed(errors =>
-        {
-            errors.Output();
-            Environment.Exit(1);
-        });
+        ParseHelper.Parse(args, Start);
     }
 
     private static void Start(CliOptions config)
