@@ -25,7 +25,7 @@
         
         <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
         
-        <Configurations>Release-Linux;Release-Cross;Release-Windows;Debug-Linux;Debug-Windows;Debug-Cross</Configurations>
+        <Configurations>Release-Cross;Release-Windows;Debug-Windows;Debug-Cross;Release-Photino;Debug-Photino</Configurations>
         
         <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
@@ -45,13 +45,13 @@
         <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.21" />
     </ItemGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Linux' Or '$(Configuration)' == 'Release-Linux'">
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
         <TargetFramework>net8.0</TargetFramework>
-        <StartupObject>OpenShock.ShockOsc.Platforms.Linux.LinuxEntryPoint</StartupObject>
-        <DefineConstants>LINUX</DefineConstants>
+        <StartupObject>OpenShock.ShockOsc.Platforms.Photino.PhotinoEntryPoint</StartupObject>
+        <DefineConstants>PHOTINO</DefineConstants>
     </PropertyGroup>
     
-    <ItemGroup Condition="'$(Configuration)' == 'Debug-Linux' Or '$(Configuration)' == 'Release-Linux'">
+    <ItemGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
         <PackageReference Include="Photino.Blazor" Version="2.7.0" />
     </ItemGroup>
 
@@ -62,16 +62,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="wwwroot\app.css" />
-        <None Include="wwwroot\fonts\poppins-latin-400-normal.405055dd..woff2" />
-        <None Include="wwwroot\fonts\poppins-latin-400-normal.cda9c93f..woff" />
-        <None Include="wwwroot\images\Icon.svg" />
-        <None Include="wwwroot\images\Icon512.png" />
-        <None Include="wwwroot\images\Icon64.png" />
-        <None Include="wwwroot\images\IconLoadingSpin.svg" />
-        <None Include="wwwroot\images\IconSlowSpin.svg" />
-        <None Include="wwwroot\images\Logo512.png" />
-        <None Include="wwwroot\index.html" />
+        <Content Update="wwwroot\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <None Update="Resources\Icon512.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
@@ -81,6 +74,9 @@
         <None Update="Resources\openshock-icon.ico">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <Content Update="wwwroot\photino.html">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>

@@ -1,11 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿#if CROSS
 using OpenShock.ShockOsc.Cli;
 using OpenShock.ShockOsc.Services;
-using OpenShock.ShockOsc.Ui;
 using OpenShock.ShockOsc.Utils;
 
-#if CROSS
 namespace OpenShock.ShockOsc.Platforms.Cross;
 
 public static class CrossEntryPoint
