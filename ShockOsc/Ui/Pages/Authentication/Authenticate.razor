@@ -57,6 +57,11 @@
 
     private State _currentState = State.Login;
 
+    protected override void OnInitialized()
+    {
+        if(AuthService.Authenticated) NavigationManager.NavigateTo("dash/dashboard");
+    }
+
     protected override async Task OnInitializedAsync()
     {
         if (await CheckTokenReceived()) return;

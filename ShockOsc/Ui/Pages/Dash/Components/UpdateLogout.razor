@@ -1,10 +1,10 @@
 @using OpenShock.ShockOsc.Config
 @using OpenShock.ShockOsc.Services
-@inject IDialogService Dialog
 @inject IDialogService DialogService
 @inject ConfigManager ConfigManager
 @inject Updater Updater
 @inject NavigationManager NavigationManager
+@inject AuthService AuthService
 @implements IDisposable
 
 @code {
@@ -36,8 +36,7 @@
 
     private async Task Logout()
     {
-        ConfigManager.Config.OpenShock.Token = string.Empty;
-        await ConfigManager.SaveAsync();
+        await AuthService.Logout();
 
         NavigationManager.NavigateTo("/");
     }

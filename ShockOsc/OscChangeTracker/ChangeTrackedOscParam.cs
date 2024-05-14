@@ -1,5 +1,6 @@
 ﻿using OpenShock.ShockOsc.Services;
 using Serilog;
+using ILogger = Serilog.ILogger;
 
 namespace OpenShock.ShockOsc.OscChangeTracker;
 

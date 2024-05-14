@@ -71,6 +71,14 @@ public sealed class OpenShockApi
         });
     }
 
+    public void Logout()
+    {
+        Devices = Array.Empty<ResponseDeviceWithShockers>();
+        Shockers = Array.Empty<ShockerResponse>();
+        
+        OnShockersUpdated.Raise(Shockers);
+    }
+
     public
         Task<OneOf<Success<LcgResponse>, NotFound, DeviceOffline, DeviceNotConnectedToGateway, UnauthenticatedError>>
         GetDeviceGateway(Guid deviceId, CancellationToken cancellationToken = default) =>

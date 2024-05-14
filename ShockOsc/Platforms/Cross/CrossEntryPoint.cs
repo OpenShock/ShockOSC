@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using OpenShock.ShockOsc.Cli;
 using OpenShock.ShockOsc.Services;
+using OpenShock.ShockOsc.Ui;
 using OpenShock.ShockOsc.Utils;
 
 #if CROSS
@@ -27,23 +28,31 @@ public static class CrossEntryPoint
             return;
         }
         
-        var builder = Host.CreateDefaultBuilder();
-        builder.ConfigureServices(services =>
-        {
-            services.AddShockOscServices();
-            services.AddCommonBlazorServices();
-            
-            // Setup blazor server side
+        var builder = WebApplication.CreateBuilder();
 
-            
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
+        
+        builder.Services.AddShockOscServices();
+        builder.Services.AddCommonBlazorServices();
+        
 #if WINDOWS
-            services.AddWindowsServices();
+            builder.Services.AddWindowsServices();
 #endif
-        });
-        
-        
+
         var app = builder.Build();
+        
+        app.UseHttpsRedirection();
+
+        app.UseStaticFiles();
+        app.UseAntiforgery();
+
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode();
+        
         app.Services.StartShockOscServices(true);
+        
+        OsTask.Run(app.Services.GetRequiredService<AuthService>().Authenticate);
         
         await app.RunAsync();
     }

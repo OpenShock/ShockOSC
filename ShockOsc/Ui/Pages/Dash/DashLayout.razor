@@ -1,6 +1,9 @@
 @using OpenShock.ShockOsc.Logging
+@using OpenShock.ShockOsc.Services
 @inject ISnackbar Snackbar
 @inherits LayoutComponentBase
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
 
 <style>
     .childs-width-100 > * {
@@ -24,6 +27,7 @@
 
 @code {
     
+    
     private void MsgNoty(string msg, Severity severity)
     {
         Snackbar.Add(msg, severity);
@@ -31,6 +35,13 @@
 
     protected override void OnInitialized()
     {
+        if (!AuthService.Authenticated)
+        {
+            Console.WriteLine("fdsfdsfdsfdsfds");
+            NavigationManager.NavigateTo("/", true, true);
+            return;
+        }
+        
         UiLogSink.NotificationAction = MsgNoty;
     }
 

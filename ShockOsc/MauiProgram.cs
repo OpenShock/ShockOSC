@@ -21,6 +21,8 @@ public static class MauiProgram
         // <---- Services ---->
 
         builder.Services.AddShockOscServices();
+        builder.Services.AddCommonBlazorServices();
+        builder.Services.AddMauiBlazorWebView();
 
 #if WINDOWS
         builder.Services.AddWindowsServices();
@@ -53,8 +55,8 @@ public static class MauiProgram
                             appWindow.Hide();
                             return;
                         }
-                        
-                        if(Application.Current == null) return;
+
+                        if (Application.Current == null) return;
 
                         var result = await Application.Current.MainPage!.DisplayAlert(
                             "Close?",

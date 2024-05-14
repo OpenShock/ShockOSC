@@ -12,6 +12,7 @@ using OpenShock.SDK.CSharp.Live.Utils;
 using OpenShock.SDK.CSharp.Utils;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Utils;
+using ILogger = Serilog.ILogger;
 
 namespace OpenShock.ShockOsc.OscQueryLibrary;
 

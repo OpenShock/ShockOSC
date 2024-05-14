@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -40,19 +40,25 @@
         <StartupObject>OpenShock.ShockOsc.Platforms.Windows.WindowsEntryPoint</StartupObject>
     </PropertyGroup>
 
+    <ItemGroup Condition="'$(Configuration)' == 'Debug-Windows' Or '$(Configuration)' == 'Release-Windows'">
+        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.21" />
+        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.21" />
+    </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug-Linux' Or '$(Configuration)' == 'Release-Linux'">
         <TargetFramework>net8.0</TargetFramework>
         <StartupObject>OpenShock.ShockOsc.Platforms.Linux.LinuxEntryPoint</StartupObject>
         <DefineConstants>LINUX</DefineConstants>
     </PropertyGroup>
+    
+    <ItemGroup Condition="'$(Configuration)' == 'Debug-Linux' Or '$(Configuration)' == 'Release-Linux'">
+        <PackageReference Include="Photino.Blazor" Version="2.7.0" />
+    </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug-Cross' Or '$(Configuration)' == 'Release-Cross'">
         <TargetFramework>net8.0</TargetFramework>
         <StartupObject>OpenShock.ShockOsc.Platforms.Cross.CrossEntryPoint</StartupObject>
         <DefineConstants>CROSS</DefineConstants>
-        
-        
     </PropertyGroup>
 
     <ItemGroup>
@@ -101,10 +107,6 @@
         <PackageReference Include="System.Reactive" Version="6.0.0" />
     </ItemGroup>
     
-    <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
-        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.21" />
-        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.21" />
-    </ItemGroup>
     
     <ItemGroup>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\AppSettingsTab.razor" />

@@ -85,7 +85,6 @@ public static class ShockOscBootstrap
 #endif
 
         services.AddMudServices();
-        services.AddMauiBlazorWebView();
     }
 
     public static void StartShockOscServices(this IServiceProvider services, bool headless)

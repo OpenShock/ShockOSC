@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Serilog;
+using ILogger = Serilog.ILogger;
 
 namespace OpenShock.ShockOsc.Utils;
 
