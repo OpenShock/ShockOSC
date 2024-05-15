@@ -34,10 +34,10 @@ public static class WindowsEntryPoint
     [STAThread]
     private static void Main(string[] args)
     {
-        ParseHelper.Parse(args, Start);
+        ParseHelper.Parse<MauiCliOptions>(args, Start);
     }
 
-    private static void Start(CliOptions config)
+    private static void Start(MauiCliOptions config)
     {
         if (config.Console)
         {
