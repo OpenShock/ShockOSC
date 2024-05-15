@@ -34,7 +34,7 @@
 </style>
 
 @code {
-    [Parameter] public string Value { get; set; }
+    [Parameter] public required string Value { get; set; }
 
     private async Task CopyTextToClipboard()
     {

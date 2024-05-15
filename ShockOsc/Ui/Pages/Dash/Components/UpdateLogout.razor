@@ -15,7 +15,7 @@
         DialogService.Show<UpdateDialog>("Update", _dialogOptions);
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         Updater.UpdateAvailable.OnValueChanged += UpdateAvailableOnValueChanged;
         Updater.CheckingForUpdate.OnValueChanged += CheckingForUpdateOnValueChanged;

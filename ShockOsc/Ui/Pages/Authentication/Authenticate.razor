@@ -8,6 +8,7 @@
 @inject PipeServerService PipeService
 @layout NotAuthedLayout
 @inherits LayoutComponentBase
+@inject ILogger<Authenticate> Logger
 
 
 @page "/"
@@ -105,6 +106,7 @@
         {
             _currentState = State.Failed;
             await InvokeAsync(StateHasChanged);
+            Logger.LogError(e, "Failed to authenticate");
             Snackbar.Add("Failed to authenticate", Severity.Error);
         }
     }

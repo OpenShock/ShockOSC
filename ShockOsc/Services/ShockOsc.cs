@@ -135,7 +135,7 @@ public sealed class ShockOsc
         await _oscClient.SendChatboxMessage($"{_configManager.Config.Chatbox.Prefix} Game Connected");
     }
 
-    public async Task OnAvatarChange(Dictionary<string, object?> parameters, string avatarId)
+    private Task OnAvatarChange(Dictionary<string, object?> parameters, string avatarId)
     {
         AvatarId = avatarId;
         try
@@ -188,6 +188,7 @@ public sealed class ShockOsc
         }
 
         OnParamChange(true);
+        return Task.CompletedTask;
     }
 
     private async Task ReceiverLoopAsync()

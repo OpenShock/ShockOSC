@@ -29,10 +29,11 @@ public class WindowsTrayService : ITrayService
         _apiHubClient.Connected += _ => HubStateChanged();
     }
     
-    private ToolStripLabel _stateLabel;
+    private ToolStripLabel? _stateLabel = null;
     
     private Task HubStateChanged()
     {
+        if (_stateLabel == null) return Task.CompletedTask;
         _stateLabel.Text = $"State: {_apiHubClient.State}";
         return Task.CompletedTask;
     }

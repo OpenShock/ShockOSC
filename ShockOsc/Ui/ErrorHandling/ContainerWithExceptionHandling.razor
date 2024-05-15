@@ -12,9 +12,9 @@
 @code {
 
     [Parameter(CaptureUnmatchedValues = true)]
-    public Dictionary<string, object> Attributes { get; set; }
+    public Dictionary<string, object>? Attributes { get; set; }
 
-    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public required RenderFragment ChildContent { get; set; }
     
     private ErrorBoundary _boundary = null!;
 }
