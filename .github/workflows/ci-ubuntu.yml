@@ -9,7 +9,7 @@ on:
   workflow_call:
   workflow_dispatch:
 
-name: ci-photino
+name: ci-ubuntu
 
 env:
   DOTNET_VERSION: 8.0.x
@@ -38,12 +38,12 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Publish ShockOSC Photino Linux
-        run: dotnet publish ShockOsc/ShockOsc.csproj -c Release-Photino -o ./publish/ShockOsc
+        run: dotnet publish ShockOsc/ShockOsc.csproj -c Release-Photino -o ./publish/ShockOsc/Linux
 
-      - name: Upload ShockOSC Photino artifacts
+      - name: Upload ShockOSC Photino Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ShockOsc
-          path: publish/ShockOsc/*
+          path: publish/ShockOsc/Linux/*
           retention-days: 1
           if-no-files-found: error
