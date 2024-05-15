@@ -1,15 +1,15 @@
-﻿#if CROSS
+﻿#if WEB
 using OpenShock.ShockOsc.Cli;
 using OpenShock.ShockOsc.Services;
 using OpenShock.ShockOsc.Utils;
 
-namespace OpenShock.ShockOsc.Platforms.Cross;
+namespace OpenShock.ShockOsc.Platforms.Web;
 
-public static class CrossEntryPoint
+public static class WebEntryPoint
 {
     public static Task Main(string[] args)
     {
-        return ParseHelper.ParseAsync(args, Start);
+        return ParseHelper.ParseAsync<CliOptions>(args, Start);
     }
 
     private static async Task Start(CliOptions config)
@@ -29,7 +29,7 @@ public static class CrossEntryPoint
 
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
-        
+
         builder.Services.AddShockOscServices();
         builder.Services.AddCommonBlazorServices();
         

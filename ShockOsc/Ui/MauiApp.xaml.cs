@@ -1,4 +1,4 @@
-﻿#if WINDOWS
+﻿#if WINDOWS 
 namespace OpenShock.ShockOsc.Ui;
 
 public partial class MauiApp

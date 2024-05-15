@@ -1,10 +1,10 @@
-﻿using OpenShock.ShockOsc.Cli;
+﻿#if PHOTINO
+using OpenShock.ShockOsc.Cli;
 using OpenShock.ShockOsc.Services;
 using OpenShock.ShockOsc.Ui;
 using OpenShock.ShockOsc.Utils;
 using Photino.Blazor;
 
-#if PHOTINO
 namespace OpenShock.ShockOsc.Platforms.Photino;
 
 public static class PhotinoEntryPoint
@@ -12,7 +12,7 @@ public static class PhotinoEntryPoint
     [STAThread]
     public static void Main(string[] args)
     {
-        ParseHelper.Parse(args, Start);
+        ParseHelper.Parse<CliOptions>(args, Start);
     }
 
     private static void Start(CliOptions config)
@@ -44,6 +44,9 @@ public static class PhotinoEntryPoint
         app.MainWindow
             .SetIconFile("Resources/Icon512.png")
             .SetTitle("ShockOSC");
+        
+        app.MainWindow.MinHeight = 600;
+        app.MainWindow.MinWidth = 1000;
         
         app.Services.StartShockOscServices(true);
         

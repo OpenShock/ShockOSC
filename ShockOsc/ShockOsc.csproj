@@ -25,7 +25,7 @@
         
         <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
         
-        <Configurations>Release-Cross;Release-Windows;Debug-Windows;Debug-Cross;Release-Photino;Debug-Photino</Configurations>
+        <Configurations>Release-Windows;Debug-Windows;Release-Photino;Debug-Photino;Release-Web;Debug-Web</Configurations>
         
         <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
@@ -49,16 +49,17 @@
         <TargetFramework>net8.0</TargetFramework>
         <StartupObject>OpenShock.ShockOsc.Platforms.Photino.PhotinoEntryPoint</StartupObject>
         <DefineConstants>PHOTINO</DefineConstants>
+        <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     </PropertyGroup>
     
     <ItemGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
         <PackageReference Include="Photino.Blazor" Version="2.7.0" />
     </ItemGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Cross' Or '$(Configuration)' == 'Release-Cross'">
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Web' Or '$(Configuration)' == 'Release-Web' ">
         <TargetFramework>net8.0</TargetFramework>
-        <StartupObject>OpenShock.ShockOsc.Platforms.Cross.CrossEntryPoint</StartupObject>
-        <DefineConstants>CROSS</DefineConstants>
+        <StartupObject>OpenShock.ShockOsc.Platforms.Web.WebEntryPoint</StartupObject>
+        <DefineConstants>WEB</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>

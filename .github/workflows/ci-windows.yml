@@ -38,7 +38,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Publish ShockOSC Windows
-        run: dotnet publish ShockOsc/ShockOsc.csproj -c Release -f net8.0-windows10.0.19041.0 -o ./publish/ShockOsc
+        run: dotnet publish ShockOsc/ShockOsc.csproj -c Release-Windows -o ./publish/ShockOsc
 
       - name: Upload ShockOSC Windows artifacts
         uses: actions/upload-artifact@v4
@@ -48,7 +48,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
   
-  instller:
+  installer:
     runs-on: windows-latest
     needs: build
 

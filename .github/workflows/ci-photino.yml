@@ -1,0 +1,49 @@
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+    types: [opened, reopened, synchronize]
+  workflow_call:
+  workflow_dispatch:
+
+name: ci-photino
+
+env:
+  DOTNET_VERSION: 8.0.x
+  REGISTRY: ghcr.io
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Publish ShockOSC Photino Linux
+        run: dotnet publish ShockOsc/ShockOsc.csproj -c Release-Photino -o ./publish/ShockOsc
+
+      - name: Upload ShockOSC Photino artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShockOsc
+          path: publish/ShockOsc/*
+          retention-days: 1
+          if-no-files-found: error

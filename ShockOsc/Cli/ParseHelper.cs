@@ -4,9 +4,9 @@ namespace OpenShock.ShockOsc.Cli;
 
 public static class ParseHelper
 {
-    public static void Parse(string[] args, Action<CliOptions> success)
+    public static void Parse<T>(string[] args, Action<T> success)
     {
-        var parsed = Parser.Default.ParseArguments<CliOptions>(args);
+        var parsed = Parser.Default.ParseArguments<T>(args);
         parsed.WithParsed(success);
         parsed.WithNotParsed(errors =>
         {
@@ -15,9 +15,9 @@ public static class ParseHelper
         });
     }
     
-    public static async Task ParseAsync(string[] args, Func<CliOptions, Task> success)
+    public static async Task ParseAsync<T>(string[] args, Func<T, Task> success)
     {
-        var parsed = Parser.Default.ParseArguments<CliOptions>(args);
+        var parsed = Parser.Default.ParseArguments<T>(args);
         await parsed.WithParsedAsync(success);
         parsed.WithNotParsed(errors =>
         {

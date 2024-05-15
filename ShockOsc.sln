@@ -7,26 +7,26 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShockOsc", "ShockOsc\ShockO
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Release-Cross|Any CPU = Release-Cross|Any CPU
 		Release-Windows|Any CPU = Release-Windows|Any CPU
 		Debug-Windows|Any CPU = Debug-Windows|Any CPU
-		Debug-Cross|Any CPU = Debug-Cross|Any CPU
 		Release-Photino|Any CPU = Release-Photino|Any CPU
 		Debug-Photino|Any CPU = Debug-Photino|Any CPU
+		Release-Web|Any CPU = Release-Web|Any CPU
+		Debug-Web|Any CPU = Debug-Web|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Cross|Any CPU.ActiveCfg = Release-Cross|Any CPU
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Cross|Any CPU.Build.0 = Release-Cross|Any CPU
 		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Windows|Any CPU.ActiveCfg = Release-Windows|Any CPU
 		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Windows|Any CPU.Build.0 = Release-Windows|Any CPU
 		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Windows|Any CPU.ActiveCfg = Debug-Windows|Any CPU
 		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Windows|Any CPU.Build.0 = Debug-Windows|Any CPU
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Cross|Any CPU.ActiveCfg = Debug-Cross|Any CPU
-		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Cross|Any CPU.Build.0 = Debug-Cross|Any CPU
 		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Photino|Any CPU.ActiveCfg = Release-Photino|Any CPU
 		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Photino|Any CPU.Build.0 = Release-Photino|Any CPU
 		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Photino|Any CPU.ActiveCfg = Debug-Photino|Any CPU
 		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Photino|Any CPU.Build.0 = Debug-Photino|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Web|Any CPU.ActiveCfg = Release-Web|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Release-Web|Any CPU.Build.0 = Release-Web|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Web|Any CPU.ActiveCfg = Debug-Web|Any CPU
+		{D3C13FCF-0FF6-45E1-AA57-0EDF1AB8C48B}.Debug-Web|Any CPU.Build.0 = Debug-Web|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
