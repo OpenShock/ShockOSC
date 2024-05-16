@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Mime;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -32,7 +33,7 @@ public class OscQueryServer : IDisposable
     private readonly ServiceDiscovery _serviceDiscovery;
     private readonly string _serviceName;
     private HostInfo? _hostInfo;
-    private object? _queryData;
+    private RootNode? _queryData;
 
     private readonly HashSet<string> FoundServices = new();
     private IPEndPoint? _lastVrcHttpServer;
@@ -68,7 +69,7 @@ public class OscQueryServer : IDisposable
                 ctx => ctx.SendStringAsync(
                     ctx.Request.RawUrl.Contains("HOST_INFO")
                         ? JsonSerializer.Serialize(_hostInfo)
-                        : JsonSerializer.Serialize(_queryData), "application/json", Encoding.UTF8)));
+                        : JsonSerializer.Serialize(_queryData), MediaTypeNames.Application.Json, Encoding.UTF8)));
 
         // mDNS
         _multicastService = new MulticastService
@@ -87,7 +88,7 @@ public class OscQueryServer : IDisposable
             return;
         }
         OsTask.Run(() => _httpServer.RunAsync());
-        Logger.Debug("OSCQueryHttpServer: Listening at {Prefix}", _httpServerUrl);
+        Logger.Information("HTTP Server listening at {Prefix}", _httpServerUrl);
         
         ListenForServices();
         _multicastService.Start();
@@ -256,10 +257,8 @@ public class OscQueryServer : IDisposable
             return;
         }
 
-        foreach (var subNode in node.Contents)
-        {
+        foreach (var subNode in node.Contents) 
             RecursiveParameterLookup(subNode.Value);
-        }
     }
 
     public async Task GetParameters()
@@ -292,17 +291,16 @@ public class OscQueryServer : IDisposable
 
     private void SetupJsonObjects()
     {
-        _queryData = new
+        _queryData = new RootNode
         {
-            DESCRIPTION = "",
-            FULL_PATH = "/",
-            ACCESS = 0,
-            CONTENTS = new
+            FullPath = "/",
+            Access = 0,
+            Contents = new RootNode.RootContents
             {
-                avatar = new
+                Avatar = new Node<AvatarContents>
                 {
-                    FULL_PATH = "/avatar",
-                    ACCESS = 2
+                    FullPath = "/avatar",
+                    Access = 2
                 }
             }
         };
