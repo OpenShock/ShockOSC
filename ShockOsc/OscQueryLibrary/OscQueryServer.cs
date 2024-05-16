@@ -31,7 +31,7 @@ public class OscQueryServer : IDisposable
     private readonly MulticastService _multicastService;
     private readonly ServiceDiscovery _serviceDiscovery;
     private readonly string _serviceName;
-    private OscQueryModels.HostInfo? _hostInfo;
+    private HostInfo? _hostInfo;
     private object? _queryData;
 
     private readonly HashSet<string> FoundServices = new();
@@ -178,14 +178,14 @@ public class OscQueryServer : IDisposable
         try
         {
             response = await Client.GetStringAsync(url);
-            var rootNode = JsonSerializer.Deserialize<OscQueryModels.HostInfo>(response);
-            if (rootNode?.OSC_PORT == null)
+            var rootNode = JsonSerializer.Deserialize<HostInfo>(response);
+            if (rootNode?.OscPort == null)
             {
                 Logger.Error("OSCQueryHttpClient: Error no OSC port found");
                 return null;
             }
 
-            return new IPEndPoint(IPAddress.Parse(rootNode.OSC_IP), (ushort)rootNode.OSC_PORT);
+            return new IPEndPoint(rootNode.OscIp, rootNode.OscPort);
         }
         catch (HttpRequestException ex)
         {
@@ -212,20 +212,23 @@ public class OscQueryServer : IDisposable
         try
         {
             response = await Client.GetStringAsync(url);
-            var rootNode = JsonSerializer.Deserialize<OscQueryModels.RootNode>(response);
-            if (rootNode?.CONTENTS?.avatar?.CONTENTS?.parameters?.CONTENTS == null)
+
+            response = File.ReadAllText("C:/Users/Lucpe/Desktop/RootNode.json");
+            
+            var rootNode = JsonSerializer.Deserialize<RootNode>(response);
+            if (rootNode?.Contents?.Avatar?.Contents?.Parameters?.Contents == null)
             {
                 Logger.Debug("OSCQueryHttpClient: Error no parameters found");
                 return;
             }
 
             ParameterList.Clear();
-            foreach (var node in rootNode.CONTENTS.avatar.CONTENTS.parameters.CONTENTS!.Values)
+            foreach (var node in rootNode.Contents.Avatar.Contents.Parameters.Contents!)
             {
-                RecursiveParameterLookup(node);
+                RecursiveParameterLookup(node.Value);
             }
 
-            avatarId = rootNode.CONTENTS.avatar.CONTENTS.change.VALUE?[0]?.ToString() ?? string.Empty;
+            avatarId = rootNode.Contents.Avatar.Contents.Change.Value.FirstOrDefault() ?? string.Empty;
             if(ParameterUpdate != null) await ParameterUpdate.Raise(ParameterList, avatarId);
         }
         catch (HttpRequestException ex)
@@ -233,11 +236,11 @@ public class OscQueryServer : IDisposable
             _lastVrcHttpServer = null;
             ParameterList.Clear();
             ParameterUpdate?.Raise(ParameterList, avatarId);
-            Logger.Error("OSCQueryHttpClient: Error {ExMessage}", ex.Message);
+            Logger.Error(ex, "HTTP request failed");
         }
         catch (Exception ex)
         {
-            Logger.Error("OSCQueryHttpClient: Error {ExMessage}\\n{Response}", ex.Message, response);
+            Logger.Error(ex, "Unexpected exception while receiving parameters via osc query");
         }
         finally
         {
@@ -245,17 +248,17 @@ public class OscQueryServer : IDisposable
         }
     }
 
-    private void RecursiveParameterLookup(OscQueryModels.Node node)
+    private void RecursiveParameterLookup(OscParameterNode node)
     {
-        if (node.CONTENTS == null)
+        if (node.Contents == null)
         {
-            ParameterList.Add(node.FULL_PATH, node.VALUE?[0]);
+            ParameterList.Add(node.FullPath, node.Value?.FirstOrDefault());
             return;
         }
 
-        foreach (var subNode in node.CONTENTS.Values)
+        foreach (var subNode in node.Contents)
         {
-            RecursiveParameterLookup(subNode);
+            RecursiveParameterLookup(subNode.Value);
         }
     }
 
@@ -304,19 +307,19 @@ public class OscQueryServer : IDisposable
             }
         };
 
-        _hostInfo = new OscQueryModels.HostInfo
+        _hostInfo = new HostInfo
         {
-            NAME = _serviceName,
-            OSC_PORT = ShockOscReceivePort,
-            OSC_IP = _ipAddress.ToString(),
-            OSC_TRANSPORT = "UDP",
-            EXTENSIONS = new OscQueryModels.Extensions
+            Name = _serviceName,
+            OscPort = ShockOscReceivePort,
+            OscIp = _ipAddress,
+            OscTransport = HostInfo.OscTransportType.UDP,
+            Extensions = new HostInfo.ExtensionsNode
             {
-                ACCESS = true,
-                CLIPMODE = true,
-                RANGE = true,
-                TYPE = true,
-                VALUE = true
+                Access = true,
+                ClipMode = true,
+                Range = true,
+                Type = true,
+                Value = true
             }
         };
     }
