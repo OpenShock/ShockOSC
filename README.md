@@ -1,8 +1,12 @@
 <center><div align="center">
 
-<img alt="OpenShock Logo" width="150px" height="150px" src="https://openshock.org/static/branding/IconSlowSpin.svg" />
+<div style="display: flex; height: 150px; gap: 50px; justify-content: center; padding: 10px 0">
 
-# ShockOsc
+<img alt="OpenShock Logo" src="https://openshock.org/static/branding/IconSlowSpin.svg" />
+
+<p style="font-size: 4.6rem;"><b>ShockOSC</b></p>
+
+</div>
 
 [![Release Version](https://img.shields.io/github/v/release/OpenShock/ShockOsc?style=for-the-badge&color=e14a6d)](https://github.com/OpenShock/ShockOsc/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/OpenShock/ShockOsc/total?style=for-the-badge&color=e14a6d)](https://github.com/OpenShock/ShockOsc/releases/latest)
