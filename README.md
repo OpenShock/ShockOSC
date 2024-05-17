@@ -1,5 +1,7 @@
 <center><div align="center">
 
+<img alt="OpenShock Logo" width="150px" height="150px" src="https://openshock.org/static/branding/IconSlowSpin.svg" />
+
 # ShockOsc
 
 [![Release Version](https://img.shields.io/github/v/release/OpenShock/ShockOsc?style=for-the-badge&color=e14a6d)](https://github.com/OpenShock/ShockOsc/releases/latest)
