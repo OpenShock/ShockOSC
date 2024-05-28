@@ -62,6 +62,7 @@ public static class ShockOscBootstrap
         services.AddSingleton<LiveControlManager>();
 
         services.AddSingleton<OscHandler>();
+        services.AddSingleton<ChatboxService>();
 
         services.AddSingleton<AuthService>();
 

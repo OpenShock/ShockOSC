@@ -18,7 +18,7 @@ public sealed class BackendHubManager
     private readonly ILogger<BackendHubManager> _logger;
     private readonly ConfigManager _configManager;
     private readonly OpenShockHubClient _openShockHubClient;
-    private readonly OscClient _oscClient;
+    private readonly ChatboxService _chatboxService;
     private readonly ShockOscData _dataLayer;
     private readonly OscHandler _oscHandler;
 
@@ -27,14 +27,14 @@ public sealed class BackendHubManager
     public BackendHubManager(ILogger<BackendHubManager> logger,
         ConfigManager configManager,
         OpenShockHubClient openShockHubClient,
-        OscClient oscClient,
+        ChatboxService chatboxService,
         ShockOscData dataLayer,
         OscHandler oscHandler)
     {
         _logger = logger;
         _configManager = configManager;
         _openShockHubClient = openShockHubClient;
-        _oscClient = oscClient;
+        _chatboxService = chatboxService;
         _dataLayer = dataLayer;
         _oscHandler = oscHandler;
 
@@ -140,25 +140,8 @@ public sealed class BackendHubManager
                 "Received remote {Type} for \"{ShockerName}\" at {Intensity}%:{Duration}s by {SenderCustomName} [{Sender}]",
                 log.Type, log.Shocker.Name, log.Intensity, inSeconds, sender.CustomName, sender.Name);
 
-        var template = _configManager.Config.Chatbox.Types[log.Type];
-        if (_configManager.Config.Chatbox.Enabled &&
-            _configManager.Config.Chatbox.DisplayRemoteControl && template.Enabled)
-        {
-            // Chatbox message remote
-            var dat = new
-            {
-                ShockerName = log.Shocker.Name,
-                Intensity = log.Intensity,
-                Duration = log.Duration,
-                DurationSeconds = inSeconds,
-                Name = sender.Name,
-                CustomName = sender.CustomName
-            };
-
-            var msg =
-                $"{_configManager.Config.Chatbox.Prefix}{Smart.Format(sender.CustomName == null ? template.Remote : template.RemoteWithCustomName, dat)}";
-            await _oscClient.SendChatboxMessage(msg);
-        }
+        await _chatboxService.SendRemoteControlMessage(log.Shocker.Name, sender.Name, sender.CustomName, log.Intensity,
+            log.Duration, log.Type);
 
         var configGroupsAffected = _configManager.Config.Groups
             .Where(s => s.Value.Shockers.Any(x => x == log.Shocker.Id)).Select(x => x.Key).ToArray();
