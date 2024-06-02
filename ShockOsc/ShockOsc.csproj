@@ -17,16 +17,16 @@
         <SelfContained>true</SelfContained>
         <Product>ShockOsc</Product>
 
-		<PackageIcon>Resources\Icon512.png</PackageIcon>
+        <PackageIcon>Resources\Icon512.png</PackageIcon>
 
         <ResourceLanguages>en</ResourceLanguages>
         <SatelliteResourceLanguages>en-US;en</SatelliteResourceLanguages>
         <IsPackable>false</IsPackable>
-        
+
         <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
-        
+
         <Configurations>Release-Windows;Debug-Windows;Release-Photino;Debug-Photino;Release-Web;Debug-Web</Configurations>
-        
+
         <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
 
@@ -41,8 +41,8 @@
     </PropertyGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Debug-Windows' Or '$(Configuration)' == 'Release-Windows'">
-        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.40" />
-        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.40" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.40"/>
+        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.40"/>
     </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
@@ -51,9 +51,9 @@
         <DefineConstants>PHOTINO</DefineConstants>
         <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     </PropertyGroup>
-    
+
     <ItemGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
-        <PackageReference Include="Photino.Blazor" Version="2.7.0" />
+        <PackageReference Include="Photino.Blazor" Version="2.7.0"/>
     </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug-Web' Or '$(Configuration)' == 'Release-Web' ">
@@ -76,44 +76,48 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <Content Update="wwwroot\photino.html">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommandLineParser" Version="2.9.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="8.0.40" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
-        <PackageReference Include="MudBlazor" Version="6.19.1" />
-        <PackageReference Include="EmbedIO" Version="3.5.2" />
-        <PackageReference Include="LucHeart.CoreOSC" Version="1.2.1" />
-        <PackageReference Include="MeaMod.DNS" Version="1.0.70" />
-        <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.19" />
-        <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.19" />
-        <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.20" />
-        <PackageReference Include="Semver" Version="2.3.0" />
-        <PackageReference Include="Serilog" Version="3.1.1" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.5" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
-        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
-        <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
-        <PackageReference Include="SmartFormat.NET" Version="3.4.0" />
-        <PackageReference Include="System.Reactive" Version="6.0.0" />
+        <PackageReference Include="CommandLineParser" Version="2.9.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="8.0.40"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0"/>
+        <PackageReference Include="MudBlazor" Version="6.19.1"/>
+        <PackageReference Include="EmbedIO" Version="3.5.2"/>
+        <PackageReference Include="LucHeart.CoreOSC" Version="1.2.1"/>
+        <PackageReference Include="MeaMod.DNS" Version="1.0.70"/>
+        <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.19"/>
+        <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.19"/>
+        <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.20"/>
+        <PackageReference Include="Semver" Version="2.3.0"/>
+        <PackageReference Include="Serilog" Version="3.1.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.5"/>
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
+        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1"/>
+        <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0"/>
+        <PackageReference Include="SmartFormat.NET" Version="3.4.0"/>
+        <PackageReference Include="System.Reactive" Version="6.0.0"/>
     </ItemGroup>
-    
-    
+
+
     <ItemGroup>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\AppSettingsTab.razor" />
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ChatboxTab.razor" />
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ConfigTab.razor" />
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DashboardTab.razor" />
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor" />
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor" />
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\LogsTab.razor" />
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ShockersTab.razor" />
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\AppSettingsTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ChatboxTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ConfigTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DashboardTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\LogsTab.razor"/>
+        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ShockersTab.razor"/>
     </ItemGroup>
+
+    <PropertyGroup>
+        <ServerGarbageCollection>false</ServerGarbageCollection>
+    </PropertyGroup>
 
 </Project>
