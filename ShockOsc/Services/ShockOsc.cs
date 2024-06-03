@@ -226,12 +226,10 @@ public sealed class ShockOsc
         {
             var fullName = addr[19..];
             if (AllAvatarParams.ContainsKey(fullName))
-            {
                 AllAvatarParams[fullName] = received.Arguments[0];
-                OnParamChange(false);
-            }
             else
                 AllAvatarParams.TryAdd(fullName, received.Arguments[0]);
+            OnParamChange(false);
         }
 
         switch (addr)
