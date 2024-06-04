@@ -43,15 +43,14 @@ public sealed class OscClient
     
     public ValueTask SendGameMessage(string address, params object?[]?arguments)
     {
-        arguments ??= Array.Empty<object>();
+        arguments ??= [];
         return _gameSenderChannel.Writer.WriteAsync(new OscMessage(address, arguments));
     }
     
     public ValueTask SendChatboxMessage(string message)
     {
-        if(!_configManager.Config.Chatbox.Enabled) return ValueTask.CompletedTask;
-        if (_configManager.Config.Osc.Hoscy) return _hoscySenderChannel.Writer.WriteAsync(new OscMessage("/hoscy/message", message));
-
+        if (_configManager.Config.Osc.Hoscy) return _hoscySenderChannel.Writer.WriteAsync(new OscMessage(
+            $"/hoscy/{_configManager.Config.Chatbox.HoscyType.ToString().ToLowerInvariant()}", message));
         return _gameSenderChannel.Writer.WriteAsync(new OscMessage("/chatbox/input", message, true));
     }
 
