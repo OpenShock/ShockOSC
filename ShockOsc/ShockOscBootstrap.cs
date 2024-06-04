@@ -31,7 +31,7 @@ public static class ShockOscBootstrap
         var isDebug = Environment.GetCommandLineArgs()
             .Any(x => x.Equals("--debug", StringComparison.InvariantCultureIgnoreCase));
 
-#if DEBUG
+#if DEBUG_WINDOWS || DEBUG_PHOTINO || DEBUG_WEB
         isDebug = true;
 #endif
         if (isDebug)
@@ -62,6 +62,7 @@ public static class ShockOscBootstrap
         services.AddSingleton<LiveControlManager>();
 
         services.AddSingleton<OscHandler>();
+        services.AddSingleton<ChatboxService>();
 
         services.AddSingleton<AuthService>();
 
@@ -80,7 +81,7 @@ public static class ShockOscBootstrap
 
     public static void AddCommonBlazorServices(this IServiceCollection services)
     {
-#if DEBUG
+#if DEBUG_WINDOWS || DEBUG_PHOTINO || DEBUG_WEB
         services.AddBlazorWebViewDeveloperTools();
 #endif
 

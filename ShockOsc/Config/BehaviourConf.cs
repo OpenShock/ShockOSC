@@ -4,7 +4,6 @@ public sealed class BehaviourConf
 {
     public bool RandomIntensity { get; set; }
     public bool RandomDuration { get; set; }
-    public uint RandomDurationStep { get; set; } = 1000;
     public JsonRange DurationRange { get; set; } = new JsonRange { Min = 1000, Max = 5000 };
     public JsonRange IntensityRange { get; set; } = new JsonRange { Min = 1, Max = 30 };
     public byte FixedIntensity { get; set; } = 50;

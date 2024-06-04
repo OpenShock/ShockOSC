@@ -13,7 +13,6 @@ public sealed class Group
     
     public bool OverrideDuration { get; set; }
     public bool RandomDuration { get; set; }
-    public uint RandomDurationStep { get; set; } = 1000;
     public JsonRange DurationRange { get; set; } = new JsonRange { Min = 1000, Max = 5000 };
     public uint FixedDuration { get; set; } = 2000;
     
