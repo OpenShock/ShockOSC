@@ -2,7 +2,7 @@
 
 public sealed class OpenShockConf
 {
-    public Uri Backend { get; set; } = new("https://api.shocklink.net");
+    public Uri Backend { get; set; } = new("https://api.openshock.app");
     public string Token { get; set; } = "";
     public IReadOnlyDictionary<Guid, ShockerConf> Shockers { get; set; } = new Dictionary<Guid, ShockerConf>();
 

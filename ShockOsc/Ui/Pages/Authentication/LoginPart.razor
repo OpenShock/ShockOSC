@@ -1,7 +1,10 @@
 ﻿@using System.Net.Http.Json
+@using System.Reflection
+@using System.Runtime.InteropServices
 @using Microsoft.Extensions.Logging
 @using OneOf.Types
 @using OpenShock.SDK.CSharp.Models
+@using OpenShock.SDK.CSharp.Utils
 @using OpenShock.ShockOsc.Backend
 @using OpenShock.ShockOsc.Config
 @using OpenShock.ShockOsc.Utils
@@ -12,12 +15,8 @@
 @inject ILogger<LoginPart> Logger
 
 <div class="d-flex">
-<MudButton Class="get-token-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="GetToken">Get Token</MudButton>
-<MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+<MudButton Class="get-token-button" Style="width: 1000px; height:  100px; font-size: 2rem" Variant="Variant.Filled" Color="Color.Primary" OnClick="GetToken">Login with OpenShock</MudButton>
 </div>
-<br/>
-<MudButton OnClick="Login" Variant="Variant.Filled" Color="Color.Primary">Continue</MudButton>
-<br/>
 <br/>
 <br/>
 <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding d-flex" Style="flex-direction: column">
@@ -36,14 +35,14 @@
         @if (!_useCustomServerDialog)
         {
             <MudSelect T="BackendServer" Label="Server" @bind-Value="Server" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
-                <MudSelectItem T="BackendServer" Value="BackendServer.Production"><span class="server-url-backdrop">https://api.shocklink.net/</span> (Production)</MudSelectItem>
-                <MudSelectItem T="BackendServer" Value="BackendServer.Staging"><span class="server-url-backdrop">https://api-staging.shocklink.net/</span> (Staging)</MudSelectItem>
+                <MudSelectItem T="BackendServer" Value="BackendServer.Production"><span class="server-url-backdrop">https://api.openshock.app/</span> (Production)</MudSelectItem>
+                <MudSelectItem T="BackendServer" Value="BackendServer.Staging"><span class="server-url-backdrop">https://api-staging.openshock.app/</span> (Staging)</MudSelectItem>
                 @if (_customServerUri != null)
                 {
                     <MudSelectItem T="BackendServer" Value="BackendServer.Custom"><span class="server-url-backdrop">@_customServerUri</span> (Custom)</MudSelectItem>
                 }
             </MudSelect>
-            
+
             <br/>
             <MudButton OnClick="() => _useCustomServerDialog = true" Color="Color.Primary">Use custom server</MudButton>
         }
@@ -51,10 +50,15 @@
         {
             <MudTextField @bind-Value="_server" Error="@ValidateCustomServerBool()" Label="Custom Server" Variant="Variant.Outlined"></MudTextField>
             <br/>
-            
+
             <MudButton OnClick="() => _useCustomServerDialog = false" Variant="Variant.Filled" Color="Color.Primary">Back</MudButton>
             <MudButton OnClick="SaveCustomServer" Variant="Variant.Filled" Color="Color.Primary" Disabled="@ValidateCustomServerBool()">Save</MudButton>
         }
+        
+        <br/>
+        <MudTextField @bind-Value="ConfigManager.Config.OpenShock.Token" Label="API Token" Variant="Variant.Outlined"></MudTextField>
+        <br/>
+        <MudButton OnClick="Login" Color="Color.Primary">Continue with Token</MudButton>
     </MudCollapse>
 
 </MudPaper>
@@ -150,8 +154,8 @@
 
     private struct UriIsNotValid;
 
-    private const string ProductionServerString = "https://api.shocklink.net/";
-    private const string StagingServerString = "https://staging-api.shocklink.net/";
+    private const string ProductionServerString = "https://api.openshock.app/";
+    private const string StagingServerString = "https://staging-api.openshock.app/";
 
     private static Uri _productionServer = new(ProductionServerString);
     private static Uri _stagingServer = new(StagingServerString);
@@ -165,10 +169,12 @@
     {
         Logger.LogTrace("Get API info");
         var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("User-Agent", "ShockOSC-Internal/1.0");
         httpClient.BaseAddress = ConfigManager.Config.OpenShock.Backend;
         var response = await httpClient.GetAsync("1");
         if (!response.IsSuccessStatusCode)
         {
+            Logger.LogError("Failed to reach API, status code: {StatusCode}", response.StatusCode);
             Snackbar.Add("Failed to reach API", Severity.Error);
             return;
         }
@@ -185,6 +191,19 @@
 
         var requestUri = new Uri(root.Data!.ShortLinkUrl, "/t/?name=ShockOSC&redirect_uri=shockosc:token/%&permissions=shockers.use");
         UiUtils.OpenUrl(requestUri.ToString());
+    }
+    
+    private string GetUserAgent()
+    {
+        var shockOscVersion = GetType().Assembly.GetName().Version!;
+        
+
+        var runtimeVersion = RuntimeInformation.FrameworkDescription;
+        if (string.IsNullOrEmpty(runtimeVersion)) runtimeVersion = "Unknown Runtime";
+
+        return
+            $"OpenShock.ShockOsc/{shockOscVersion.Major}.{shockOscVersion.Minor}.{shockOscVersion.Build} " +
+            $"({runtimeVersion}; {UserAgentUtils.GetOs()}; ShockOscInternals)";
     }
 
     public sealed class RootResponse
