@@ -106,6 +106,14 @@ public sealed class ChatboxService : IAsyncDisposable
 
         await _messageChannel.Writer.WriteAsync(new Message(msg, _configManager.Config.Chatbox.TimeoutTimeSpan));
     }
+    
+    public async ValueTask SendGenericMessage(string message)
+    {
+        if (!_configManager.Config.Chatbox.Enabled) return;
+
+        var msg = $"{_configManager.Config.Chatbox.Prefix}{message}";
+        await _messageChannel.Writer.WriteAsync(new Message(msg, _configManager.Config.Chatbox.TimeoutTimeSpan));
+    }
 
     private async Task MessageLoop()
     {

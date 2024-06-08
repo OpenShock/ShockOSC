@@ -134,8 +134,8 @@ public sealed class ShockOsc
 
         _logger.LogInformation("Ready");
         OsTask.Run(_underscoreConfig.SendUpdateForAll);
-
-        await _oscClient.SendChatboxMessage($"{_configManager.Config.Chatbox.Prefix} Game Connected");
+        
+        await _chatboxService.SendGenericMessage("Game Connected");
     }
 
     private Task OnAvatarChange(Dictionary<string, object?> parameters, string avatarId)
@@ -379,8 +379,7 @@ public sealed class ShockOsc
         if (string.IsNullOrEmpty(_configManager.Config.Chatbox.IgnoredKillSwitchActive))
             return ValueTask.CompletedTask;
 
-        return _oscClient.SendChatboxMessage(
-            $"{_configManager.Config.Chatbox.Prefix}{_configManager.Config.Chatbox.IgnoredKillSwitchActive}");
+        return _chatboxService.SendGenericMessage(_configManager.Config.Chatbox.IgnoredKillSwitchActive);
     }
 
     private ValueTask LogIgnoredAfk()
@@ -389,8 +388,7 @@ public sealed class ShockOsc
         if (string.IsNullOrEmpty(_configManager.Config.Chatbox.IgnoredAfk))
             return ValueTask.CompletedTask;
 
-        return _oscClient.SendChatboxMessage(
-            $"{_configManager.Config.Chatbox.Prefix}{_configManager.Config.Chatbox.IgnoredAfk}");
+        return _chatboxService.SendGenericMessage(_configManager.Config.Chatbox.IgnoredAfk);
     }
 
     private async Task SenderLoopAsync()
