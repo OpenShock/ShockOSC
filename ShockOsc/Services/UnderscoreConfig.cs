@@ -159,7 +159,7 @@ public sealed class UnderscoreConfig
                     if (Math.Abs(minDurationFloat - currentMinDuration) < 0.001) return;
 
                     _configManager.Config.Behaviour.DurationRange.Min =
-                        MathUtils.ClampUint((uint)Math.Round(minDurationFloat * 100), 300, 30_000);
+                        MathUtils.ClampUint((uint)Math.Round(minDurationFloat * 10_000), 300, 30_000);
                     ValidateSettings();
                     _configManager.SaveFnf();
                     OnConfigUpdate?.Invoke(); // update Ui
