@@ -213,8 +213,6 @@ public class OscQueryServer : IDisposable
         try
         {
             response = await Client.GetStringAsync(url);
-
-            response = File.ReadAllText("C:/Users/Lucpe/Desktop/RootNode.json");
             
             var rootNode = JsonSerializer.Deserialize<RootNode>(response);
             if (rootNode?.Contents?.Avatar?.Contents?.Parameters?.Contents == null)
