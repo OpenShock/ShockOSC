@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
+using OpenShock.Desktop.Plugin;
 using OpenShock.SDK.CSharp.Hub;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
@@ -77,6 +78,12 @@ public static class ShockOscBootstrap
         services.AddSingleton<UnderscoreConfig>();
         
         services.AddSingleton<StatusHandler>();
+
+        PluginManager.LoadAllPlugins();
+        foreach (var plugin in PluginManager.Plugins)
+        {
+            plugin.RegisterServices(services);
+        }
     }
 
     public static void AddCommonBlazorServices(this IServiceCollection services)
@@ -114,6 +121,10 @@ public static class ShockOscBootstrap
         services.GetRequiredService<Services.ShockOsc>();
         services.GetRequiredService<OscQueryServer>().Start();
         services.GetRequiredService<PipeServerService>().StartServer();
+        foreach (var plugin in PluginManager.Plugins)
+        {
+            plugin.StartServices(services);
+        }
 
         var updater = services.GetRequiredService<Updater>();
         OsTask.Run(updater.CheckUpdate);

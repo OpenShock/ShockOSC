@@ -67,7 +67,3 @@ E.g. `ShockOsc/_All_IShock`
 ## Credits
 
 [ShockOsc Contributors](https://github.com/OpenShock/ShockOsc/graphs/contributors)
-
-## Support
-
-You can support the openshock dev team here: [Sponsor OpenShock](https://github.com/sponsors/OpenShock)
