@@ -11,14 +11,12 @@ namespace OpenShock.ShockOsc.Logging;
 
 public class UiLogSink : ILogEventSink
 {
-    private readonly ITextFormatter _messageProvider;
-    private readonly ITextFormatter _sourceContextProvider;
+    private readonly MessageTemplateTextFormatter _messageProvider;
     public static Action<string, Severity>? NotificationAction { get; set; }
 
     public UiLogSink()
     {
         _messageProvider = new MessageTemplateTextFormatter("{Message:lj} {NewLine}{Exception}");
-        _sourceContextProvider = new MessageTemplateTextFormatter("{SourceContext}");
     }
 
     public void Emit(LogEvent logEvent)

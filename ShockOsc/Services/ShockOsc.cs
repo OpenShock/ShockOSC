@@ -42,7 +42,9 @@ public sealed class ShockOsc
         "Active",
         "Intensity",
         "CooldownPercentage",
-        "IShock"
+        "IShock",
+        "IVibrate",
+        "ISound"
     };
 
     public readonly Dictionary<string, object?> ShockOscParams = new();
@@ -134,7 +136,7 @@ public sealed class ShockOsc
 
         _logger.LogInformation("Ready");
         OsTask.Run(_underscoreConfig.SendUpdateForAll);
-        
+
         await _chatboxService.SendGenericMessage("Game Connected");
     }
 
@@ -301,6 +303,8 @@ public sealed class ShockOsc
         switch (action)
         {
             case "IShock":
+            case "IVibrate":
+            case "ISound":
                 if (value is not true) return;
                 if (_underscoreConfig.KillSwitch)
                 {
@@ -330,8 +334,16 @@ public sealed class ShockOsc
                     _logger.LogInformation("Ignoring IShock, group {Group} is on cooldown", programGroup.Name);
                     return;
                 }
+                
+                var type = action switch
+                {
+                    "IShock" => ControlType.Shock,
+                    "IVibrate" => ControlType.Vibrate,
+                    "ISound" => ControlType.Sound,
+                    _ => ControlType.Vibrate
+                };
 
-                OsTask.Run(() => InstantShock(programGroup, GetDuration(programGroup), GetIntensity(programGroup)));
+                OsTask.Run(() => InstantAction(programGroup, GetDuration(programGroup), GetIntensity(programGroup), type));
 
                 return;
             case "Stretch":
@@ -400,23 +412,26 @@ public sealed class ShockOsc
         }
     }
 
-    private async Task InstantShock(ProgramGroup programGroup, uint duration, byte intensity, bool exclusive = false)
+    private async Task InstantAction(ProgramGroup programGroup, uint duration, byte intensity, ControlType type,
+        bool exclusive = false)
     {
-        programGroup.LastExecuted = DateTime.UtcNow;
-        programGroup.LastDuration = duration;
-        programGroup.LastIntensity = intensity;
-
-        _oscHandler.ForceUnmute();
-        _oscHandler.SendParams();
+        if (type == ControlType.Shock)
+        {
+            programGroup.LastExecuted = DateTime.UtcNow;
+            programGroup.LastDuration = duration;
+            programGroup.LastIntensity = intensity;
+            _oscHandler.ForceUnmute();
+            _oscHandler.SendParams();
+        }
 
         programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(duration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
         _logger.LogInformation(
-            "Sending shock to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}",
+            "Sending {Type} to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}", type,
             programGroup.Name, intensity, inSeconds, exclusive);
 
-        await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock, exclusive);
-        await _chatboxService.SendLocalControlMessage(programGroup.Name, intensity, duration, ControlType.Shock);
+        await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, type, exclusive);
+        await _chatboxService.SendLocalControlMessage(programGroup.Name, intensity, duration, type);
     }
 
     private async Task CheckLoop()
@@ -512,7 +527,7 @@ public sealed class ShockOsc
         }
         else intensity = GetIntensity(programGroup);
 
-        InstantShock(programGroup, GetDuration(programGroup), intensity, exclusive);
+        InstantAction(programGroup, GetDuration(programGroup), intensity, ControlType.Shock, exclusive);
     }
 
     private byte GetPhysbonePullIntensity(ProgramGroup programGroup, float stretch)

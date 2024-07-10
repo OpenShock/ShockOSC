@@ -16,7 +16,7 @@ public static class LogStore
         OnLogAdded?.Invoke();
     }
 
-    public class LogEntry
+    public sealed class LogEntry
     {
         public required LogEventLevel Level { get; init; }
         public required DateTimeOffset Time { get; init; }
