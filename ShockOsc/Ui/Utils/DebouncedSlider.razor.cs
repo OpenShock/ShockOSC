@@ -1,11 +1,12 @@
-﻿using System.Reactive.Linq;
+﻿using System.Numerics;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Microsoft.AspNetCore.Components;
 using Size = MudBlazor.Size;
 
 namespace OpenShock.ShockOsc.Ui.Utils;
 
-public partial class DebouncedSlider<T> : ComponentBase
+public partial class DebouncedSlider<T> : ComponentBase where T : struct, INumber<T>
 {
     
     private BehaviorSubject<T>? _subject;
@@ -45,7 +46,7 @@ public partial class DebouncedSlider<T> : ComponentBase
         set
         {
             _subject?.OnNext(value);
-            if(_sliderValue != null && _sliderValue.Equals(value)) return;
+            if(_sliderValue.Equals(value)) return;
                 
             SliderValueChanged.InvokeAsync(value);
             _sliderValue = value!;
@@ -65,13 +66,12 @@ public partial class DebouncedSlider<T> : ComponentBase
     
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public T Min { get; set; } = T.Zero;
     
     [Parameter]
-    public T? Min { get; set; }
+    public T Max { get; set; } = T.CreateTruncating(100);
     
     [Parameter]
-    public T? Max { get; set; }
-    
-    [Parameter]
-    public T? Step { get; set; }
+    public T Step { get; set; } = T.One;
 }

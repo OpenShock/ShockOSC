@@ -6,7 +6,7 @@ public static class ThemeDefinition
 {
     public static readonly MudTheme ShockOscTheme = new()
     {
-        Palette = new PaletteDark
+        PaletteDark = new PaletteDark
         {
             Primary = "#e14a6d",
             PrimaryDarken = "#b31e40",
