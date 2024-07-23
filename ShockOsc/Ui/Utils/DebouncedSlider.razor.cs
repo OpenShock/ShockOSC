@@ -6,7 +6,7 @@ using Size = MudBlazor.Size;
 
 namespace OpenShock.ShockOsc.Ui.Utils;
 
-public partial class DebouncedSlider<T> : ComponentBase where T : struct, INumber<T>
+public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : struct, INumber<T>
 {
     
     private BehaviorSubject<T>? _subject;
@@ -74,4 +74,14 @@ public partial class DebouncedSlider<T> : ComponentBase where T : struct, INumbe
     
     [Parameter]
     public T Step { get; set; } = T.One;
+
+    private bool _disposed;
+    
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        
+        _subject?.Dispose();
+    }
 }
