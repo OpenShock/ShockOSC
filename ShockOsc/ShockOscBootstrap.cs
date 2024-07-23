@@ -1,14 +1,13 @@
 ﻿using System.Net;
-using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using OpenShock.SDK.CSharp.Hub;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Logging;
-using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Services;
 using OpenShock.ShockOsc.Services.Pipes;
 using OpenShock.ShockOsc.Utils;
+using OscQueryLibrary;
 using Serilog;
 
 namespace OpenShock.ShockOsc;
@@ -47,7 +46,7 @@ public static class ShockOscBootstrap
         services.AddMemoryCache();
 
         services.AddSingleton<PipeServerService>();
-        
+
         services.AddSingleton<ShockOscData>();
 
         services.AddSingleton<ConfigManager>();
@@ -70,12 +69,12 @@ public static class ShockOscBootstrap
         {
             var config = provider.GetRequiredService<ConfigManager>();
             var listenAddress = config.Config.Osc.QuestSupport ? IPAddress.Any : IPAddress.Loopback;
-            return new OscQueryServer("ShockOsc", listenAddress, config);
+            return new OscQueryServer("ShockOsc", listenAddress);
         });
 
         services.AddSingleton<Services.ShockOsc>();
         services.AddSingleton<UnderscoreConfig>();
-        
+
         services.AddSingleton<StatusHandler>();
     }
 
@@ -109,11 +108,14 @@ public static class ShockOscBootstrap
 
         #endregion
 
+        var config = services.GetRequiredService<ConfigManager>();
+
 
         // <---- Warmup ---->
         services.GetRequiredService<Services.ShockOsc>();
-        services.GetRequiredService<OscQueryServer>().Start();
         services.GetRequiredService<PipeServerService>().StartServer();
+        
+        if (config.Config.Osc.OscQuery) services.GetRequiredService<OscQueryServer>().Start();
 
         var updater = services.GetRequiredService<Updater>();
         OsTask.Run(updater.CheckUpdate);

@@ -84,6 +84,7 @@
         <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.24" />
         <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.24" />
         <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.24" />
+        <PackageReference Include="OscQueryLibrary" Version="1.0.0" />
         <PackageReference Include="Semver" Version="2.3.0"/>
         <PackageReference Include="Serilog" Version="4.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.7" />

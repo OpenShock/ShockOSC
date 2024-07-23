@@ -6,8 +6,8 @@ using OpenShock.SDK.CSharp.Utils;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
-using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Utils;
+using OscQueryLibrary;
 
 #pragma warning disable CS4014
 
@@ -87,7 +87,7 @@ public sealed class ShockOsc
 
         if (!_configManager.Config.Osc.OscQuery)
         {
-            FoundVrcClient(null);
+            FoundVrcClient(null, null);
         }
 
         _logger.LogInformation("Started ShockOsc.cs");
@@ -108,17 +108,17 @@ public sealed class ShockOsc
         OnParamsChange?.Invoke(shockOscParam);
     }
 
-    private async Task FoundVrcClient(IPEndPoint? oscClient)
+    private async Task FoundVrcClient(OscQueryServer oscQueryServer, IPEndPoint ipEndPoint)
     {
         _logger.LogInformation("Found VRC client");
         // stop tasks
         _oscServerActive = false;
         Task.Delay(1000).Wait(); // wait for tasks to stop
 
-        if (oscClient != null)
+        if (ipEndPoint != null)
         {
-            _oscClient.CreateGameConnection(oscClient.Address, _oscQueryServer.ShockOscReceivePort,
-                (ushort)oscClient.Port);
+            _oscClient.CreateGameConnection(ipEndPoint.Address, oscQueryServer.OscReceivePort,
+                (ushort)ipEndPoint.Port);
         }
         else
         {
