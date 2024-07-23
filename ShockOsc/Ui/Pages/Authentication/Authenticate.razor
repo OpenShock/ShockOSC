@@ -77,7 +77,7 @@
     {
         if (string.IsNullOrEmpty(PipeService.Token) || _currentState != State.Login) return false;
         ConfigManager.Config.OpenShock.Token = PipeService.Token;
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
         PipeService.Token = null;
         await ProceedAuthenticated();
         return true;

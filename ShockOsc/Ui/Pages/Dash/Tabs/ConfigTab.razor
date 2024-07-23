@@ -122,7 +122,8 @@
     
     private Task OnSettingsValueChangeAsync()
     {
-        return Task.WhenAll(ConfigManager.SaveAsync(), underscoreConfig.SendUpdateForAll());
+        ConfigManager.Save();
+        return underscoreConfig.SendUpdateForAll();
     }
 
     protected override void OnInitialized()

@@ -14,7 +14,7 @@
     <br/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Chatbox.TimeoutEnabled" Label="Timeout (Clear) Chatbox Automatically"></MudCheckBox>
     <br/>
-    <DebouncedSlider T="uint" Size="Size.Large" Min="1_300" Max="30_000" Step="100" Style="margin-left: 16px; width: 500px !important;" @bind-SliderValue="@ConfigManager.Config.Chatbox.Timeout" OnSaveAction="_ => ConfigManager.SaveFnf()">
+    <DebouncedSlider T="uint" Size="Size.Large" Min="1_300" Max="30_000" Step="100" Style="margin-left: 16px; width: 500px !important;" @bind-SliderValue="@ConfigManager.Config.Chatbox.Timeout" OnSaveAction="_ => ConfigManager.Save()">
         Timeout: @MathF.Round(ConfigManager.Config.Chatbox.Timeout / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
     </DebouncedSlider>
 </MudPaper>
@@ -61,9 +61,9 @@
 @code {
 
 
-    private async Task OnSettingsValueChange()
+    private void OnSettingsValueChange()
     {
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
     }
 
 }

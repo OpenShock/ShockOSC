@@ -31,9 +31,9 @@
 
 @code {
 
-    private Task OnShockerConfigUpdate()
+    private void OnShockerConfigUpdate()
     {
-        return ConfigManager.SaveAsync();
+        ConfigManager.Save();
     }
 
 }

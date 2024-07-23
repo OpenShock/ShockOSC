@@ -66,7 +66,7 @@ public sealed class AuthService
         Authenticated = false;
         
         _configManager.Config.OpenShock.Token = string.Empty;
-        await _configManager.SaveAsync();
+        _configManager.Save();
         
         _logger.LogInformation("Logging out");
         await _hubClient.StopAsync();

@@ -21,10 +21,10 @@
         InvokeAsync(StateHasChanged);
     }
 
-    private async Task Skip()
+    private void Skip()
     {
         ConfigManager.Config.App.LastIgnoredVersion = Updater.LatestVersion;
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
         MudDialog.Close(DialogResult.Ok(true));
     }
 
