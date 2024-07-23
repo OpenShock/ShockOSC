@@ -1,15 +1,12 @@
 ﻿using System.Globalization;
-using Microsoft.Extensions.Logging;
 using OpenShock.SDK.CSharp.Hub;
 using OpenShock.SDK.CSharp.Hub.Models;
-using OpenShock.SDK.CSharp.Live;
-using OpenShock.SDK.CSharp.Live.LiveControlModels;
 using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.Services;
 using Serilog;
-using SmartFormat;
+using Control = OpenShock.SDK.CSharp.Hub.Models.Control;
 
 namespace OpenShock.ShockOsc.Backend;
 
