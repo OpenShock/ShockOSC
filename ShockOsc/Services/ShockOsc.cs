@@ -110,7 +110,7 @@ public sealed class ShockOsc
 
     private async Task FoundVrcClient(OscQueryServer oscQueryServer, IPEndPoint ipEndPoint)
     {
-        _logger.LogInformation("Found VRC client");
+        _logger.LogInformation("Found VRC client at {Ip}", ipEndPoint);
         // stop tasks
         _oscServerActive = false;
         Task.Delay(1000).Wait(); // wait for tasks to stop
@@ -334,7 +334,7 @@ public sealed class ShockOsc
                     _logger.LogInformation("Ignoring IShock, group {Group} is on cooldown", programGroup.Name);
                     return;
                 }
-                
+
                 var type = action switch
                 {
                     "IShock" => ControlType.Shock,
@@ -343,7 +343,8 @@ public sealed class ShockOsc
                     _ => ControlType.Vibrate
                 };
 
-                OsTask.Run(() => InstantAction(programGroup, GetDuration(programGroup), GetIntensity(programGroup), type));
+                OsTask.Run(() =>
+                    InstantAction(programGroup, GetDuration(programGroup), GetIntensity(programGroup), type));
 
                 return;
             case "Stretch":
@@ -477,14 +478,12 @@ public sealed class ShockOsc
             programGroup.IsGrabbed &&
             programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
         {
-            var vibrationIntensity = programGroup.LastStretchValue * 100f;
-            if (vibrationIntensity < 1)
-                vibrationIntensity = 1;
+            var pullIntensityTranslated = Math.Max(Convert.ToByte(programGroup.LastStretchValue * 100f), (byte)1);
             programGroup.LastVibration = DateTime.UtcNow;
 
-            _logger.LogDebug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
+            _logger.LogDebug("Vibrating/Shocking {Shocker} at {Intensity}", pos, pullIntensityTranslated);
 
-            await _liveControlManager.ControlGroupFrame(programGroup, vibrationIntensity);
+            _liveControlManager.ControlGroupFramePhysbonePull(programGroup, pullIntensityTranslated);
         }
 
         if (programGroup.TriggerMethod == TriggerMethod.None)
