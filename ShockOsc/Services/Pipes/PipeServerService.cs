@@ -8,13 +8,11 @@ namespace OpenShock.ShockOsc.Services.Pipes;
 public sealed class PipeServerService
 {
     private readonly ILogger<PipeServerService> _logger;
-    private readonly IHostApplicationLifetime _appLifetime;
     private uint _clientCount = 0;
 
-    public PipeServerService(ILogger<PipeServerService> logger, IHostApplicationLifetime appLifetime)
+    public PipeServerService(ILogger<PipeServerService> logger)
     {
         _logger = logger;
-        _appLifetime = appLifetime;
     }
 
     public string? Token { get; set; }
@@ -35,7 +33,7 @@ public sealed class PipeServerService
 
         _logger.LogInformation("[{Id}] Starting new server loop", id);
 
-        await pipeServerStream.WaitForConnectionAsync(_appLifetime.ApplicationStopped);
+        await pipeServerStream.WaitForConnectionAsync();
 #pragma warning disable CS4014
         OsTask.Run(ServerLoop);
 #pragma warning restore CS4014
