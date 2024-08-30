@@ -5,6 +5,28 @@
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 
+                  OpenShcok Extra Restrictions
+
+  You are free to use, modify, and distribute this software under the
+terms ofthe GNU Affero General Public License version 3.0 (AGPL-3.0),
+with the following additional restriction:
+
+  1. You may not modify this software in a way that makes it compatible
+with or specifically tailored for use with a different backend or service
+other than the OpenShock backend for which it has been originally
+developed and documented, unless you obtain explicit written permission
+from the original copyright holder(s).
+
+This additional restriction is intended to maintain the original intent
+and purpose of this software and prevent it from being used in ways that
+could undermine its primary functionality or purpose tied to the
+OpenShock backend.
+
+By accepting these terms, you acknowledge and agree to comply with this
+additional restriction, in addition to the terms of the AGPL-3.0.
+If you do not agree to this additional restriction, you are not granted
+permission to use, modify, or distribute this software.
+
                             Preamble
 
   The GNU Affero General Public License is a free, copyleft license for
@@ -664,13 +686,3 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
-
-Additional Restriction:
-
-You are free to use, modify, and distribute this software under the terms of the GNU Affero General Public License version 3.0 (AGPL-3.0), with the following additional restriction:
-
-1. You may not modify this software in a way that makes it compatible with or specifically tailored for use with a different backend or service other than the OpenShock backend for which it has been originally developed and documented, unless you obtain explicit written permission from the original copyright holder(s).
-
-This additional restriction is intended to maintain the original intent and purpose of this software and prevent it from being used in ways that could undermine its primary functionality or purpose tied to the OpenShock backend.
-
-By accepting these terms, you acknowledge and agree to comply with this additional restriction, in addition to the terms of the AGPL-3.0. If you do not agree to this additional restriction, you are not granted permission to use, modify, or distribute this software.
