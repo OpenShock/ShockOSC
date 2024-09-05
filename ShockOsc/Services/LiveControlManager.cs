@@ -159,7 +159,7 @@ public sealed class LiveControlManager
         await OnStateUpdated.Raise();
     }
     
-    public void ControlGroupFramePhysbonePull(ProgramGroup group, byte intensity)
+    public void ControlGroupFrameCheckLoop(ProgramGroup group, byte intensity, ControlType type)
     {
         if (group.Id == Guid.Empty)
         {
@@ -171,7 +171,7 @@ public sealed class LiveControlManager
                 
                 ControlFrame(apiDevice.Shockers
                     .Where(x => _configManager.Config.OpenShock.Shockers.Any(y => y.Key == x.Id && y.Value.Enabled))
-                    .Select(x => x.Id), liveControlClient, intensity);
+                    .Select(x => x.Id), liveControlClient, intensity, type);
             }
         }
 
@@ -192,17 +192,13 @@ public sealed class LiveControlManager
             if (device.Key == null) continue;
             if (!LiveControlClients.TryGetValue(device.Key.Value, out var client)) continue;
 
-            ControlFrame(device.Select(x => x), client, intensity);
+            ControlFrame(device.Select(x => x), client, intensity, type);
         }
     }
 
     private void ControlFrame(IEnumerable<Guid> shockers, IOpenShockLiveControlClient client,
-        byte vibrationIntensity)
+        byte vibrationIntensity, ControlType type)
     {
-        var type = _configManager.Config.Behaviour.WhileBoneHeld == BehaviourConf.BoneHeldAction.Shock
-            ? ControlType.Shock
-            : ControlType.Vibrate;
-        
         foreach (var shocker in shockers)
         {
             client.IntakeFrame(shocker, type, vibrationIntensity);

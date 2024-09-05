@@ -44,7 +44,9 @@ public sealed class ShockOsc
         "CooldownPercentage",
         "IShock",
         "IVibrate",
-        "ISound"
+        "ISound",
+        "NextIntensity",
+        "NextDuration",
     };
 
     public readonly Dictionary<string, object?> ShockOscParams = new();
@@ -302,6 +304,50 @@ public sealed class ShockOsc
         var value = received.Arguments.ElementAtOrDefault(0);
         switch (action)
         {
+            case "NextIntensity":
+                if (value is not float nextIntensity)
+                {
+                    programGroup.NextIntensity = 0;
+                    return;
+                }
+
+                programGroup.NextIntensity = Convert.ToByte(MathUtils.Saturate(nextIntensity) * 100f);
+                break;
+            
+            case "NextDuration":
+                if (value is not float nextDuration)
+                {
+                    programGroup.NextDuration = 0;
+                    return;
+                }
+
+                programGroup.NextDuration = nextDuration;
+                break;
+            
+            case "CShock":
+                if (value is not float intensity)
+                {
+                    programGroup.ConcurrentIntensity = 0;
+                    programGroup.ConcurrentType = ControlType.Stop;
+                    return;
+                }
+                
+                var scaledIntensity = intensity * 100f;
+                if(scaledIntensity > 127) break;
+                
+                programGroup.ConcurrentIntensity = Convert.ToByte(intensity * 100f);
+
+                var ctype = action switch
+                {
+                    "CShock" => ControlType.Shock,
+                    "CVibrate" => ControlType.Vibrate,
+                    "CSound" => ControlType.Sound,
+                    _ => ControlType.Vibrate
+                };
+
+                programGroup.ConcurrentType = ctype;
+                break;
+            
             case "IShock":
             case "IVibrate":
             case "ISound":
@@ -413,26 +459,30 @@ public sealed class ShockOsc
         }
     }
 
-    private async Task InstantAction(ProgramGroup programGroup, uint duration, byte intensity, ControlType type,
+    private async Task InstantAction(ProgramGroup programGroup, ushort duration, byte intensity, ControlType type,
         bool exclusive = false)
     {
+        // Intensity is pre scaled to 0 - 100
+        var actualIntensity = programGroup.NextIntensity == 0 ? intensity : programGroup.NextIntensity;
+        var actualDuration = programGroup.NextDuration == 0 ? duration : GetScaledDuration(programGroup, programGroup.NextDuration);
+        
         if (type == ControlType.Shock)
         {
             programGroup.LastExecuted = DateTime.UtcNow;
-            programGroup.LastDuration = duration;
-            programGroup.LastIntensity = intensity;
+            programGroup.LastDuration = actualDuration;
+            programGroup.LastIntensity = actualIntensity;
             _oscHandler.ForceUnmute();
             _oscHandler.SendParams();
         }
 
         programGroup.TriggerMethod = TriggerMethod.None;
-        var inSeconds = MathF.Round(duration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
+        var inSeconds = MathF.Round(actualDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
         _logger.LogInformation(
             "Sending {Type} to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}", type,
-            programGroup.Name, intensity, inSeconds, exclusive);
+            programGroup.Name, actualIntensity, inSeconds, exclusive);
 
-        await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, type, exclusive);
-        await _chatboxService.SendLocalControlMessage(programGroup.Name, intensity, duration, type);
+        await _backendHubManager.ControlGroup(programGroup.Id, actualDuration, actualIntensity, type, exclusive);
+        await _chatboxService.SendLocalControlMessage(programGroup.Name, actualIntensity, actualDuration, type);
     }
 
     private async Task CheckLoop()
@@ -463,6 +513,18 @@ public sealed class ShockOsc
 
     private async Task CheckProgramGroup(ProgramGroup programGroup, Guid pos, BehaviourConf config)
     {
+        if (programGroup.ConcurrentIntensity != 0)
+        {
+            _liveControlManager.ControlGroupFrameCheckLoop(programGroup, GetScaledIntensity(programGroup, programGroup.ConcurrentIntensity), programGroup.ConcurrentType);
+            programGroup.LastConcurrentIntensity = programGroup.ConcurrentIntensity;
+            return;
+        }
+
+        if (programGroup.LastConcurrentIntensity != 0)
+        {
+            _liveControlManager.ControlGroupFrameCheckLoop(programGroup, 0, ControlType.Stop);
+        }
+
         var cooldownTime = _configManager.Config.Behaviour.CooldownTime;
         if (programGroup.ConfigGroup is { OverrideCooldownTime: true })
             cooldownTime = programGroup.ConfigGroup.CooldownTime;
@@ -483,7 +545,9 @@ public sealed class ShockOsc
 
             _logger.LogDebug("Vibrating/Shocking {Shocker} at {Intensity}", pos, pullIntensityTranslated);
 
-            _liveControlManager.ControlGroupFramePhysbonePull(programGroup, pullIntensityTranslated);
+            _liveControlManager.ControlGroupFrameCheckLoop(programGroup, pullIntensityTranslated, _configManager.Config.Behaviour.WhileBoneHeld == BehaviourConf.BoneHeldAction.Shock
+                ? ControlType.Shock
+                : ControlType.Vibrate);
         }
 
         if (programGroup.TriggerMethod == TriggerMethod.None)
@@ -528,6 +592,50 @@ public sealed class ShockOsc
 
         InstantAction(programGroup, GetDuration(programGroup), intensity, ControlType.Shock, exclusive);
     }
+    
+    private ushort GetScaledDuration(ProgramGroup programGroup, float scale)
+    {
+        scale = MathUtils.Saturate(scale);
+        
+        if (programGroup.ConfigGroup is not { OverrideDuration: true })
+        {
+            // Use global config
+            var config = _configManager.Config.Behaviour;
+
+            if (!config.RandomDuration) return (ushort) (config.FixedDuration * scale);
+            var rdr = config.DurationRange;
+            return (ushort)
+                (MathUtils.LerpUShort(
+                    (ushort)(rdr.Min / DurationStep), (ushort)(rdr.Max / DurationStep), scale)
+                 * DurationStep);
+        }
+
+        // Use group config
+        var groupConfig = programGroup.ConfigGroup;
+
+        if (!groupConfig.RandomDuration) return (ushort) (groupConfig.FixedDuration * scale);
+        var groupRdr = groupConfig.DurationRange;
+        return (ushort)(MathUtils.LerpUShort((ushort) (groupRdr.Min / DurationStep),
+            (ushort)(groupRdr.Max / DurationStep), scale) * DurationStep);
+    }
+    
+    private byte GetScaledIntensity(ProgramGroup programGroup, byte intensity)
+    {
+        if (programGroup.ConfigGroup is not { OverrideIntensity: true })
+        {
+            // Use global config
+            var config = _configManager.Config.Behaviour;
+
+            if (!config.RandomIntensity) return (byte)MathUtils.LerpFloat(0, config.FixedIntensity, intensity);
+            return (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, intensity);
+        }
+
+        // Use group config
+        var groupConfig = programGroup.ConfigGroup;
+
+        if (!groupConfig.RandomIntensity) return (byte)MathUtils.LerpFloat(0, groupConfig.FixedIntensity, intensity);
+        return (byte)MathUtils.LerpFloat(groupConfig.IntensityRange.Min, groupConfig.IntensityRange.Max, intensity);
+    }
 
     private byte GetPhysbonePullIntensity(ProgramGroup programGroup, float stretch)
     {
@@ -548,9 +656,9 @@ public sealed class ShockOsc
         return (byte)MathUtils.LerpFloat(groupConfig.IntensityRange.Min, groupConfig.IntensityRange.Max, stretch);
     }
 
-    private const uint DurationStep = 100;
+    private const ushort DurationStep = 100;
 
-    private uint GetDuration(ProgramGroup programGroup)
+    private ushort GetDuration(ProgramGroup programGroup)
     {
         if (programGroup.ConfigGroup is not { OverrideDuration: true })
         {
@@ -559,8 +667,8 @@ public sealed class ShockOsc
 
             if (!config.RandomDuration) return config.FixedDuration;
             var rdr = config.DurationRange;
-            return (uint)(Random.Next((int)(rdr.Min / DurationStep),
-                (int)(rdr.Max / DurationStep)) * DurationStep);
+            return (ushort)(Random.Next(rdr.Min / DurationStep,
+                rdr.Max / DurationStep) * DurationStep);
         }
 
         // Use group config
@@ -568,8 +676,8 @@ public sealed class ShockOsc
 
         if (!groupConfig.RandomDuration) return groupConfig.FixedDuration;
         var groupRdr = groupConfig.DurationRange;
-        return (uint)(Random.Next((int)(groupRdr.Min / DurationStep),
-            (int)(groupRdr.Max / DurationStep)) * DurationStep);
+        return (ushort)(Random.Next(groupRdr.Min / DurationStep,
+            groupRdr.Max / DurationStep) * DurationStep);
     }
 
     private byte GetIntensity(ProgramGroup programGroup)
@@ -581,7 +689,7 @@ public sealed class ShockOsc
 
             if (!config.RandomIntensity) return config.FixedIntensity;
             var rir = config.IntensityRange;
-            var intensityValue = Random.Next((int)rir.Min, (int)rir.Max);
+            var intensityValue = Random.Next(rir.Min, rir.Max);
             return (byte)intensityValue;
         }
 
@@ -590,7 +698,7 @@ public sealed class ShockOsc
 
         if (!groupConfig.RandomIntensity) return groupConfig.FixedIntensity;
         var groupRir = groupConfig.IntensityRange;
-        var groupIntensityValue = Random.Next((int)groupRir.Min, (int)groupRir.Max);
+        var groupIntensityValue = Random.Next(groupRir.Min, groupRir.Max);
         return (byte)groupIntensityValue;
     }
 }

@@ -154,7 +154,7 @@ public sealed class BackendHubManager
                 case ControlType.Shock:
                 {
                     pain.LastIntensity = log.Intensity;
-                    pain.LastDuration = log.Duration;
+                    pain.LastDuration = (ushort)log.Duration;
                     pain.LastExecuted = log.ExecutedAt;
 
                     oneShock = true;
