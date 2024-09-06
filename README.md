@@ -1,6 +1,6 @@
 <center><div align="center">
 
-<img alt="OpenShock Logo" height="150px" width="150px" src="https://openshock.org/static/branding/IconSlowSpin.svg" />
+<img alt="OpenShock Logo" height="150px" width="150px" src="https://openshock.org/IconSlowSpin.svg" />
 
 <h1><b>ShockOSC</b></h1>
 
