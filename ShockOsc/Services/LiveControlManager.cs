@@ -173,6 +173,7 @@ public sealed class LiveControlManager
                     .Where(x => _configManager.Config.OpenShock.Shockers.Any(y => y.Key == x.Id && y.Value.Enabled))
                     .Select(x => x.Id), liveControlClient, intensity, type);
             }
+            return;
         }
 
         if (group.ConfigGroup == null)

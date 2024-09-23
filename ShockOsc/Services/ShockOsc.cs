@@ -45,6 +45,7 @@ public sealed class ShockOsc
         "IShock",
         "IVibrate",
         "ISound",
+        "CShock",
         "NextIntensity",
         "NextDuration",
     };
@@ -523,6 +524,8 @@ public sealed class ShockOsc
         if (programGroup.LastConcurrentIntensity != 0)
         {
             _liveControlManager.ControlGroupFrameCheckLoop(programGroup, 0, ControlType.Stop);
+            programGroup.LastConcurrentIntensity = 0;
+            _logger.LogInformation("Stopping");
         }
 
         var cooldownTime = _configManager.Config.Behaviour.CooldownTime;
@@ -626,15 +629,15 @@ public sealed class ShockOsc
             // Use global config
             var config = _configManager.Config.Behaviour;
 
-            if (!config.RandomIntensity) return (byte)MathUtils.LerpFloat(0, config.FixedIntensity, intensity);
-            return (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, intensity);
+            if (!config.RandomIntensity) return (byte)MathUtils.LerpFloat(0, config.FixedIntensity, intensity / 100f);
+            return (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, intensity / 100f);
         }
 
         // Use group config
         var groupConfig = programGroup.ConfigGroup;
 
-        if (!groupConfig.RandomIntensity) return (byte)MathUtils.LerpFloat(0, groupConfig.FixedIntensity, intensity);
-        return (byte)MathUtils.LerpFloat(groupConfig.IntensityRange.Min, groupConfig.IntensityRange.Max, intensity);
+        if (!groupConfig.RandomIntensity) return (byte)MathUtils.LerpFloat(0, groupConfig.FixedIntensity, intensity / 100f);
+        return (byte)MathUtils.LerpFloat(groupConfig.IntensityRange.Min, groupConfig.IntensityRange.Max, intensity / 100f);
     }
 
     private byte GetPhysbonePullIntensity(ProgramGroup programGroup, float stretch)
