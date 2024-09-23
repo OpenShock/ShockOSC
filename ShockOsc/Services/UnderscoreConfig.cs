@@ -110,6 +110,7 @@ public sealed class UnderscoreConfig
 
                     _configManager.Config.Behaviour.FixedIntensity =
                         Math.Clamp((byte)Math.Round(intensityFloat * 100), (byte)0, (byte)100);
+                    _configManager.Config.Behaviour.RandomIntensity = false;
                     ValidateSettings();
                     _configManager.Save();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -126,7 +127,8 @@ public sealed class UnderscoreConfig
                     if (Math.Abs(minIntensityFloat - currentMinIntensity) < 0.001) return;
 
                     _configManager.Config.Behaviour.IntensityRange.Min =
-                        MathUtils.ClampUint((uint)Math.Round(minIntensityFloat * 100), 0, 100);
+                        MathUtils.ClampByte((byte)Math.Round(minIntensityFloat * 100), 0, 100);
+                    _configManager.Config.Behaviour.RandomIntensity = true;
                     ValidateSettings();
                     _configManager.Save();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -143,7 +145,8 @@ public sealed class UnderscoreConfig
                     if (Math.Abs(maxIntensityFloat - currentMaxIntensity) < 0.001) return;
 
                     _configManager.Config.Behaviour.IntensityRange.Max =
-                        MathUtils.ClampUint((uint)Math.Round(maxIntensityFloat * 100), 0, 100);
+                        MathUtils.ClampByte((byte)Math.Round(maxIntensityFloat * 100), 0, 100);
+                    _configManager.Config.Behaviour.RandomIntensity = true;
                     ValidateSettings();
                     _configManager.Save();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -159,7 +162,8 @@ public sealed class UnderscoreConfig
                     if (Math.Abs(minDurationFloat - currentMinDuration) < 0.001) return;
 
                     _configManager.Config.Behaviour.DurationRange.Min =
-                        MathUtils.ClampUint((uint)Math.Round(minDurationFloat * 10_000), 300, 30_000);
+                        MathUtils.ClampUShort((ushort)Math.Round(minDurationFloat * 10_000), 300, 30_000);
+                    _configManager.Config.Behaviour.RandomDuration = true;
                     ValidateSettings();
                     _configManager.Save();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -175,7 +179,8 @@ public sealed class UnderscoreConfig
                     if (Math.Abs(maxDurationFloat - currentMaxDuration) < 0.001) return;
 
                     _configManager.Config.Behaviour.DurationRange.Max =
-                        MathUtils.ClampUint((uint)Math.Round(maxDurationFloat * 10_000), 300, 30_000);
+                        MathUtils.ClampUShort((ushort)Math.Round(maxDurationFloat * 10_000), 300, 30_000);
+                    _configManager.Config.Behaviour.RandomDuration = true;
                     ValidateSettings();
                     _configManager.Save();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -191,7 +196,8 @@ public sealed class UnderscoreConfig
                     if (Math.Abs(durationFloat - currentDuration) < 0.001) return;
 
                     _configManager.Config.Behaviour.FixedDuration =
-                        MathUtils.ClampUint((uint)Math.Round(durationFloat * 10_000), 300, 10_000);
+                        MathUtils.ClampUShort((ushort)Math.Round(durationFloat * 10_000), 300, 10_000);
+                    _configManager.Config.Behaviour.RandomDuration = false;
                     ValidateSettings();
                     _configManager.Save();
                     OnConfigUpdate?.Invoke(); // update Ui

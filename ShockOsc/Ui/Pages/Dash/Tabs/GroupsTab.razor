@@ -173,13 +173,13 @@
             }
             else
             {
-                <DebouncedSlider T="uint" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
+                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
                                  OnValueChanged="u => { if (CurrentGroup.IntensityRange.Max < u) CurrentGroup.IntensityRange.Max = u; }"
                                  OnSaveAction="_ => ConfigManager.Save()">
                     Min Intensity: @CurrentGroup.IntensityRange.Min%
                 </DebouncedSlider>
 
-                <DebouncedSlider T="uint" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
+                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
                                  OnValueChanged="u => { if (CurrentGroup.IntensityRange.Min > u) CurrentGroup.IntensityRange.Min = u; }"
                                  OnSaveAction="_ => ConfigManager.Save()">
                     Max Intensity: @CurrentGroup.IntensityRange.Max%
@@ -207,7 +207,7 @@
             <br/>
             @if (!CurrentGroup.RandomDuration)
             {
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedDuration"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedDuration"
                                  OnSaveAction="_ => ConfigManager.Save()"
                                  Min="300" Max="30000" Step="100">
                     Duration: @MathF.Round(CurrentGroup.FixedDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
@@ -215,14 +215,14 @@
             }
             else
             {
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Min"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Min"
                                  OnValueChanged="u => { if (CurrentGroup.DurationRange.Max < u) CurrentGroup.DurationRange.Max = u; }"
                                  OnSaveAction="_ => ConfigManager.Save()"
                                  Min="300" Max="30000" Step="100">
                     Min Duration: @MathF.Round(CurrentGroup.DurationRange.Min / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
                 </DebouncedSlider>
 
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Max"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Max"
                                  OnValueChanged="u => { if (CurrentGroup.DurationRange.Min > u) CurrentGroup.DurationRange.Min = u; }"
                                  OnSaveAction="_ => ConfigManager.Save()"
                                  Min="300" Max="30000" Step="100">
