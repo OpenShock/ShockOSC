@@ -16,7 +16,7 @@ Used as an interface for OpenShock to communicate with applications that support
 
 ## Setup
 
-[Wiki](https://wiki.openshock.org/guides/shockosc-avatar-setup/)
+[Wiki](https://wiki.openshock.org/guides/shockosc-basic/)
 
 ### Avatar contacts setup for VRC
 
