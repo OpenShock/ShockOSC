@@ -333,10 +333,8 @@ public sealed class ShockOsc
                     return;
                 }
                 
-                var scaledIntensity = intensity * 100f;
-                if(scaledIntensity > 127) break;
-                
-                programGroup.ConcurrentIntensity = Convert.ToByte(intensity * 100f);
+                var scaledIntensity = MathUtils.Saturate(intensity) * 100f;
+                programGroup.ConcurrentIntensity = Convert.ToByte(scaledIntensity);
 
                 var ctype = action switch
                 {
