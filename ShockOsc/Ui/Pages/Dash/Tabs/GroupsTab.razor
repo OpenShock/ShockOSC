@@ -245,6 +245,10 @@
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.SuppressPhysBoneReleaseAction" Label="Suppress PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudText>Shockers in Group</MudText>
         <MudDivider/>
         <br/>
