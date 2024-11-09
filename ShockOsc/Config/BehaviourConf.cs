@@ -11,6 +11,7 @@ public sealed class BehaviourConf
     public uint HoldTime { get; set; } = 250;
     public uint CooldownTime { get; set; } = 5000;
     public BoneHeldAction WhileBoneHeld { get; set; } = BoneHeldAction.Vibrate;
+    public bool SuppressPhysBoneReleaseAction { get; set; }
     public bool DisableWhileAfk { get; set; } = true;
     public bool ForceUnmute { get; set; }
 

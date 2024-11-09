@@ -245,7 +245,14 @@
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.SuppressPhysBoneReleaseAction" Label="Suppress PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverridePhysBoneReleaseAction" Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
+        <MudDivider />
+        <MudCollapse Expanded="CurrentGroup.OverridePhysBoneReleaseAction">
+            <br/>
+
+            <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.SuppressPhysBoneReleaseAction" Label="Suppress PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
+
+        </MudCollapse>
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">

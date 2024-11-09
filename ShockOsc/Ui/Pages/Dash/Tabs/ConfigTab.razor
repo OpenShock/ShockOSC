@@ -22,6 +22,7 @@
             }
         </MudSelect>
     </MudPaper>
+    <MudCheckBox @bind-Value="ConfigManager.Config.Behaviour.SuppressPhysBoneReleaseAction" Class="checkbox-title" Label="Suppress PhysBone Release Action" @bind-Value:after="OnSettingsValueChangeAsync" />
     
     <br/>
     <br/>
