@@ -596,7 +596,12 @@ public sealed class ShockOsc
         if (programGroup.TriggerMethod == TriggerMethod.PhysBoneRelease)
         {
             programGroup.TriggerMethod = TriggerMethod.None;
-            if (programGroup.ConfigGroup is { OverridePhysBoneReleaseAction: true } ? programGroup.ConfigGroup is { SuppressPhysBoneReleaseAction: true } : _configManager.Config.Behaviour.SuppressPhysBoneReleaseAction) { return; }
+            if (programGroup.ConfigGroup is { OverridePhysBoneReleaseAction: true } ? programGroup.ConfigGroup is { SuppressPhysBoneReleaseAction: true } : _configManager.Config.Behaviour.SuppressPhysBoneReleaseAction)
+            {
+                programGroup.LastExecuted = DateTime.UtcNow;
+                programGroup.LastDuration = 0;
+                return;
+            }
             intensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
             programGroup.LastStretchValue = 0;
 
