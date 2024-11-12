@@ -18,4 +18,7 @@ public sealed class Group
     
     public bool OverrideCooldownTime { get; set; }
     public uint CooldownTime { get; set; } = 5000;
+
+    public bool OverridePhysBoneReleaseAction { get; set; }
+    public bool SuppressPhysBoneReleaseAction { get; set; }
 }

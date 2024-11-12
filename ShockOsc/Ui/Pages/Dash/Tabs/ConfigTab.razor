@@ -22,13 +22,14 @@
             }
         </MudSelect>
     </MudPaper>
+    <MudCheckBox @bind-Value="ConfigManager.Config.Behaviour.SuppressPhysBoneReleaseAction" Class="checkbox-title" Label="Suppress PhysBone Release Action" @bind-Value:after="OnSettingsValueChangeAsync" />
     
     <br/>
     <br/>
     <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnSettingsValueChangeAsync"/>
     <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.HoldTime" Label="Contact Hold Time" @bind-Value:after="OnSettingsValueChangeAsync"/>
     <br/>
-    <MudToggleGroup T="string" @bind-Value="RandomIntensityString" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChangeAsync">
+    <MudToggleGroup T="string" @bind-Value="RandomIntensityString" Style="width: 330px; margin: 30px 0 0 10px;" Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChangeAsync">
         <MudToggleItem Value="@("Fixed Intensity")"/>
         <MudToggleItem Value="@("Random Intensity")"/>
     </MudToggleGroup>
@@ -58,7 +59,7 @@
     }
     
 
-    <MudToggleGroup T="string" @bind-Value="RandomDurationString" Style="width: 330px; margin: 30px 0 0 10px;" Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChangeAsync">
+    <MudToggleGroup T="string" @bind-Value="RandomDurationString" Style="width: 330px; margin: 30px 0 0 10px;" Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChangeAsync">
         <MudToggleItem Value="@("Fixed Duration")"/>
         <MudToggleItem Value="@("Random Duration")"/>
     </MudToggleGroup>

@@ -157,7 +157,7 @@
             <div class="d-flex" style="justify-content: space-between">
 
                 <MudToggleGroup T="string" @bind-Value="CurrentRandomIntensityString" Style="width: 330px; margin: 0 0 0 10px;"
-                                Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                                Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
                     <MudToggleItem Value="@("Fixed Intensity")"/>
                     <MudToggleItem Value="@("Random Intensity")"/>
                 </MudToggleGroup>
@@ -198,7 +198,7 @@
             <div class="d-flex" style="justify-content: space-between">
 
                 <MudToggleGroup T="string" @bind-Value="CurrentRandomDurationString" Style="width: 330px; margin: 0 0 0 10px;"
-                                Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                                Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
                     <MudToggleItem Value="@("Fixed Duration")"/>
                     <MudToggleItem Value="@("Random Duration")"/>
                 </MudToggleGroup>
@@ -240,6 +240,17 @@
             <br/>
 
             <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="CurrentGroup.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
+
+        </MudCollapse>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverridePhysBoneReleaseAction" Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
+        <MudDivider />
+        <MudCollapse Expanded="CurrentGroup.OverridePhysBoneReleaseAction">
+            <br/>
+
+            <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.SuppressPhysBoneReleaseAction" Label="Suppress PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
 
         </MudCollapse>
     </MudPaper>

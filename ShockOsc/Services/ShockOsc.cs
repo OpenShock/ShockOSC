@@ -413,6 +413,13 @@ public sealed class ShockOsc
                     }
                 }
 
+                if (!programGroup.IsGrabbed && isGrabbed)
+                {
+                    // on physbone grab
+                    ushort TheDuration = GetDuration(programGroup);
+                    programGroup.PhysBoneGrabLimitTime = DateTime.UtcNow.AddMilliseconds(TheDuration);
+                    _logger.LogDebug("Limiting hold duration of Group {Group} to {Duration}ms", programGroup.Name, TheDuration);
+                }
                 programGroup.IsGrabbed = isGrabbed;
                 return;
             // Normal shocker actions
@@ -538,10 +545,12 @@ public sealed class ShockOsc
             _configManager.Config.Behaviour.WhileBoneHeld !=
             BehaviourConf.BoneHeldAction.None &&
             !isActiveOrOnCooldown &&
+            !_underscoreConfig.KillSwitch &&
             programGroup.IsGrabbed &&
+            programGroup.PhysBoneGrabLimitTime > DateTime.UtcNow &&
             programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
         {
-            var pullIntensityTranslated = Math.Max(Convert.ToByte(programGroup.LastStretchValue * 100f), (byte)1);
+            var pullIntensityTranslated = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
             programGroup.LastVibration = DateTime.UtcNow;
 
             _logger.LogDebug("Vibrating/Shocking {Shocker} at {Intensity}", pos, pullIntensityTranslated);
@@ -584,6 +593,13 @@ public sealed class ShockOsc
 
         if (programGroup.TriggerMethod == TriggerMethod.PhysBoneRelease)
         {
+            programGroup.TriggerMethod = TriggerMethod.None;
+            if (programGroup.ConfigGroup is { OverridePhysBoneReleaseAction: true } ? programGroup.ConfigGroup is { SuppressPhysBoneReleaseAction: true } : _configManager.Config.Behaviour.SuppressPhysBoneReleaseAction)
+            {
+                programGroup.LastExecuted = DateTime.UtcNow;
+                programGroup.LastDuration = 0;
+                return;
+            }
             intensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
             programGroup.LastStretchValue = 0;
 
