@@ -552,10 +552,10 @@ public sealed class ShockOsc
                 group => group.OverrideBoneHeldAction);
 
             if (heldAction != BoneAction.None && programGroup.PhysBoneGrabLimitTime > DateTime.UtcNow &&
-                programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
+                programGroup.LastHeldAction < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
             {
                 var pullIntensityTranslated = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
-                programGroup.LastVibration = DateTime.UtcNow;
+                programGroup.LastHeldAction = DateTime.UtcNow;
 
                 _logger.LogDebug("Vibrating/Shocking {Shocker} at {Intensity}", pos, pullIntensityTranslated);
 

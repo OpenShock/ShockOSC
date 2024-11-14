@@ -161,7 +161,7 @@ public sealed class BackendHubManager
                     break;
                 }
                 case ControlType.Vibrate:
-                    pain.LastVibration = log.ExecutedAt;
+                    pain.LastHeldAction = log.ExecutedAt;
                     break;
                 case ControlType.Stop:
                     pain.LastDuration = 0;
