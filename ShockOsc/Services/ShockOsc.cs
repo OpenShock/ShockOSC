@@ -610,10 +610,7 @@ public sealed class ShockOsc
             intensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
             programGroup.LastStretchValue = 0;
             
-            var heldAction = _configUtils.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
-                group => group.OverrideBoneHeldAction);
-            
-            InstantAction(programGroup, GetDuration(programGroup), intensity, heldAction.ToControlType(), true);
+            InstantAction(programGroup, GetDuration(programGroup), intensity, releaseAction.ToControlType(), true);
             return;
         }
         
