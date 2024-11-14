@@ -25,6 +25,7 @@ public sealed class ShockOsc
     private readonly OscHandler _oscHandler;
     private readonly LiveControlManager _liveControlManager;
     private readonly ChatboxService _chatboxService;
+    private readonly ConfigUtils _configUtils;
 
     private bool _oscServerActive;
     private bool _isAfk;
@@ -64,7 +65,7 @@ public sealed class ShockOsc
         OscQueryServer oscQueryServer,
         ShockOscData dataLayer,
         OscHandler oscHandler, LiveControlManager liveControlManager,
-        ChatboxService chatboxService)
+        ChatboxService chatboxService, ConfigUtils configUtils)
     {
         _logger = logger;
         _oscClient = oscClient;
@@ -76,6 +77,7 @@ public sealed class ShockOsc
         _oscHandler = oscHandler;
         _liveControlManager = liveControlManager;
         _chatboxService = chatboxService;
+        _configUtils = configUtils;
 
         OnGroupsChanged += () =>
         {
@@ -406,8 +408,7 @@ public sealed class ShockOsc
                         programGroup.TriggerMethod = TriggerMethod.PhysBoneRelease;
                         programGroup.LastActive = DateTime.UtcNow;
                     }
-                    else if (_configManager.Config.Behaviour.WhileBoneHeld !=
-                             BehaviourConf.BoneHeldAction.None)
+                    else if (_configUtils.GetGroupOrGlobal(programGroup, config => config.WhileBoneHeld, group => group.OverrideBoneHeldAction) != BoneAction.None)
                     {
                         await _backendHubManager.CancelControl(programGroup);
                     }
@@ -416,9 +417,9 @@ public sealed class ShockOsc
                 if (!programGroup.IsGrabbed && isGrabbed)
                 {
                     // on physbone grab
-                    ushort TheDuration = GetDuration(programGroup);
-                    programGroup.PhysBoneGrabLimitTime = DateTime.UtcNow.AddMilliseconds(TheDuration);
-                    _logger.LogDebug("Limiting hold duration of Group {Group} to {Duration}ms", programGroup.Name, TheDuration);
+                    var theDuration = GetDuration(programGroup);
+                    programGroup.PhysBoneGrabLimitTime = DateTime.UtcNow.AddMilliseconds(theDuration);
+                    _logger.LogDebug("Limiting hold duration of Group {Group} to {Duration}ms", programGroup.Name, theDuration);
                 }
                 programGroup.IsGrabbed = isGrabbed;
                 return;
@@ -530,7 +531,6 @@ public sealed class ShockOsc
         {
             _liveControlManager.ControlGroupFrameCheckLoop(programGroup, 0, ControlType.Stop);
             programGroup.LastConcurrentIntensity = 0;
-            _logger.LogInformation("Stopping");
         }
 
         var cooldownTime = _configManager.Config.Behaviour.CooldownTime;
@@ -541,23 +541,27 @@ public sealed class ShockOsc
             programGroup.LastExecuted.AddMilliseconds(cooldownTime)
                 .AddMilliseconds(programGroup.LastDuration) > DateTime.UtcNow;
 
+
+        
         if (programGroup.TriggerMethod == TriggerMethod.None &&
-            _configManager.Config.Behaviour.WhileBoneHeld !=
-            BehaviourConf.BoneHeldAction.None &&
             !isActiveOrOnCooldown &&
             !_underscoreConfig.KillSwitch &&
-            programGroup.IsGrabbed &&
-            programGroup.PhysBoneGrabLimitTime > DateTime.UtcNow &&
-            programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
+            programGroup.IsGrabbed)
         {
-            var pullIntensityTranslated = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
-            programGroup.LastVibration = DateTime.UtcNow;
+            var heldAction = _configUtils.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
+                group => group.OverrideBoneHeldAction);
 
-            _logger.LogDebug("Vibrating/Shocking {Shocker} at {Intensity}", pos, pullIntensityTranslated);
+            if (heldAction != BoneAction.None && programGroup.PhysBoneGrabLimitTime > DateTime.UtcNow &&
+                programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
+            {
+                var pullIntensityTranslated = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
+                programGroup.LastVibration = DateTime.UtcNow;
 
-            _liveControlManager.ControlGroupFrameCheckLoop(programGroup, pullIntensityTranslated, _configManager.Config.Behaviour.WhileBoneHeld == BehaviourConf.BoneHeldAction.Shock
-                ? ControlType.Shock
-                : ControlType.Vibrate);
+                _logger.LogDebug("Vibrating/Shocking {Shocker} at {Intensity}", pos, pullIntensityTranslated);
+
+                _liveControlManager.ControlGroupFrameCheckLoop(programGroup, pullIntensityTranslated,
+                    heldAction.ToControlType());
+            }
         }
 
         if (programGroup.TriggerMethod == TriggerMethod.None)
@@ -589,25 +593,35 @@ public sealed class ShockOsc
         }
 
         byte intensity;
-        var exclusive = false;
 
+        // Physbone was release
         if (programGroup.TriggerMethod == TriggerMethod.PhysBoneRelease)
         {
             programGroup.TriggerMethod = TriggerMethod.None;
-            if (programGroup.ConfigGroup is { OverridePhysBoneReleaseAction: true } ? programGroup.ConfigGroup is { SuppressPhysBoneReleaseAction: true } : _configManager.Config.Behaviour.SuppressPhysBoneReleaseAction)
+            var releaseAction = _configUtils.GetGroupOrGlobal(programGroup,
+                behaviourConfig => behaviourConfig.WhenBoneReleased, group => group.OverrideBoneReleasedAction);
+
+            if (releaseAction == BoneAction.None)
             {
-                programGroup.LastExecuted = DateTime.UtcNow;
-                programGroup.LastDuration = 0;
+                programGroup.LastStretchValue = 0;
                 return;
             }
+            
             intensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
             programGroup.LastStretchValue = 0;
-
-            exclusive = true;
+            
+            var heldAction = _configUtils.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
+                group => group.OverrideBoneHeldAction);
+            
+            InstantAction(programGroup, GetDuration(programGroup), intensity, heldAction.ToControlType(), true);
+            return;
         }
-        else intensity = GetIntensity(programGroup);
+        
+        // Normal shock
+        
+        intensity = GetIntensity(programGroup);
 
-        InstantAction(programGroup, GetDuration(programGroup), intensity, ControlType.Shock, exclusive);
+        InstantAction(programGroup, GetDuration(programGroup), intensity, ControlType.Shock, false);
     }
     
     private ushort GetScaledDuration(ProgramGroup programGroup, float scale)

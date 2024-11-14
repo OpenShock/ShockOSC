@@ -4,30 +4,37 @@
 @using OpenShock.ShockOsc.Ui.Utils
 @using OpenShock.ShockOsc.Utils
 @implements IDisposable
-@inject UnderscoreConfig underscoreConfig
 @inject ConfigManager ConfigManager
-@inject ShockOsc ShockOsc
 @inject UnderscoreConfig UnderscoreConfig
 
 @page "/dash/config"
 
 <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding">
-    <MudText>Global Shocker Options (_All Shocker)</MudText>
+    <MudText>Global Shocker Options (_All Group)</MudText>
     <MudDivider/>
-    <MudPaper Style="display: inline-block; width: 200px; padding-top: 8px; padding-left: 5px">
-        <MudSelect Class="option-width" @bind-Value="ConfigManager.Config.Behaviour.WhileBoneHeld" Label="While PhysBone Held" @bind-Value:after="OnSettingsValueChangeAsync">
-            @foreach (BehaviourConf.BoneHeldAction boneHeldAction in Enum.GetValues(typeof(BehaviourConf.BoneHeldAction)))
+    <div style="display: flex; width: 600px; padding-top: 20px;">
+        <MudSelect Class="option-width" Dense="true" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.WhileBoneHeld" Label="While PhysBone Held" @bind-Value:after="OnSettingsValueChangeAsync">
+            @foreach (var boneHeldAction in BoneActionExtensions.BoneActions)
             {
                 <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
             }
         </MudSelect>
-    </MudPaper>
-    <MudCheckBox @bind-Value="ConfigManager.Config.Behaviour.SuppressPhysBoneReleaseAction" Class="checkbox-title" Label="Suppress PhysBone Release Action" @bind-Value:after="OnSettingsValueChangeAsync" />
+        <MudSelect Class="option-width" Dense="true" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.WhenBoneReleased" Label="When PhysBone Released" @bind-Value:after="OnSettingsValueChangeAsync">
+            @foreach (var boneReleasedAction in BoneActionExtensions.BoneActions)
+            {
+            <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
     
     <br/>
-    <br/>
-    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnSettingsValueChangeAsync"/>
-    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.HoldTime" Label="Contact Hold Time" @bind-Value:after="OnSettingsValueChangeAsync"/>
+
+    <div style="display: flex; width: 600px; padding-top: 20px;">
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.CooldownTime" Label="Cooldown Time (ms)" @bind-Value:after="OnSettingsValueChangeAsync"/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.HoldTime" Label="Contact Hold Time (ms)" @bind-Value:after="OnSettingsValueChangeAsync"/>
+    </div>
+    
+
     <br/>
     <MudToggleGroup T="string" @bind-Value="RandomIntensityString" Style="width: 330px; margin: 30px 0 0 10px;" Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChangeAsync">
         <MudToggleItem Value="@("Fixed Intensity")"/>
@@ -97,7 +104,7 @@
 <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
     <MudText>Game Options</MudText>
     <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="underscoreConfig.KillSwitch" Label="Kill Switch" @bind-Value:after="OnSettingsValueChangeAsync"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="UnderscoreConfig.KillSwitch" Label="Kill Switch" @bind-Value:after="OnSettingsValueChangeAsync"/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Behaviour.DisableWhileAfk" Label="Disable While Afk" @bind-Value:after="OnSettingsValueChangeAsync"/>
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ConfigManager.Config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChangeAsync"/>
 </MudPaper>
@@ -124,7 +131,7 @@
     private Task OnSettingsValueChangeAsync()
     {
         ConfigManager.Save();
-        return underscoreConfig.SendUpdateForAll();
+        return UnderscoreConfig.SendUpdateForAll();
     }
 
     protected override void OnInitialized()

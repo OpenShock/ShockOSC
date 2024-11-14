@@ -245,13 +245,32 @@
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverridePhysBoneReleaseAction" Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldAction" Label="Override PhysBone Held Action" @bind-Value:after="OnGroupSettingsValueChange" />
         <MudDivider />
-        <MudCollapse Expanded="CurrentGroup.OverridePhysBoneReleaseAction">
+        <MudCollapse Expanded="CurrentGroup.OverrideBoneHeldAction">
             <br/>
 
-            <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.SuppressPhysBoneReleaseAction" Label="Suppress PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
+            <MudSelect Class="option-width" @bind-Value="CurrentGroup.OverrideBoneHeldAction" Label="When PhysBone Held" @bind-Value:after="OnGroupSettingsValueChange">
+                @foreach (var boneHeldAction in BoneActionExtensions.BoneActions)
+                {
+                    <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
+                }
+            </MudSelect>
+        </MudCollapse>
+    </MudPaper>
+    
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneReleasedAction" Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
+        <MudDivider />
+        <MudCollapse Expanded="CurrentGroup.OverrideBoneReleasedAction">
+            <br/>
 
+            <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhenBoneReleased" Label="When PhysBone Released" @bind-Value:after="OnGroupSettingsValueChange">
+                @foreach (var boneReleasedAction in BoneActionExtensions.BoneActions)
+                {
+                <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
+                }
+            </MudSelect>
         </MudCollapse>
     </MudPaper>
 

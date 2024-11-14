@@ -65,6 +65,8 @@ public static class ShockOscBootstrap
 
         services.AddSingleton<AuthService>();
 
+        services.AddSingleton<ConfigUtils>();
+
         services.AddSingleton(provider =>
         {
             var config = provider.GetRequiredService<ConfigManager>();
