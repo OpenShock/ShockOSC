@@ -250,7 +250,7 @@
         <MudCollapse Expanded="CurrentGroup.OverrideBoneHeldAction">
             <br/>
 
-            <MudSelect Class="option-width" @bind-Value="CurrentGroup.OverrideBoneHeldAction" Label="When PhysBone Held" @bind-Value:after="OnGroupSettingsValueChange">
+            <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhileBoneHeld" Label="When PhysBone Held" @bind-Value:after="OnGroupSettingsValueChange">
                 @foreach (var boneHeldAction in BoneActionExtensions.BoneActions)
                 {
                     <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
