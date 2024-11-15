@@ -14,4 +14,6 @@ public class SharedBehaviourConfig
     
     public BoneAction WhileBoneHeld { get; set; } = BoneAction.Vibrate;
     public BoneAction WhenBoneReleased { get; set; } = BoneAction.Shock;
+
+    public uint? BoneHeldDurationLimit { get; set; } = null;
 }
