@@ -28,6 +28,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+          
+      - name: Install maui workload
+        run: dotnet workload install maui
 
       - name: Cache NuGet packages
         uses: actions/cache@v3
