@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System.ComponentModel;
+using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Caching.Memory;
@@ -23,6 +24,7 @@ public partial class DiscordInvite : ComponentBase
     }
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public required string InviteCode { get; set; }
 
     private DiscordInviteResponse? _invite;

@@ -7,6 +7,8 @@
 <MudDialogProvider/>
 <MudSnackbarProvider/>
 
+<div style="position: absolute; top:0; left: 0; height: 1px; width: 100%; background-color: var(--mud-palette-divider); z-index: 9999"></div>
+
 <ContainerWithExceptionHandling>
         <Router AppAssembly="@typeof(Main).Assembly">
             <Found Context="routeData">

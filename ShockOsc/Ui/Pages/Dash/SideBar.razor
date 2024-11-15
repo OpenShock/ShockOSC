@@ -51,7 +51,7 @@
                 <div class="d-flex gap-5" style="flex-wrap: wrap; margin: 10px 0;">
 
                     <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
-                        <MudText Style="font-size: 10pt">Hub</MudText>
+                        <MudText Style="font-size: 10pt; text-align: center">Hub</MudText>
                         <MudTooltip Arrow="true" Placement="Placement.Top" Text="@ApiHubClient.State.ToString()">
                             <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="@GetConnectionStateColor(ApiHubClient.State)"/>
                         </MudTooltip>
@@ -66,7 +66,7 @@
                         else
                         {
                             <div style="display: flex; flex-direction: column" class="child-div-align-center flex-grow-1">
-                                <MudText Style="font-size: 10pt">@device.Name.Truncate(13)</MudText>
+                                <MudText Style="font-size: 10pt; text-align: center">@device.Name.Truncate(13)</MudText>
                                 <MudTooltip Arrow="true" Placement="Placement.Top" Text="Offline">
                                     <MudIcon Icon="@Icons.Material.Filled.Wifi" Color="@Color.Dark"/>
                                 </MudTooltip>

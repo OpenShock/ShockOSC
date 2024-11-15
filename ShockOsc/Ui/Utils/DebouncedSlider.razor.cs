@@ -1,7 +1,10 @@
-﻿using System.Numerics;
+﻿using System.ComponentModel;
+using System.Numerics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using Size = MudBlazor.Size;
 
 namespace OpenShock.ShockOsc.Ui.Utils;
@@ -27,17 +30,26 @@ public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : s
         _subject.Throttle(DebounceTime).Subscribe(value => OnSaveAction?.Invoke(value));
     }
 
-    [Parameter] public string Label { get; set; } = string.Empty;
-    [Parameter] public TimeSpan DebounceTime { get; set; } = TimeSpan.FromMilliseconds(500);
-
-    [Parameter] public EventCallback<T> SliderValueChanged { get; set; }
+    [Parameter] 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+    public string Label { get; set; } = string.Empty;
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+    public TimeSpan DebounceTime { get; set; } = TimeSpan.FromMilliseconds(500);
+
+    [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public EventCallback<T> SliderValueChanged { get; set; }
+    
+    [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Action<T>? OnValueChanged { get; set; }
 
     private T _sliderValue = default!;
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
 #pragma warning disable BL0007
     public T SliderValue
 #pragma warning restore BL0007
@@ -52,27 +64,37 @@ public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : s
             _sliderValue = value!;
         }
     }
-
-    [Parameter] public Action<T>? OnSaveAction { get; set; }
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+    public Action<T>? OnSaveAction { get; set; }
+    
+    [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public Size Size { get; set; } = Size.Small;
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public string? Style { get; set; }
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public string? Class { get; set; }
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public RenderFragment? ChildContent { get; set; }
 
-    [Parameter] public T Min { get; set; } = T.Zero;
+    [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+    public T Min { get; set; } = T.Zero;
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public T Max { get; set; } = T.CreateTruncating(100);
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public T Step { get; set; } = T.One;
 
     private bool _disposed;
