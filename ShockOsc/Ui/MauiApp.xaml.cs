@@ -3,6 +3,8 @@ namespace OpenShock.ShockOsc.Ui;
 
 public partial class MauiApp
 {
+    
+    
     public MauiApp()
     {
         InitializeComponent();
@@ -10,6 +12,8 @@ public partial class MauiApp
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
+        
+        
         var window = new Window(new MainPage())
         {
             MinimumHeight = 600,
@@ -18,6 +22,7 @@ public partial class MauiApp
             {
                 Icon = ImageSource.FromFile("Resources/Icon512.png"),
                 Title = "ShockOSC",
+                Subtitle = Constants.Version.ToString(),
                 BackgroundColor = Color.FromArgb("212121")
             }
         };
