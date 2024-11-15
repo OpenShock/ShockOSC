@@ -29,8 +29,8 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           
-      - name: Install maui workload
-        run: dotnet workload install maui
+      - name: Install maui workload for windows
+        run: dotnet workload install maui-windows
 
       - name: Cache NuGet packages
         uses: actions/cache@v3
