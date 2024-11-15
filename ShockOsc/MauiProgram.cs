@@ -58,13 +58,17 @@ public static class MauiProgram
 
                         if (Application.Current == null) return;
 
-                        var result = await Application.Current.MainPage!.DisplayAlert(
+                        var page = Application.Current.Windows[0].Page;
+                        
+                        if(page == null) return;
+                        
+                        var result = await page.DisplayAlert(
                             "Close?",
                             "Do you want to close ShockOSC?",
                             "Yes",
                             "Cancel");
 
-                        if (result) Application.Current?.Quit();
+                        if (result) Application.Current.Quit();
                     };
                 });
             });
