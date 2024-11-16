@@ -22,18 +22,22 @@
         <MudSelect Class="option-width" Dense="true" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.WhenBoneReleased" Label="When PhysBone Released" @bind-Value:after="OnSettingsValueChangeAsync">
             @foreach (var boneReleasedAction in BoneActionExtensions.BoneActions)
             {
-            <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
+                <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
             }
         </MudSelect>
     </div>
-    
+
     <br/>
 
     <div style="display: flex; width: 600px; padding-top: 20px;">
         <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.CooldownTime" Label="Cooldown Time (ms)" @bind-Value:after="OnSettingsValueChangeAsync"/>
         <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Behaviour.HoldTime" Label="Contact Hold Time (ms)" @bind-Value:after="OnSettingsValueChangeAsync"/>
     </div>
-    
+
+    <div style="display: flex; width: 600px; padding-top: 20px;">
+        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_limitBoneHeldDurationEnabled" Label="Limit Physbone held duration" @bind-Value:after="OnSettingsValueChangeAsync"/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_limitBoneHeldDuration" Label="Limit Duration (ms)" Disabled="!_limitBoneHeldDurationEnabled" @bind-Value:after="OnSettingsValueChangeAsync"/>
+    </div>
 
     <br/>
     <MudToggleGroup T="string" @bind-Value="RandomIntensityString" Style="width: 330px; margin: 30px 0 0 10px;" Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChangeAsync">
@@ -45,26 +49,26 @@
 
     @if (!ConfigManager.Config.Behaviour.RandomIntensity)
     {
-    <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@ConfigManager.Config.Behaviour.FixedIntensity"
-                     OnSaveAction="_ => OnSettingsValueChange()">
-        Intensity: @ConfigManager.Config.Behaviour.FixedIntensity%
-    </DebouncedSlider>
+        <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@ConfigManager.Config.Behaviour.FixedIntensity"
+                         OnSaveAction="_ => OnSettingsValueChange()">
+            Intensity: @ConfigManager.Config.Behaviour.FixedIntensity%
+        </DebouncedSlider>
     }
     else
     {
-    <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@ConfigManager.Config.Behaviour.IntensityRange.Min"
-                     OnValueChanged="u => { if (ConfigManager.Config.Behaviour.IntensityRange.Max < u) ConfigManager.Config.Behaviour.IntensityRange.Max = u; }"
-                     OnSaveAction="_ => OnSettingsValueChange()">
-        Min Intensity: @ConfigManager.Config.Behaviour.IntensityRange.Min%
-    </DebouncedSlider>
+        <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@ConfigManager.Config.Behaviour.IntensityRange.Min"
+                         OnValueChanged="u => { if (ConfigManager.Config.Behaviour.IntensityRange.Max < u) ConfigManager.Config.Behaviour.IntensityRange.Max = u; }"
+                         OnSaveAction="_ => OnSettingsValueChange()">
+            Min Intensity: @ConfigManager.Config.Behaviour.IntensityRange.Min%
+        </DebouncedSlider>
 
-    <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@ConfigManager.Config.Behaviour.IntensityRange.Max"
-                     OnValueChanged="u => { if (ConfigManager.Config.Behaviour.IntensityRange.Min > u) ConfigManager.Config.Behaviour.IntensityRange.Min = u; }"
-                     OnSaveAction="_ => OnSettingsValueChange()">
-        Max Intensity: @ConfigManager.Config.Behaviour.IntensityRange.Max%
-    </DebouncedSlider>
+        <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@ConfigManager.Config.Behaviour.IntensityRange.Max"
+                         OnValueChanged="u => { if (ConfigManager.Config.Behaviour.IntensityRange.Min > u) ConfigManager.Config.Behaviour.IntensityRange.Min = u; }"
+                         OnSaveAction="_ => OnSettingsValueChange()">
+            Max Intensity: @ConfigManager.Config.Behaviour.IntensityRange.Max%
+        </DebouncedSlider>
     }
-    
+
 
     <MudToggleGroup T="string" @bind-Value="RandomDurationString" Style="width: 330px; margin: 30px 0 0 10px;" Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnSettingsValueChangeAsync">
         <MudToggleItem Value="@("Fixed Duration")"/>
@@ -110,7 +114,7 @@
 </MudPaper>
 
 @code {
-    
+
     private string RandomIntensityString
     {
         get => ConfigManager.Config.Behaviour.RandomIntensity ? "Random Intensity" : "Fixed Intensity";
@@ -123,19 +127,27 @@
         set => ConfigManager.Config.Behaviour.RandomDuration = value == "Random Duration";
     }
 
+    private uint _limitBoneHeldDuration;
+    private bool _limitBoneHeldDurationEnabled;
+
     private void OnSettingsValueChange()
     {
         OsTask.Run(OnSettingsValueChangeAsync);
     }
-    
+
     private Task OnSettingsValueChangeAsync()
     {
+        ConfigManager.Config.Behaviour.BoneHeldDurationLimit = _limitBoneHeldDurationEnabled ? _limitBoneHeldDuration : null;
+
         ConfigManager.Save();
         return UnderscoreConfig.SendUpdateForAll();
     }
 
     protected override void OnInitialized()
     {
+        _limitBoneHeldDurationEnabled = ConfigManager.Config.Behaviour.BoneHeldDurationLimit.HasValue;
+        _limitBoneHeldDuration = ConfigManager.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
+
         UnderscoreConfig.OnConfigUpdate += OnConfigUpdate;
     }
 
@@ -148,7 +160,6 @@
     {
         UnderscoreConfig.OnConfigUpdate -= OnConfigUpdate;
     }
-    
-    
+
 
 }

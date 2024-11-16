@@ -417,9 +417,10 @@ public sealed class ShockOsc
                 if (!programGroup.IsGrabbed && isGrabbed)
                 {
                     // on physbone grab
-                    var theDuration = GetDuration(programGroup);
-                    programGroup.PhysBoneGrabLimitTime = DateTime.UtcNow.AddMilliseconds(theDuration);
-                    _logger.LogDebug("Limiting hold duration of Group {Group} to {Duration}ms", programGroup.Name, theDuration);
+                    var durationLimit = _configUtils.GetGroupOrGlobal(programGroup,
+                        config => config.BoneHeldDurationLimit, group => group.OverrideBoneHeldDurationLimit);
+                    programGroup.PhysBoneGrabLimitTime = durationLimit == null ? null : DateTime.UtcNow.AddMilliseconds(durationLimit.Value);
+                    _logger.LogDebug("Limiting hold duration of Group {Group} to {Duration}ms", programGroup.Name, durationLimit);
                 }
                 programGroup.IsGrabbed = isGrabbed;
                 return;
@@ -551,7 +552,7 @@ public sealed class ShockOsc
             var heldAction = _configUtils.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
                 group => group.OverrideBoneHeldAction);
 
-            if (heldAction != BoneAction.None && programGroup.PhysBoneGrabLimitTime > DateTime.UtcNow &&
+            if (heldAction != BoneAction.None && (programGroup.PhysBoneGrabLimitTime == null || programGroup.PhysBoneGrabLimitTime > DateTime.UtcNow) &&
                 programGroup.LastHeldAction < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
             {
                 var pullIntensityTranslated = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);

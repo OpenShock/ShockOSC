@@ -14,6 +14,7 @@
 @code {
 
     private Guid? _group = null;
+
     public Guid? Group
     {
         get => _group;
@@ -21,7 +22,8 @@
         {
             _group = value;
             OnGroupSelect();
-        } }
+        }
+    }
 
     public async Task AddGroup()
     {
@@ -51,7 +53,15 @@
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
-    private void OnGroupSettingsValueChange() => ConfigManager.Save();
+    private void OnGroupSettingsValueChange()
+    {
+        if (CurrentGroup != null)
+        {
+            CurrentGroup.BoneHeldDurationLimit = _limitBoneHeldDurationEnabled ? _limitBoneHeldDuration : null;
+        }
+
+        ConfigManager.Save();
+    }
 
     private void OnGroupSelect()
     {
@@ -124,6 +134,15 @@
 
         await InvokeAsync(StateHasChanged);
         ConfigManager.Save();
+    }
+
+    private uint _limitBoneHeldDuration;
+    private bool _limitBoneHeldDurationEnabled;
+
+    protected override void OnInitialized()
+    {
+        _limitBoneHeldDurationEnabled = ConfigManager.Config.Behaviour.BoneHeldDurationLimit.HasValue;
+        _limitBoneHeldDuration = ConfigManager.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
     }
 
 }
@@ -245,8 +264,8 @@
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldAction" Label="Override PhysBone Held Action" @bind-Value:after="OnGroupSettingsValueChange" />
-        <MudDivider />
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldAction" Label="Override PhysBone Held Action" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudDivider/>
         <MudCollapse Expanded="CurrentGroup.OverrideBoneHeldAction">
             <br/>
 
@@ -258,21 +277,33 @@
             </MudSelect>
         </MudCollapse>
     </MudPaper>
-    
+
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneReleasedAction" Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange" />
-        <MudDivider />
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneReleasedAction" Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudDivider/>
         <MudCollapse Expanded="CurrentGroup.OverrideBoneReleasedAction">
             <br/>
 
             <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhenBoneReleased" Label="When PhysBone Released" @bind-Value:after="OnGroupSettingsValueChange">
                 @foreach (var boneReleasedAction in BoneActionExtensions.BoneActions)
                 {
-                <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
+                    <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
                 }
             </MudSelect>
         </MudCollapse>
     </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldDurationLimit" Label="Override PhysBone Held Duration Limit" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudDivider/>
+        <MudCollapse Expanded="CurrentGroup.OverrideBoneHeldDurationLimit">
+            <div style="display: flex; width: 600px; padding-top: 20px;">
+                <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_limitBoneHeldDurationEnabled" Label="Limit Physbone held duration" @bind-Value:after="OnGroupSettingsValueChange"/>
+                <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_limitBoneHeldDuration" Label="Limit Duration (ms)" Disabled="!_limitBoneHeldDurationEnabled" @bind-Value:after="OnGroupSettingsValueChange"/>
+            </div>
+        </MudCollapse>
+    </MudPaper>
+
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudText>Shockers in Group</MudText>

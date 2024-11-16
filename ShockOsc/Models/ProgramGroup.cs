@@ -10,7 +10,7 @@ public sealed class ProgramGroup
     public DateTime LastActive { get; set; }
     public DateTime LastExecuted { get; set; }
     public DateTime LastHeldAction { get; set; }
-    public DateTime PhysBoneGrabLimitTime { get; set; }
+    public DateTime? PhysBoneGrabLimitTime { get; set; }
     public ushort LastDuration { get; set; }
     public byte LastIntensity { get; set; }
     public float LastStretchValue { get; set; }
