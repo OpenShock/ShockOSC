@@ -126,8 +126,8 @@ public sealed class Updater
 
             listOfValid.Add((release, version));
         }
-
-        (GithubReleaseResponse, SemVersion)? newestPreRelease = listOfValid.OrderByDescending(x => x.Item2).FirstOrDefault();
+        
+        (GithubReleaseResponse, SemVersion)? newestPreRelease = listOfValid.OrderByDescending(x => x.Item2, SemVersion.PrecedenceComparer).FirstOrDefault();
         var latestRelease = await GetLatestRelease();
         if (newestPreRelease == null && latestRelease == null)
         {

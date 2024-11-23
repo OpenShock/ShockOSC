@@ -53,14 +53,13 @@ public static class WindowsEntryPoint
         {
             using var pipeClientStream = new NamedPipeClientStream(".", "OpenShock.ShockOsc", PipeDirection.Out);
             pipeClientStream.Connect(500);
-
-            var parsedUri = UriParser.Parse(config.Uri);
-
+            
             using var writer = new StreamWriter(pipeClientStream);
             writer.AutoFlush = true;
 
             if (!string.IsNullOrEmpty(config.Uri))
             {
+                var parsedUri = UriParser.Parse(config.Uri);
                 var pipeMessage = parsedUri.Type switch
                 {
                     UriParameterType.Show => new PipeMessage { Type = PipeMessageType.Show },

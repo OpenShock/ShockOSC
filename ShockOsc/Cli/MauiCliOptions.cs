@@ -8,5 +8,5 @@ public sealed class MauiCliOptions : CliOptions
     public required bool Console { get; init; }
     
     [Option("uri", Required = false, HelpText = "Custom URI for callbacks")]
-    public required string Uri { get; init; }
+    public required string? Uri { get; init; }
 }
