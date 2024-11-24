@@ -711,7 +711,7 @@ public sealed class ShockOsc
 
     private byte GetIntensity(ProgramGroup programGroup)
     {
-        if (programGroup.ConfigGroup is not { OverrideDuration: true })
+        if (programGroup.ConfigGroup is not { OverrideIntensity: true })
         {
             // Use global config
             var config = _configManager.Config.Behaviour;
