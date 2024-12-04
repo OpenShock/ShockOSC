@@ -11,8 +11,8 @@
         <AssemblyName>OpenShock.ShockOsc</AssemblyName>
         <RootNamespace>OpenShock.ShockOsc</RootNamespace>
         <Company>OpenShock</Company>
-        <AssemblyVersion>2.1.2</AssemblyVersion>
-        <Version>2.1.2</Version>
+        <AssemblyVersion>2.4.2</AssemblyVersion>
+        <Version>2.4.2</Version>
         <ApplicationIcon>Resources\openshock-icon.ico</ApplicationIcon>
         <SelfContained>true</SelfContained>
         <Product>ShockOsc</Product>
@@ -31,7 +31,7 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug-Windows' Or '$(Configuration)' == 'Release-Windows'">
-        <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+        <TargetFramework>net9.0-windows10.0.19041</TargetFramework>
         <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
         <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
         <WindowsPackageType>None</WindowsPackageType>
@@ -41,8 +41,8 @@
     </PropertyGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Debug-Windows' Or '$(Configuration)' == 'Release-Windows'">
-        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.40" />
-        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.40" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.10" />
     </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
@@ -72,27 +72,28 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommandLineParser" Version="2.9.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="8.0.40" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
-        <PackageReference Include="MudBlazor" Version="6.19.1" />
-        <PackageReference Include="EmbedIO" Version="3.5.2" />
-        <PackageReference Include="LucHeart.CoreOSC" Version="1.2.1" />
-        <PackageReference Include="MeaMod.DNS" Version="1.0.70" />
-        <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.19" />
-        <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.19" />
-        <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.20" />
-        <PackageReference Include="Semver" Version="2.3.0" />
-        <PackageReference Include="Serilog" Version="3.1.1" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.5" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
-        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
-        <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
-        <PackageReference Include="SmartFormat.NET" Version="3.4.0" />
-        <PackageReference Include="System.Reactive" Version="6.0.0" />
+        <PackageReference Include="CommandLineParser" Version="2.9.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+        <PackageReference Include="MudBlazor" Version="7.15.0" />
+        <PackageReference Include="EmbedIO" Version="3.5.2"/>
+        <PackageReference Include="LucHeart.CoreOSC" Version="1.4.0" />
+        <PackageReference Include="MeaMod.DNS" Version="1.0.71" />
+        <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.29" />
+        <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.29" />
+        <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.29" />
+        <PackageReference Include="OscQueryLibrary" Version="1.1.2" />
+        <PackageReference Include="Semver" Version="3.0.0" />
+        <PackageReference Include="Serilog" Version="4.1.0" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
+        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+        <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+        <PackageReference Include="SmartFormat.NET" Version="3.5.1" />
+        <PackageReference Include="System.Reactive" Version="6.0.1" />
     </ItemGroup>
 
 

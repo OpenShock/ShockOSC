@@ -2,9 +2,12 @@
 @using OpenShock.ShockOsc.Ui.Pages.Dash
 @using OpenShock.ShockOsc.Ui.Utils
 
-<MudThemeProvider Theme="ThemeDefinition.ShockOscTheme"/>
+<MudThemeProvider Theme="ThemeDefinition.ShockOscTheme" IsDarkMode="true"/>
+<MudPopoverProvider/>
 <MudDialogProvider/>
 <MudSnackbarProvider/>
+
+<div style="position: absolute; top:0; left: 0; height: 1px; width: 100%; background-color: var(--mud-palette-divider); z-index: 9999"></div>
 
 <ContainerWithExceptionHandling>
         <Router AppAssembly="@typeof(Main).Assembly">

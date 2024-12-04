@@ -1,7 +1,5 @@
-﻿using System.Collections.Concurrent;
-using System.IO.Pipes;
+﻿using System.IO.Pipes;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using OpenShock.SDK.CSharp.Utils;
 using OpenShock.ShockOsc.Utils;
 

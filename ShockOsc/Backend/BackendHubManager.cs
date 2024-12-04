@@ -1,15 +1,12 @@
 ﻿using System.Globalization;
-using Microsoft.Extensions.Logging;
 using OpenShock.SDK.CSharp.Hub;
 using OpenShock.SDK.CSharp.Hub.Models;
-using OpenShock.SDK.CSharp.Live;
-using OpenShock.SDK.CSharp.Live.LiveControlModels;
 using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.Services;
 using Serilog;
-using SmartFormat;
+using Control = OpenShock.SDK.CSharp.Hub.Models.Control;
 
 namespace OpenShock.ShockOsc.Backend;
 
@@ -157,14 +154,14 @@ public sealed class BackendHubManager
                 case ControlType.Shock:
                 {
                     pain.LastIntensity = log.Intensity;
-                    pain.LastDuration = log.Duration;
+                    pain.LastDuration = (ushort)log.Duration;
                     pain.LastExecuted = log.ExecutedAt;
 
                     oneShock = true;
                     break;
                 }
                 case ControlType.Vibrate:
-                    pain.LastVibration = log.ExecutedAt;
+                    pain.LastHeldAction = log.ExecutedAt;
                     break;
                 case ControlType.Stop:
                     pain.LastDuration = 0;

@@ -14,6 +14,7 @@
 @code {
 
     private Guid? _group = null;
+
     public Guid? Group
     {
         get => _group;
@@ -21,7 +22,8 @@
         {
             _group = value;
             OnGroupSelect();
-        } }
+        }
+    }
 
     public async Task AddGroup()
     {
@@ -30,7 +32,7 @@
         Group = groupId;
 
         await InvokeAsync(StateHasChanged);
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
@@ -41,17 +43,25 @@
         ConfigManager.Config.Groups.Remove(Group.Value);
         Group = null;
         await InvokeAsync(StateHasChanged);
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
     private async Task OnSettingsValueChange()
     {
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
-    private Task OnGroupSettingsValueChange() => ConfigManager.SaveAsync();
+    private void OnGroupSettingsValueChange()
+    {
+        if (CurrentGroup != null)
+        {
+            CurrentGroup.BoneHeldDurationLimit = _limitBoneHeldDurationEnabled ? _limitBoneHeldDuration : null;
+        }
+
+        ConfigManager.Save();
+    }
 
     private void OnGroupSelect()
     {
@@ -60,12 +70,12 @@
         InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnSelectedShockersUpdate()
+    private void OnSelectedShockersUpdate()
     {
         if (CurrentGroup != null)
         {
             CurrentGroup.Shockers = _selectedShockers.ToList();
-            await ConfigManager.SaveAsync();
+            ConfigManager.Save();
         }
     }
 
@@ -112,7 +122,7 @@
         CurrentGroup.RandomIntensity = ConfigManager.Config.Behaviour.RandomIntensity;
 
         await InvokeAsync(StateHasChanged);
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
     }
 
     private async Task ResetDuration()
@@ -123,7 +133,16 @@
         CurrentGroup.RandomDuration = ConfigManager.Config.Behaviour.RandomDuration;
 
         await InvokeAsync(StateHasChanged);
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
+    }
+
+    private uint _limitBoneHeldDuration;
+    private bool _limitBoneHeldDurationEnabled;
+
+    protected override void OnInitialized()
+    {
+        _limitBoneHeldDurationEnabled = ConfigManager.Config.Behaviour.BoneHeldDurationLimit.HasValue;
+        _limitBoneHeldDuration = ConfigManager.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
     }
 
 }
@@ -157,7 +176,7 @@
             <div class="d-flex" style="justify-content: space-between">
 
                 <MudToggleGroup T="string" @bind-Value="CurrentRandomIntensityString" Style="width: 330px; margin: 0 0 0 10px;"
-                                Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                                Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
                     <MudToggleItem Value="@("Fixed Intensity")"/>
                     <MudToggleItem Value="@("Random Intensity")"/>
                 </MudToggleGroup>
@@ -167,21 +186,21 @@
             @if (!CurrentGroup.RandomIntensity)
             {
                 <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedIntensity"
-                                 OnSaveAction="_ => ConfigManager.SaveFnf()">
+                                 OnSaveAction="_ => ConfigManager.Save()">
                     Intensity: @CurrentGroup.FixedIntensity%
                 </DebouncedSlider>
             }
             else
             {
-                <DebouncedSlider T="uint" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
+                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
                                  OnValueChanged="u => { if (CurrentGroup.IntensityRange.Max < u) CurrentGroup.IntensityRange.Max = u; }"
-                                 OnSaveAction="_ => ConfigManager.SaveFnf()">
+                                 OnSaveAction="_ => ConfigManager.Save()">
                     Min Intensity: @CurrentGroup.IntensityRange.Min%
                 </DebouncedSlider>
 
-                <DebouncedSlider T="uint" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
+                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
                                  OnValueChanged="u => { if (CurrentGroup.IntensityRange.Min > u) CurrentGroup.IntensityRange.Min = u; }"
-                                 OnSaveAction="_ => ConfigManager.SaveFnf()">
+                                 OnSaveAction="_ => ConfigManager.Save()">
                     Max Intensity: @CurrentGroup.IntensityRange.Max%
                 </DebouncedSlider>
             }
@@ -198,7 +217,7 @@
             <div class="d-flex" style="justify-content: space-between">
 
                 <MudToggleGroup T="string" @bind-Value="CurrentRandomDurationString" Style="width: 330px; margin: 0 0 0 10px;"
-                                Outline="true" Delimiters="true" Dense="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                                Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
                     <MudToggleItem Value="@("Fixed Duration")"/>
                     <MudToggleItem Value="@("Random Duration")"/>
                 </MudToggleGroup>
@@ -207,24 +226,24 @@
             <br/>
             @if (!CurrentGroup.RandomDuration)
             {
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedDuration"
-                                 OnSaveAction="_ => ConfigManager.SaveFnf()"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedDuration"
+                                 OnSaveAction="_ => ConfigManager.Save()"
                                  Min="300" Max="30000" Step="100">
                     Duration: @MathF.Round(CurrentGroup.FixedDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
                 </DebouncedSlider>
             }
             else
             {
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Min"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Min"
                                  OnValueChanged="u => { if (CurrentGroup.DurationRange.Max < u) CurrentGroup.DurationRange.Max = u; }"
-                                 OnSaveAction="_ => ConfigManager.SaveFnf()"
+                                 OnSaveAction="_ => ConfigManager.Save()"
                                  Min="300" Max="30000" Step="100">
                     Min Duration: @MathF.Round(CurrentGroup.DurationRange.Min / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
                 </DebouncedSlider>
 
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Max"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Max"
                                  OnValueChanged="u => { if (CurrentGroup.DurationRange.Min > u) CurrentGroup.DurationRange.Min = u; }"
-                                 OnSaveAction="_ => ConfigManager.SaveFnf()"
+                                 OnSaveAction="_ => ConfigManager.Save()"
                                  Min="300" Max="30000" Step="100">
                     Max Duration: @MathF.Round(CurrentGroup.DurationRange.Max / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
                 </DebouncedSlider>
@@ -243,6 +262,48 @@
 
         </MudCollapse>
     </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldAction" Label="Override PhysBone Held Action" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudDivider/>
+        <MudCollapse Expanded="CurrentGroup.OverrideBoneHeldAction">
+            <br/>
+
+            <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhileBoneHeld" Label="When PhysBone Held" @bind-Value:after="OnGroupSettingsValueChange">
+                @foreach (var boneHeldAction in BoneActionExtensions.BoneActions)
+                {
+                    <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
+                }
+            </MudSelect>
+        </MudCollapse>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneReleasedAction" Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudDivider/>
+        <MudCollapse Expanded="CurrentGroup.OverrideBoneReleasedAction">
+            <br/>
+
+            <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhenBoneReleased" Label="When PhysBone Released" @bind-Value:after="OnGroupSettingsValueChange">
+                @foreach (var boneReleasedAction in BoneActionExtensions.BoneActions)
+                {
+                    <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
+                }
+            </MudSelect>
+        </MudCollapse>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldDurationLimit" Label="Override PhysBone Held Duration Limit" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudDivider/>
+        <MudCollapse Expanded="CurrentGroup.OverrideBoneHeldDurationLimit">
+            <div style="display: flex; width: 600px; padding-top: 20px;">
+                <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_limitBoneHeldDurationEnabled" Label="Limit Physbone held duration" @bind-Value:after="OnGroupSettingsValueChange"/>
+                <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_limitBoneHeldDuration" Label="Limit Duration (ms)" Disabled="!_limitBoneHeldDurationEnabled" @bind-Value:after="OnGroupSettingsValueChange"/>
+            </div>
+        </MudCollapse>
+    </MudPaper>
+
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudText>Shockers in Group</MudText>

@@ -87,7 +87,7 @@
 
     public async Task Login()
     {
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
         await ProceedAuthenticated();
     }
 

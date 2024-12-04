@@ -1,6 +1,6 @@
 <center><div align="center">
 
-<img alt="OpenShock Logo" height="150px" width="150px" src="https://openshock.org/static/branding/IconSlowSpin.svg" />
+<img alt="OpenShock Logo" height="150px" width="150px" src="https://openshock.org/IconSlowSpin.svg" />
 
 <h1><b>ShockOSC</b></h1>
 
@@ -16,24 +16,7 @@ Used as an interface for OpenShock to communicate with applications that support
 
 ## Setup
 
-[Wiki](https://wiki.openshock.org/guides/shockosc-avatar-setup/)
-
-### Avatar contacts setup for VRC
-
-1. Add a new **bool** parameter to your avatars (animator & params file). Name template `ShockOsc/{GroupName}` e.g. `ShockOsc/Leg`
-2. Configure one or more contact receivers on your avatar
-3. Set it to constant and have it drive the designated parameter you have just created
-4. Upload
-5. Reset & Enable OSC
-
-### Avatar PhysBone setup for VRC
-
-You can use physbones to trigger shocks with verifying intensity based on the distance the bone is stretched once it's released.
-
-1. Add a new parameter to a physbone component on your avatar with the same name as your shocker, e.g. `ShockOsc/Leg`
-2. Add a new **float** parameter called `ShockOsc/{GroupName}_Stretch` to your avatars animator & do **NOT** add to params file
-3. Add a new **bool** parameter called `ShockOsc/{ShockerName}_IsGrabbed` to your avatars animator & do **NOT** add to params file
-4. Edit `IntensityRange` in the configuration file to your liking
+[Wiki](https://wiki.openshock.org/guides/shockosc-basic/)
 
 ### Visual parameters
 

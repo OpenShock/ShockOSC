@@ -6,8 +6,8 @@ using OpenShock.SDK.CSharp.Utils;
 using OpenShock.ShockOsc.Backend;
 using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
-using OpenShock.ShockOsc.OscQueryLibrary;
 using OpenShock.ShockOsc.Utils;
+using OscQueryLibrary;
 
 #pragma warning disable CS4014
 
@@ -25,6 +25,7 @@ public sealed class ShockOsc
     private readonly OscHandler _oscHandler;
     private readonly LiveControlManager _liveControlManager;
     private readonly ChatboxService _chatboxService;
+    private readonly ConfigUtils _configUtils;
 
     private bool _oscServerActive;
     private bool _isAfk;
@@ -42,7 +43,12 @@ public sealed class ShockOsc
         "Active",
         "Intensity",
         "CooldownPercentage",
-        "IShock"
+        "IShock",
+        "IVibrate",
+        "ISound",
+        "CShock",
+        "NextIntensity",
+        "NextDuration",
     };
 
     public readonly Dictionary<string, object?> ShockOscParams = new();
@@ -59,7 +65,7 @@ public sealed class ShockOsc
         OscQueryServer oscQueryServer,
         ShockOscData dataLayer,
         OscHandler oscHandler, LiveControlManager liveControlManager,
-        ChatboxService chatboxService)
+        ChatboxService chatboxService, ConfigUtils configUtils)
     {
         _logger = logger;
         _oscClient = oscClient;
@@ -71,6 +77,7 @@ public sealed class ShockOsc
         _oscHandler = oscHandler;
         _liveControlManager = liveControlManager;
         _chatboxService = chatboxService;
+        _configUtils = configUtils;
 
         OnGroupsChanged += () =>
         {
@@ -85,7 +92,7 @@ public sealed class ShockOsc
 
         if (!_configManager.Config.Osc.OscQuery)
         {
-            FoundVrcClient(null);
+            FoundVrcClient(null, null);
         }
 
         _logger.LogInformation("Started ShockOsc.cs");
@@ -106,17 +113,17 @@ public sealed class ShockOsc
         OnParamsChange?.Invoke(shockOscParam);
     }
 
-    private async Task FoundVrcClient(IPEndPoint? oscClient)
+    private async Task FoundVrcClient(OscQueryServer oscQueryServer, IPEndPoint ipEndPoint)
     {
-        _logger.LogInformation("Found VRC client");
+        _logger.LogInformation("Found VRC client at {Ip}", ipEndPoint);
         // stop tasks
         _oscServerActive = false;
         Task.Delay(1000).Wait(); // wait for tasks to stop
 
-        if (oscClient != null)
+        if (ipEndPoint != null)
         {
-            _oscClient.CreateGameConnection(oscClient.Address, _oscQueryServer.ShockOscReceivePort,
-                (ushort)oscClient.Port);
+            _oscClient.CreateGameConnection(ipEndPoint.Address, oscQueryServer.OscReceivePort,
+                (ushort)ipEndPoint.Port);
         }
         else
         {
@@ -134,7 +141,7 @@ public sealed class ShockOsc
 
         _logger.LogInformation("Ready");
         OsTask.Run(_underscoreConfig.SendUpdateForAll);
-        
+
         await _chatboxService.SendGenericMessage("Game Connected");
     }
 
@@ -300,7 +307,51 @@ public sealed class ShockOsc
         var value = received.Arguments.ElementAtOrDefault(0);
         switch (action)
         {
+            case "NextIntensity":
+                if (value is not float nextIntensity)
+                {
+                    programGroup.NextIntensity = 0;
+                    return;
+                }
+
+                programGroup.NextIntensity = Convert.ToByte(MathUtils.Saturate(nextIntensity) * 100f);
+                break;
+            
+            case "NextDuration":
+                if (value is not float nextDuration)
+                {
+                    programGroup.NextDuration = 0;
+                    return;
+                }
+
+                programGroup.NextDuration = nextDuration;
+                break;
+            
+            case "CShock":
+                if (value is not float intensity)
+                {
+                    programGroup.ConcurrentIntensity = 0;
+                    programGroup.ConcurrentType = ControlType.Stop;
+                    return;
+                }
+                
+                var scaledIntensity = MathUtils.Saturate(intensity) * 100f;
+                programGroup.ConcurrentIntensity = Convert.ToByte(scaledIntensity);
+
+                var ctype = action switch
+                {
+                    "CShock" => ControlType.Shock,
+                    "CVibrate" => ControlType.Vibrate,
+                    "CSound" => ControlType.Sound,
+                    _ => ControlType.Vibrate
+                };
+
+                programGroup.ConcurrentType = ctype;
+                break;
+            
             case "IShock":
+            case "IVibrate":
+            case "ISound":
                 if (value is not true) return;
                 if (_underscoreConfig.KillSwitch)
                 {
@@ -331,7 +382,16 @@ public sealed class ShockOsc
                     return;
                 }
 
-                OsTask.Run(() => InstantShock(programGroup, GetDuration(programGroup), GetIntensity(programGroup)));
+                var type = action switch
+                {
+                    "IShock" => ControlType.Shock,
+                    "IVibrate" => ControlType.Vibrate,
+                    "ISound" => ControlType.Sound,
+                    _ => ControlType.Vibrate
+                };
+
+                OsTask.Run(() =>
+                    InstantAction(programGroup, GetDuration(programGroup), GetIntensity(programGroup), type));
 
                 return;
             case "Stretch":
@@ -348,13 +408,20 @@ public sealed class ShockOsc
                         programGroup.TriggerMethod = TriggerMethod.PhysBoneRelease;
                         programGroup.LastActive = DateTime.UtcNow;
                     }
-                    else if (_configManager.Config.Behaviour.WhileBoneHeld !=
-                             BehaviourConf.BoneHeldAction.None)
+                    else if (_configUtils.GetGroupOrGlobal(programGroup, config => config.WhileBoneHeld, group => group.OverrideBoneHeldAction) != BoneAction.None)
                     {
                         await _backendHubManager.CancelControl(programGroup);
                     }
                 }
 
+                if (!programGroup.IsGrabbed && isGrabbed)
+                {
+                    // on physbone grab
+                    var durationLimit = _configUtils.GetGroupOrGlobal(programGroup,
+                        config => config.BoneHeldDurationLimit, group => group.OverrideBoneHeldDurationLimit);
+                    programGroup.PhysBoneGrabLimitTime = durationLimit == null ? null : DateTime.UtcNow.AddMilliseconds(durationLimit.Value);
+                    _logger.LogDebug("Limiting hold duration of Group {Group} to {Duration}ms", programGroup.Name, durationLimit);
+                }
                 programGroup.IsGrabbed = isGrabbed;
                 return;
             // Normal shocker actions
@@ -400,23 +467,30 @@ public sealed class ShockOsc
         }
     }
 
-    private async Task InstantShock(ProgramGroup programGroup, uint duration, byte intensity, bool exclusive = false)
+    private async Task InstantAction(ProgramGroup programGroup, ushort duration, byte intensity, ControlType type,
+        bool exclusive = false)
     {
-        programGroup.LastExecuted = DateTime.UtcNow;
-        programGroup.LastDuration = duration;
-        programGroup.LastIntensity = intensity;
-
-        _oscHandler.ForceUnmute();
-        _oscHandler.SendParams();
+        // Intensity is pre scaled to 0 - 100
+        var actualIntensity = programGroup.NextIntensity == 0 ? intensity : programGroup.NextIntensity;
+        var actualDuration = programGroup.NextDuration == 0 ? duration : GetScaledDuration(programGroup, programGroup.NextDuration);
+        
+        if (type == ControlType.Shock)
+        {
+            programGroup.LastExecuted = DateTime.UtcNow;
+            programGroup.LastDuration = actualDuration;
+            programGroup.LastIntensity = actualIntensity;
+            _oscHandler.ForceUnmute();
+            _oscHandler.SendParams();
+        }
 
         programGroup.TriggerMethod = TriggerMethod.None;
-        var inSeconds = MathF.Round(duration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
+        var inSeconds = MathF.Round(actualDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
         _logger.LogInformation(
-            "Sending shock to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}",
-            programGroup.Name, intensity, inSeconds, exclusive);
+            "Sending {Type} to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}", type,
+            programGroup.Name, actualIntensity, inSeconds, exclusive);
 
-        await _backendHubManager.ControlGroup(programGroup.Id, duration, intensity, ControlType.Shock, exclusive);
-        await _chatboxService.SendLocalControlMessage(programGroup.Name, intensity, duration, ControlType.Shock);
+        await _backendHubManager.ControlGroup(programGroup.Id, actualDuration, actualIntensity, type, exclusive);
+        await _chatboxService.SendLocalControlMessage(programGroup.Name, actualIntensity, actualDuration, type);
     }
 
     private async Task CheckLoop()
@@ -447,6 +521,19 @@ public sealed class ShockOsc
 
     private async Task CheckProgramGroup(ProgramGroup programGroup, Guid pos, BehaviourConf config)
     {
+        if (programGroup.ConcurrentIntensity != 0)
+        {
+            _liveControlManager.ControlGroupFrameCheckLoop(programGroup, GetScaledIntensity(programGroup, programGroup.ConcurrentIntensity), programGroup.ConcurrentType);
+            programGroup.LastConcurrentIntensity = programGroup.ConcurrentIntensity;
+            return;
+        }
+
+        if (programGroup.LastConcurrentIntensity != 0)
+        {
+            _liveControlManager.ControlGroupFrameCheckLoop(programGroup, 0, ControlType.Stop);
+            programGroup.LastConcurrentIntensity = 0;
+        }
+
         var cooldownTime = _configManager.Config.Behaviour.CooldownTime;
         if (programGroup.ConfigGroup is { OverrideCooldownTime: true })
             cooldownTime = programGroup.ConfigGroup.CooldownTime;
@@ -455,21 +542,27 @@ public sealed class ShockOsc
             programGroup.LastExecuted.AddMilliseconds(cooldownTime)
                 .AddMilliseconds(programGroup.LastDuration) > DateTime.UtcNow;
 
+
+        
         if (programGroup.TriggerMethod == TriggerMethod.None &&
-            _configManager.Config.Behaviour.WhileBoneHeld !=
-            BehaviourConf.BoneHeldAction.None &&
             !isActiveOrOnCooldown &&
-            programGroup.IsGrabbed &&
-            programGroup.LastVibration < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
+            !_underscoreConfig.KillSwitch &&
+            programGroup.IsGrabbed)
         {
-            var vibrationIntensity = programGroup.LastStretchValue * 100f;
-            if (vibrationIntensity < 1)
-                vibrationIntensity = 1;
-            programGroup.LastVibration = DateTime.UtcNow;
+            var heldAction = _configUtils.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
+                group => group.OverrideBoneHeldAction);
 
-            _logger.LogDebug("Vibrating {Shocker} at {Intensity}", pos, vibrationIntensity);
+            if (heldAction != BoneAction.None && (programGroup.PhysBoneGrabLimitTime == null || programGroup.PhysBoneGrabLimitTime > DateTime.UtcNow) &&
+                programGroup.LastHeldAction < DateTime.UtcNow.Subtract(TimeSpan.FromMilliseconds(100)))
+            {
+                var pullIntensityTranslated = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
+                programGroup.LastHeldAction = DateTime.UtcNow;
 
-            await _liveControlManager.ControlGroupFrame(programGroup, vibrationIntensity);
+                _logger.LogDebug("Vibrating/Shocking {Shocker} at {Intensity}", pos, pullIntensityTranslated);
+
+                _liveControlManager.ControlGroupFrameCheckLoop(programGroup, pullIntensityTranslated,
+                    heldAction.ToControlType());
+            }
         }
 
         if (programGroup.TriggerMethod == TriggerMethod.None)
@@ -501,18 +594,76 @@ public sealed class ShockOsc
         }
 
         byte intensity;
-        var exclusive = false;
 
+        // Physbone was release
         if (programGroup.TriggerMethod == TriggerMethod.PhysBoneRelease)
         {
+            programGroup.TriggerMethod = TriggerMethod.None;
+            var releaseAction = _configUtils.GetGroupOrGlobal(programGroup,
+                behaviourConfig => behaviourConfig.WhenBoneReleased, group => group.OverrideBoneReleasedAction);
+
+            if (releaseAction == BoneAction.None)
+            {
+                programGroup.LastStretchValue = 0;
+                return;
+            }
+            
             intensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
             programGroup.LastStretchValue = 0;
-
-            exclusive = true;
+            
+            InstantAction(programGroup, GetDuration(programGroup), intensity, releaseAction.ToControlType(), true);
+            return;
         }
-        else intensity = GetIntensity(programGroup);
+        
+        // Normal shock
+        
+        intensity = GetIntensity(programGroup);
 
-        InstantShock(programGroup, GetDuration(programGroup), intensity, exclusive);
+        InstantAction(programGroup, GetDuration(programGroup), intensity, ControlType.Shock, false);
+    }
+    
+    private ushort GetScaledDuration(ProgramGroup programGroup, float scale)
+    {
+        scale = MathUtils.Saturate(scale);
+        
+        if (programGroup.ConfigGroup is not { OverrideDuration: true })
+        {
+            // Use global config
+            var config = _configManager.Config.Behaviour;
+
+            if (!config.RandomDuration) return (ushort) (config.FixedDuration * scale);
+            var rdr = config.DurationRange;
+            return (ushort)
+                (MathUtils.LerpUShort(
+                    (ushort)(rdr.Min / DurationStep), (ushort)(rdr.Max / DurationStep), scale)
+                 * DurationStep);
+        }
+
+        // Use group config
+        var groupConfig = programGroup.ConfigGroup;
+
+        if (!groupConfig.RandomDuration) return (ushort) (groupConfig.FixedDuration * scale);
+        var groupRdr = groupConfig.DurationRange;
+        return (ushort)(MathUtils.LerpUShort((ushort) (groupRdr.Min / DurationStep),
+            (ushort)(groupRdr.Max / DurationStep), scale) * DurationStep);
+    }
+    
+    private byte GetScaledIntensity(ProgramGroup programGroup, byte intensity)
+    {
+        if (programGroup.ConfigGroup is not { OverrideIntensity: true })
+        {
+            // Use global config
+            var config = _configManager.Config.Behaviour;
+
+            if (!config.RandomIntensity) return (byte)MathUtils.LerpFloat(0, config.FixedIntensity, intensity / 100f);
+            return (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, intensity / 100f);
+        }
+
+        // Use group config
+        var groupConfig = programGroup.ConfigGroup;
+
+        if (!groupConfig.RandomIntensity) return (byte)MathUtils.LerpFloat(0, groupConfig.FixedIntensity, intensity / 100f);
+        return (byte)MathUtils.LerpFloat(groupConfig.IntensityRange.Min, groupConfig.IntensityRange.Max, intensity / 100f);
     }
 
     private byte GetPhysbonePullIntensity(ProgramGroup programGroup, float stretch)
@@ -534,9 +685,9 @@ public sealed class ShockOsc
         return (byte)MathUtils.LerpFloat(groupConfig.IntensityRange.Min, groupConfig.IntensityRange.Max, stretch);
     }
 
-    private const uint DurationStep = 100;
+    private const ushort DurationStep = 100;
 
-    private uint GetDuration(ProgramGroup programGroup)
+    private ushort GetDuration(ProgramGroup programGroup)
     {
         if (programGroup.ConfigGroup is not { OverrideDuration: true })
         {
@@ -545,8 +696,8 @@ public sealed class ShockOsc
 
             if (!config.RandomDuration) return config.FixedDuration;
             var rdr = config.DurationRange;
-            return (uint)(Random.Next((int)(rdr.Min / DurationStep),
-                (int)(rdr.Max / DurationStep)) * DurationStep);
+            return (ushort)(Random.Next(rdr.Min / DurationStep,
+                rdr.Max / DurationStep) * DurationStep);
         }
 
         // Use group config
@@ -554,20 +705,20 @@ public sealed class ShockOsc
 
         if (!groupConfig.RandomDuration) return groupConfig.FixedDuration;
         var groupRdr = groupConfig.DurationRange;
-        return (uint)(Random.Next((int)(groupRdr.Min / DurationStep),
-            (int)(groupRdr.Max / DurationStep)) * DurationStep);
+        return (ushort)(Random.Next(groupRdr.Min / DurationStep,
+            groupRdr.Max / DurationStep) * DurationStep);
     }
 
     private byte GetIntensity(ProgramGroup programGroup)
     {
-        if (programGroup.ConfigGroup is not { OverrideDuration: true })
+        if (programGroup.ConfigGroup is not { OverrideIntensity: true })
         {
             // Use global config
             var config = _configManager.Config.Behaviour;
 
             if (!config.RandomIntensity) return config.FixedIntensity;
             var rir = config.IntensityRange;
-            var intensityValue = Random.Next((int)rir.Min, (int)rir.Max);
+            var intensityValue = Random.Next(rir.Min, rir.Max);
             return (byte)intensityValue;
         }
 
@@ -576,7 +727,7 @@ public sealed class ShockOsc
 
         if (!groupConfig.RandomIntensity) return groupConfig.FixedIntensity;
         var groupRir = groupConfig.IntensityRange;
-        var groupIntensityValue = Random.Next((int)groupRir.Min, (int)groupRir.Max);
+        var groupIntensityValue = Random.Next(groupRir.Min, groupRir.Max);
         return (byte)groupIntensityValue;
     }
 }

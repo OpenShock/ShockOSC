@@ -159,30 +159,27 @@ public sealed class LiveControlManager
         await OnStateUpdated.Raise();
     }
     
-    public Task ControlGroupFrame(ProgramGroup group, float intensity)
+    public void ControlGroupFrameCheckLoop(ProgramGroup group, byte intensity, ControlType type)
     {
         if (group.Id == Guid.Empty)
         {
-            var controlTasks = LiveControlClients
-                .Select(clientPair =>
-                {
-                    var apiDevice = _apiClient.Devices
-                        .FirstOrDefault(x => x.Id == clientPair.Key);
-                    if (apiDevice == null) return Task.CompletedTask;
-
-                    return ControlFrame(apiDevice.Shockers
-                        .Where(x => _configManager.Config.OpenShock.Shockers
-                            .Any(y => y.Key == x.Id && y.Value.Enabled))
-                        .Select(x => x.Id), clientPair.Value, intensity);
-                });
-
-            return Task.WhenAll(controlTasks);
+            foreach (var (deviceId, liveControlClient) in LiveControlClients)
+            {
+                var apiDevice = _apiClient.Devices
+                    .FirstOrDefault(x => x.Id == deviceId);
+                if (apiDevice == null) continue;
+                
+                ControlFrame(apiDevice.Shockers
+                    .Where(x => _configManager.Config.OpenShock.Shockers.Any(y => y.Key == x.Id && y.Value.Enabled))
+                    .Select(x => x.Id), liveControlClient, intensity, type);
+            }
+            return;
         }
 
         if (group.ConfigGroup == null)
         {
             _logger.LogWarning("Group [{GroupId}] does not have a config group", group.Id);
-            return Task.CompletedTask;
+            return;
         }
 
         var enabledShockers = group.ConfigGroup.Shockers.Where(x =>
@@ -191,30 +188,21 @@ public sealed class LiveControlManager
         var shockersByDevice = enabledShockers.GroupBy(
             x => _apiClient.Devices.FirstOrDefault(y => y.Shockers.Any(z => z.Id == x))?.Id);
 
-        var controlTasksByDevice = shockersByDevice.Select(deviceShockers =>
+        foreach (var device in shockersByDevice)
         {
-            if (deviceShockers.Key == null) return Task.CompletedTask;
-            if (!LiveControlClients.TryGetValue(deviceShockers.Key.Value, out var client)) return Task.CompletedTask;
+            if (device.Key == null) continue;
+            if (!LiveControlClients.TryGetValue(device.Key.Value, out var client)) continue;
 
-            return ControlFrame(deviceShockers.Select(x => x), client, intensity);
-        });
-
-        return Task.WhenAll(controlTasksByDevice);
+            ControlFrame(device.Select(x => x), client, intensity, type);
+        }
     }
 
-    private async Task ControlFrame(IEnumerable<Guid> shockers, IOpenShockLiveControlClient client,
-        float vibrationIntensity)
+    private void ControlFrame(IEnumerable<Guid> shockers, IOpenShockLiveControlClient client,
+        byte vibrationIntensity, ControlType type)
     {
-        var shockersFrames = shockers.Select(x => client.SendFrame(new ClientLiveFrame
+        foreach (var shocker in shockers)
         {
-            Type = _configManager.Config.Behaviour.WhileBoneHeld ==
-                   BehaviourConf.BoneHeldAction.Shock
-                ? ControlType.Shock
-                : ControlType.Vibrate,
-            Intensity = (byte)vibrationIntensity,
-            Shocker = x
-        }));
-
-        await Task.WhenAll(shockersFrames);
+            client.IntakeFrame(shocker, type, vibrationIntensity);
+        }
     }
 }

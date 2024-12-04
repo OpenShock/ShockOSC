@@ -45,7 +45,7 @@ public class WindowsTrayService : ITrayService
         tray.Text = "ShockOSC";
 
         var menu = new ContextMenuStrip();
-
+        
         menu.Items.Add("ShockOSC", Image.FromFile(@"Resources\openshock-icon.ico"), OnMainClick);
         menu.Items.Add(new ToolStripSeparator());
         _stateLabel = new ToolStripLabel($"State: {_apiHubClient.State}");

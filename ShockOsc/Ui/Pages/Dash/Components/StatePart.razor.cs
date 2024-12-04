@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using System.ComponentModel;
+using Microsoft.AspNetCore.Components;
 using OpenShock.SDK.CSharp.Live;
 using OpenShock.SDK.CSharp.Live.LiveControlModels;
 using Color = MudBlazor.Color;
@@ -8,9 +9,11 @@ namespace OpenShock.ShockOsc.Ui.Pages.Dash.Components;
 public partial class StatePart : ComponentBase, IDisposable
 {
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public required IOpenShockLiveControlClient Client { get; set; }
     
     [Parameter]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public required string Text { get; set; }
 
     

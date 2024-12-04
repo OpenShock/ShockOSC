@@ -8,7 +8,7 @@
 @implements IDisposable
 
 @code {
-    private readonly DialogOptions _dialogOptions = new() { NoHeader = true, DisableBackdropClick = true };
+    private readonly DialogOptions _dialogOptions = new() { NoHeader = true, BackdropClick = false };
 
     private void OpenUpdateDialog()
     {

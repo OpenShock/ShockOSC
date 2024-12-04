@@ -58,14 +58,14 @@
         InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnSettingsValueChange()
+    private void OnSettingsValueChange()
     {
-        await ConfigManager.SaveAsync();
+        ConfigManager.Save();
     }
 
     private async Task UpdateChannelChanged()
     {
-        await OnSettingsValueChange();
+        OnSettingsValueChange();
         await Updater.CheckUpdate();
     }
 

@@ -1,8 +1,8 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace OpenShock.ShockOsc.Config;
 
-public class JsonRange
+public class JsonRange<T> where T : struct
 {
-    public required uint Min { get; set; }
-    public required uint Max { get; set; }
+    public required T Min { get; set; }
+    public required T Max { get; set; }
 }
