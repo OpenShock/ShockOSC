@@ -55,9 +55,12 @@
 ;--------------------------------
 ;Pages
 
+    !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUpgrade
     !insertmacro MUI_PAGE_LICENSE "..\LICENSE"
-    !define MUI_PAGE_CUSTOMFUNCTION_PRE dirPre
+
+    !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUpgrade
     !insertmacro MUI_PAGE_DIRECTORY
+
     !insertmacro MUI_PAGE_INSTFILES
 
     ;------------------------------
@@ -72,6 +75,8 @@
     !define MUI_FINISHPAGE_SHOWREADME
     !define MUI_FINISHPAGE_SHOWREADME_TEXT "Create desktop shortcut"
     !define MUI_FINISHPAGE_SHOWREADME_FUNCTION createDesktopShortcut
+
+    !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUpgrade
     !insertmacro MUI_PAGE_FINISH
 
     !insertmacro MUI_UNPAGE_CONFIRM
@@ -89,33 +94,43 @@
 ;--------------------------------
 ;Functions
 
-Function dirPre
-    StrCmp $upgradeInstallation "true" 0 +2
+Function SkipIfUpgrade
+    StrCmp $upgradeInstallation 0 noUpgrade
         Abort
+    noUpgrade:
 FunctionEnd
 
 Function .onInit
-    StrCpy $upgradeInstallation "false"
+    StrCpy $upgradeInstallation 0
 
     ReadRegStr $R0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ShockOSC" "UninstallString"
-    StrCmp $R0 "" done
+    StrCmp $R0 "" notInstalled
+        StrCpy $upgradeInstallation 1
+    notInstalled:
 
     ; If ShockOSC is already running, display a warning message
+    loop:
     StrCpy $1 "OpenShock.ShockOsc.exe"
     nsProcess::_FindProcess "$1"
     Pop $R1
     ${If} $R1 = 0
         MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "ShockOSC is still running. $\n$\nClick `OK` to kill the running process or `Cancel` to cancel this installer." /SD IDOK IDCANCEL cancel
             nsExec::ExecToStack "taskkill /IM OpenShock.ShockOsc.exe"
+    ${Else}
+        Goto done
     ${EndIf}
+    Sleep 1000
+    Goto loop
 
-    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "ShockOSC is already installed. $\n$\nClick `OK` to upgrade the existing installation or `Cancel` to cancel this upgrade." /SD IDOK IDCANCEL cancel
-        Goto next
     cancel:
         Abort
-    next:
-        StrCpy $upgradeInstallation "true"
     done:
+FunctionEnd
+
+Function .onInstSuccess
+    ${If} $upgradeInstallation = 1
+        Call launchShockOSC
+    ${EndIf}
 FunctionEnd
 
 Function createDesktopShortcut
@@ -132,19 +147,18 @@ FunctionEnd
 
 Section "Install" SecInstall
 
-    StrCmp $upgradeInstallation "true" 0 noupgrade
+    StrCmp $upgradeInstallation 0 noUpgrade
         DetailPrint "Uninstall previous version..."
         ExecWait '"$INSTDIR\Uninstall.exe" /S _?=$INSTDIR'
         Delete $INSTDIR\Uninstall.exe
-        Goto afterupgrade
-
-    noupgrade:
+        Goto afterUpgrade
+    noUpgrade:
     
     inetc::get "https://aka.ms/vs/17/release/vc_redist.x64.exe" $TEMP\vcredist_x64.exe
     ExecWait "$TEMP\vcredist_x64.exe /install /quiet /norestart"
     Delete "$TEMP\vcredist_x64.exe"
 
-    afterupgrade:
+    afterUpgrade:
 
     SetOutPath "$INSTDIR"
 
@@ -170,12 +184,6 @@ Section "Install" SecInstall
     WriteRegStr HKCU "Software\Classes\ShockOSC\shell" "" "open"
     WriteRegStr HKCU "Software\Classes\ShockOSC\shell\open" "FriendlyAppName" "ShockOSC"
     WriteRegStr HKCU "Software\Classes\ShockOSC\shell\open\command" "" '"$INSTDIR\OpenShock.ShockOsc.exe" --uri="%1"'
-
-    ${If} ${Silent}
-        SetOutPath $INSTDIR
-        ShellExecAsUser::ShellExecAsUser "" "$INSTDIR\OpenShock.ShockOsc.exe" ""
-    ${EndIf}
-
 SectionEnd
 
 ;--------------------------------
