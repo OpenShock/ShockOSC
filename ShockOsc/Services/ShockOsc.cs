@@ -18,6 +18,7 @@ public sealed class ShockOsc
     private readonly ILogger<ShockOsc> _logger;
     private readonly OscClient _oscClient;
     private readonly BackendHubManager _backendHubManager;
+    private readonly MedalICYMIService _medalIcymiService;
     private readonly UnderscoreConfig _underscoreConfig;
     private readonly ConfigManager _configManager;
     private readonly OscQueryServer _oscQueryServer;
@@ -65,7 +66,7 @@ public sealed class ShockOsc
         OscQueryServer oscQueryServer,
         ShockOscData dataLayer,
         OscHandler oscHandler, LiveControlManager liveControlManager,
-        ChatboxService chatboxService, ConfigUtils configUtils)
+        ChatboxService chatboxService, ConfigUtils configUtils, MedalICYMIService medalIcymiService)
     {
         _logger = logger;
         _oscClient = oscClient;
@@ -78,6 +79,7 @@ public sealed class ShockOsc
         _liveControlManager = liveControlManager;
         _chatboxService = chatboxService;
         _configUtils = configUtils;
+        _medalIcymiService = medalIcymiService;
 
         OnGroupsChanged += () =>
         {
@@ -485,6 +487,12 @@ public sealed class ShockOsc
 
         programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(actualDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
+
+        if (_configManager.Config.MedalIcymi.IcymiEnabled)
+        {
+            await _medalIcymiService.TriggerBookmarkAsync("evt_shockosc_triggered");
+        }
+        
         _logger.LogInformation(
             "Sending {Type} to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}", type,
             programGroup.Name, actualIntensity, inSeconds, exclusive);

@@ -78,6 +78,7 @@ public static class ShockOscBootstrap
         services.AddSingleton<UnderscoreConfig>();
 
         services.AddSingleton<StatusHandler>();
+        services.AddSingleton<MedalICYMIService>();
     }
 
     public static void AddCommonBlazorServices(this IServiceCollection services)
