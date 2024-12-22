@@ -89,12 +89,16 @@ public class MedalIcymiService
                 _logger.LogWarning("Disabled event: The event was received but not processed because it is disabled in the user’s ICYMI settings.");
                 break;
 
+            case 200 when responseContent.Contains("success"):
+                _logger.LogDebug("Event received and processed successfully");
+                break;
+            
             case 500:
                 _logger.LogError("Internal server error: An unexpected error occurred while processing the request.");
                 break;
 
             default:
-                _logger.LogError("Unexpected response: {0} - {1}", statusCode, responseContent);
+                _logger.LogWarning("Unexpected response: {0} - {1}", statusCode, responseContent);
                 break;
         }
     }
