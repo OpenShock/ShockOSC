@@ -490,7 +490,7 @@ public sealed class ShockOsc
 
         if (_configManager.Config.MedalIcymi.IcymiEnabled)
         {
-            await _medalIcymiService.TriggerBookmarkAsync("evt_shockosc_triggered");
+            await _medalIcymiService.TriggerMedalIcymiAction("evt_shockosc_triggered");
         }
         
         _logger.LogInformation(

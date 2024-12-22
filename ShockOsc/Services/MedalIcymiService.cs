@@ -26,10 +26,13 @@ public class MedalIcymiService
             case IcymiGame.ChilloutVR:
                 HttpClient.DefaultRequestHeaders.Add("publicKey", PubApiKeyCvr);
                 break;
+            default:
+                _logger.LogError("Game Selection was out of range. Value was: {value}", _configManager.Config.MedalIcymi.IcymiGame);
+                break;
         }
     }
 
-    public async Task TriggerBookmarkAsync(string eventId)
+    public async Task TriggerMedalIcymiAction(string eventId)
     {
         var eventPayload = new
         {
@@ -38,7 +41,7 @@ public class MedalIcymiService
             
             contextTags = new
             {
-                location = _configManager.Config.MedalIcymi.IcymiGame,
+                location = _configManager.Config.MedalIcymi.IcymiGame.ToString(),
                 description = _configManager.Config.MedalIcymi.IcymiDescription
             },
             triggerActions = new[]
@@ -60,14 +63,14 @@ public class MedalIcymiService
         {
             var response = await HttpClient.PostAsync($"{BaseUrl}/event/invoke", content);
 
-            _logger.LogInformation("{0} triggered.", _configManager.Config.MedalIcymi.IcymiTriggerAction);
+            _logger.LogInformation("{triggerAction} triggered.", _configManager.Config.MedalIcymi.IcymiTriggerAction);
                 
             var responseContent = await response.Content.ReadAsStringAsync();
             HandleApiResponse((int)response.StatusCode, responseContent);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error while creating Medal {0}: {1}", _configManager.Config.MedalIcymi.IcymiTriggerAction, ex);
+            _logger.LogError("Error while creating Medal {triggerAction}: {exception}", _configManager.Config.MedalIcymi.IcymiTriggerAction, ex);
         }
     }
 
@@ -108,7 +111,7 @@ public class MedalIcymiService
                 break;
 
             default:
-                _logger.LogWarning("Unexpected response: {0} - {1}", statusCode, responseContent);
+                _logger.LogWarning("Unexpected response: {statusCode} - {response}", statusCode, responseContent);
                 break;
         }
     }
