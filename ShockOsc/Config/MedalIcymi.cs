@@ -1,6 +1,6 @@
 ﻿namespace OpenShock.ShockOsc.Config;
 
-public sealed class MedalICYMI
+public sealed class MedalIcymi
 {
     public bool IcymiEnabled { get; set; } = false;
     public string IcymiName { get; set; } = "ShockOSC";

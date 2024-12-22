@@ -18,7 +18,7 @@ public sealed class ShockOsc
     private readonly ILogger<ShockOsc> _logger;
     private readonly OscClient _oscClient;
     private readonly BackendHubManager _backendHubManager;
-    private readonly MedalICYMIService _medalIcymiService;
+    private readonly MedalIcymiService _medalIcymiService;
     private readonly UnderscoreConfig _underscoreConfig;
     private readonly ConfigManager _configManager;
     private readonly OscQueryServer _oscQueryServer;
@@ -66,7 +66,7 @@ public sealed class ShockOsc
         OscQueryServer oscQueryServer,
         ShockOscData dataLayer,
         OscHandler oscHandler, LiveControlManager liveControlManager,
-        ChatboxService chatboxService, ConfigUtils configUtils, MedalICYMIService medalIcymiService)
+        ChatboxService chatboxService, ConfigUtils configUtils, MedalIcymiService medalIcymiService)
     {
         _logger = logger;
         _oscClient = oscClient;

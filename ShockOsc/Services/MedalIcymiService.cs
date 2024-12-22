@@ -4,15 +4,15 @@ using OpenShock.ShockOsc.Config;
 
 namespace OpenShock.ShockOsc.Services;
 
-public class MedalICYMIService
+public class MedalIcymiService
 {
-    private readonly ILogger<MedalICYMIService> _logger;
+    private readonly ILogger<MedalIcymiService> _logger;
     private readonly ConfigManager _configManager;
     private static readonly HttpClient HttpClient = new();
     private const string BaseUrl = "http://localhost:12665/api/v1";
     private const string ApiKey = "pub_x4PTxSGVk6sl8BYg5EB5qsn8QIVz4kRi"; // these are publicly generated and are not sensitive.
 
-    public MedalICYMIService(ILogger<MedalICYMIService> logger, ConfigManager configManager)
+    public MedalIcymiService(ILogger<MedalIcymiService> logger, ConfigManager configManager)
     {
         _logger = logger;
         _configManager = configManager;
