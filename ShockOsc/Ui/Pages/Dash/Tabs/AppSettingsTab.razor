@@ -73,6 +73,16 @@
         </MudSelect>
     </div>
     
+    <div style="width: 600px; padding-top: 20px;">
+        <MudText>Target Game (changing requires restart)</MudText>
+        <MudDivider/>
+        <MudSelect Class="option-width" Dense="true" Variant="Variant.Filled" @bind-Value="ConfigManager.Config.MedalIcymi.IcymiGame" Label="Record for" @bind-Value:after="OnSettingsValueChange">
+            @foreach (IcymiGame icymiGame in Enum.GetValues(typeof(IcymiGame)))
+            {
+                <MudSelectItem Value="@icymiGame">@icymiGame</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
 </MudPaper>
 
 

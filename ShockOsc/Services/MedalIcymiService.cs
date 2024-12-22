@@ -10,13 +10,23 @@ public class MedalIcymiService
     private readonly ConfigManager _configManager;
     private static readonly HttpClient HttpClient = new();
     private const string BaseUrl = "http://localhost:12665/api/v1";
-    private const string ApiKey = "pub_x4PTxSGVk6sl8BYg5EB5qsn8QIVz4kRi"; // these are publicly generated and are not sensitive.
+    // these are publicly generated and are not sensitive.
+    private const string PubApiKeyVrc = "pub_x4PTxSGVk6sl8BYg5EB5qsn8QIVz4kRi";
+    private const string PubApiKeyCvr = "pub_LRG3bA6XjoVSkSU4JuXmL51tJdGJWdVQ"; 
 
     public MedalIcymiService(ILogger<MedalIcymiService> logger, ConfigManager configManager)
     {
         _logger = logger;
         _configManager = configManager;
-        HttpClient.DefaultRequestHeaders.Add("publicKey", ApiKey);
+        switch (_configManager.Config.MedalIcymi.IcymiGame)
+        {
+            case IcymiGame.VRChat:
+                HttpClient.DefaultRequestHeaders.Add("publicKey", PubApiKeyVrc);
+                break;
+            case IcymiGame.ChilloutVR:
+                HttpClient.DefaultRequestHeaders.Add("publicKey", PubApiKeyCvr);
+                break;
+        }
     }
 
     public async Task TriggerBookmarkAsync(string eventId)
@@ -28,7 +38,7 @@ public class MedalIcymiService
             
             contextTags = new
             {
-                location = "VRChat",
+                location = _configManager.Config.MedalIcymi.IcymiGame,
                 description = _configManager.Config.MedalIcymi.IcymiDescription
             },
             triggerActions = new[]

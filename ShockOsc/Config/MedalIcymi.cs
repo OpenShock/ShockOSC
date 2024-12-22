@@ -8,6 +8,7 @@ public sealed class MedalIcymi
     public int IcymiClipDuration { get; set; } = 30;
     public IcymiAlertType IcymiAlertType { get; set; } = IcymiAlertType.Default;
     public IcymiTriggerAction IcymiTriggerAction { get; set; } = IcymiTriggerAction.SaveClip;
+    public IcymiGame IcymiGame { get; set; } = IcymiGame.VRChat;
 }
 
 public enum IcymiTriggerAction
@@ -21,4 +22,10 @@ public enum IcymiAlertType
     Disabled,
     SoundOnly,
     OverlayOnly
+}
+
+public enum IcymiGame
+{
+    VRChat,
+    ChilloutVR
 }
