@@ -4,6 +4,7 @@ namespace OpenShock.ShockOsc.Config;
 
 public sealed class ShockOscConfig
 {
+    public MedalIcymi MedalIcymi { get; set; } = new();
     public OscConf Osc { get; set; } = new();
     public BehaviourConf Behaviour { get; set; } = new();
     public OpenShockConf OpenShock { get; set; } = new();
