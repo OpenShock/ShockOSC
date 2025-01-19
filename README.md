@@ -28,7 +28,7 @@ Add these parameters to your avatars animator & params file.
 - **float** `ShockOsc/{GroupName}_CooldownPercentage` 0f = shocker isn't on cooldown, 1f = shocker on cooldown (0f while shocker is active)
 - **float** `ShockOsc/{GroupName}_Intensity` 0..1f percentage value that represents how close the shock was to maximum intensity from `IntensityRange` (except for FixedIntensity)
 
-#### Virtual Groups
+#### Virtual Groups (visual)
 
 You can use the virtual, or pseudo, shockers with the name `_Any` and `_All` for some limited actions. Read more below.
 
