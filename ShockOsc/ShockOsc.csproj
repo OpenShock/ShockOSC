@@ -108,6 +108,17 @@
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ShockersTab.razor"/>
     </ItemGroup>
 
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Desktop\ModuleBase\ModuleBase.csproj" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <None Remove="Resources\ShockOSC-Icon.svg" />
+      <EmbeddedResource Include="Resources\ShockOSC-Icon.svg" />
+    </ItemGroup>
+
     <PropertyGroup>
         <ServerGarbageCollection>false</ServerGarbageCollection>
     </PropertyGroup>
