@@ -1,20 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <SingleProject>true</SingleProject>
+        <OutputType>Library</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
-        <ApplicationTitle>ShockOsc</ApplicationTitle>
 
         <AssemblyName>OpenShock.ShockOsc</AssemblyName>
         <RootNamespace>OpenShock.ShockOsc</RootNamespace>
         <Company>OpenShock</Company>
         <AssemblyVersion>2.4.2</AssemblyVersion>
         <Version>2.4.2</Version>
-        <ApplicationIcon>Resources\openshock-icon.ico</ApplicationIcon>
-        <SelfContained>true</SelfContained>
         <Product>ShockOsc</Product>
 
         <PackageIcon>Resources\Icon512.png</PackageIcon>
@@ -22,58 +18,15 @@
         <ResourceLanguages>en</ResourceLanguages>
         <SatelliteResourceLanguages>en-US;en</SatelliteResourceLanguages>
         <IsPackable>false</IsPackable>
-
-        <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
-
-        <Configurations>Release-Windows;Debug-Windows;Release-Photino;Debug-Photino;Release-Web;Debug-Web</Configurations>
+        
+        <Configurations>Debug;Release</Configurations>
 
         <Platforms>AnyCPU</Platforms>
+        <TargetFramework>net9.0</TargetFramework>
     </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Windows' Or '$(Configuration)' == 'Release-Windows'">
-        <TargetFramework>net9.0-windows10.0.19041</TargetFramework>
-        <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
-        <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-        <WindowsPackageType>None</WindowsPackageType>
-        <UseMaui>true</UseMaui>
-        <DefineConstants>MAUI</DefineConstants>
-        <StartupObject>OpenShock.ShockOsc.Platforms.Windows.WindowsEntryPoint</StartupObject>
-    </PropertyGroup>
-
-    <ItemGroup Condition="'$(Configuration)' == 'Debug-Windows' Or '$(Configuration)' == 'Release-Windows'">
-        <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.10" />
-        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.10" />
-    </ItemGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
-        <TargetFramework>net8.0</TargetFramework>
-        <StartupObject>OpenShock.ShockOsc.Platforms.Photino.PhotinoEntryPoint</StartupObject>
-        <DefineConstants>PHOTINO</DefineConstants>
-        <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-    </PropertyGroup>
-
-    <ItemGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
-        <PackageReference Include="Photino.Blazor" Version="2.7.0"/>
-    </ItemGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Web' Or '$(Configuration)' == 'Release-Web' ">
-        <TargetFramework>net8.0</TargetFramework>
-        <StartupObject>OpenShock.ShockOsc.Platforms.Web.WebEntryPoint</StartupObject>
-        <DefineConstants>WEB</DefineConstants>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <Content Update="wwwroot\**">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <None Update="Resources\**">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.9.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.10" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
@@ -117,6 +70,38 @@
     <ItemGroup>
       <None Remove="Resources\ShockOSC-Icon.svg" />
       <EmbeddedResource Include="Resources\ShockOSC-Icon.svg" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <Resource Remove="Platforms\Windows\App.xaml" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <MauiPlatformSpecificFolder Remove="Platforms\Windows\" />
+      <MauiPlatformSpecificFolder Remove="Platforms\Android\" />
+      <MauiPlatformSpecificFolder Remove="Platforms\iOS\" />
+      <MauiPlatformSpecificFolder Remove="Platforms\MacCatalyst\" />
+      <MauiPlatformSpecificFolder Remove="Platforms\Windows\" />
+      <MauiPlatformSpecificFolder Remove="Platforms\Tizen\" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\app.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\deps\MudBlazor\MudBlazor.min.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\deps\MudBlazor\MudBlazor.min.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\fonts\poppins-latin-400-normal.405055dd..woff2" />
+      <_ContentIncludedByDefault Remove="wwwroot\fonts\poppins-latin-400-normal.cda9c93f..woff" />
+      <_ContentIncludedByDefault Remove="wwwroot\images\Icon.svg" />
+      <_ContentIncludedByDefault Remove="wwwroot\images\Icon512.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\images\Icon64.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\images\IconLoadingSpin.svg" />
+      <_ContentIncludedByDefault Remove="wwwroot\images\IconSlowSpin.svg" />
+      <_ContentIncludedByDefault Remove="wwwroot\images\Logo512.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\index.html" />
+      <_ContentIncludedByDefault Remove="wwwroot\photino.html" />
     </ItemGroup>
 
     <PropertyGroup>
