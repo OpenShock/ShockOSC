@@ -23,13 +23,12 @@
 
         <Platforms>AnyCPU</Platforms>
         <TargetFramework>net9.0</TargetFramework>
+        <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+        <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommandLineParser" Version="2.9.1"/>
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
         <PackageReference Include="MudBlazor" Version="7.15.0" />
         <PackageReference Include="EmbedIO" Version="3.5.2"/>
         <PackageReference Include="LucHeart.CoreOSC" Version="1.4.0" />
@@ -41,8 +40,6 @@
         <PackageReference Include="Semver" Version="3.0.0" />
         <PackageReference Include="Serilog" Version="4.1.0" />
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
-        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0"/>
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
         <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
         <PackageReference Include="SmartFormat.NET" Version="3.5.1" />
@@ -51,14 +48,10 @@
 
 
     <ItemGroup>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\AppSettingsTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ChatboxTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ConfigTab.razor"/>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DashboardTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor"/>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\LogsTab.razor"/>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ShockersTab.razor"/>
     </ItemGroup>
 
 
@@ -68,44 +61,7 @@
 
 
     <ItemGroup>
-      <None Remove="Resources\ShockOSC-Icon.svg" />
       <EmbeddedResource Include="Resources\ShockOSC-Icon.svg" />
     </ItemGroup>
-
-
-    <ItemGroup>
-      <Resource Remove="Platforms\Windows\App.xaml" />
-    </ItemGroup>
-
-
-    <ItemGroup>
-      <MauiPlatformSpecificFolder Remove="Platforms\Windows\" />
-      <MauiPlatformSpecificFolder Remove="Platforms\Android\" />
-      <MauiPlatformSpecificFolder Remove="Platforms\iOS\" />
-      <MauiPlatformSpecificFolder Remove="Platforms\MacCatalyst\" />
-      <MauiPlatformSpecificFolder Remove="Platforms\Windows\" />
-      <MauiPlatformSpecificFolder Remove="Platforms\Tizen\" />
-    </ItemGroup>
-
-
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="wwwroot\app.css" />
-      <_ContentIncludedByDefault Remove="wwwroot\deps\MudBlazor\MudBlazor.min.css" />
-      <_ContentIncludedByDefault Remove="wwwroot\deps\MudBlazor\MudBlazor.min.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\fonts\poppins-latin-400-normal.405055dd..woff2" />
-      <_ContentIncludedByDefault Remove="wwwroot\fonts\poppins-latin-400-normal.cda9c93f..woff" />
-      <_ContentIncludedByDefault Remove="wwwroot\images\Icon.svg" />
-      <_ContentIncludedByDefault Remove="wwwroot\images\Icon512.png" />
-      <_ContentIncludedByDefault Remove="wwwroot\images\Icon64.png" />
-      <_ContentIncludedByDefault Remove="wwwroot\images\IconLoadingSpin.svg" />
-      <_ContentIncludedByDefault Remove="wwwroot\images\IconSlowSpin.svg" />
-      <_ContentIncludedByDefault Remove="wwwroot\images\Logo512.png" />
-      <_ContentIncludedByDefault Remove="wwwroot\index.html" />
-      <_ContentIncludedByDefault Remove="wwwroot\photino.html" />
-    </ItemGroup>
-
-    <PropertyGroup>
-        <ServerGarbageCollection>false</ServerGarbageCollection>
-    </PropertyGroup>
 
 </Project>
