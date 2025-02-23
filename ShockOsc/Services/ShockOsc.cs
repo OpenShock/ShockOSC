@@ -89,13 +89,14 @@ public sealed class ShockOsc
         oscQueryServer.ParameterUpdate += OnAvatarChange;
 
         SetupGroups();
-
+    }
+    
+    public async Task Start()
+    {
         if (!_moduleConfig.Config.Osc.OscQuery)
         {
-            FoundVrcClient(null, null);
+            await SetupVrcClient(null);
         }
-
-        _logger.LogInformation("Started ShockOsc.cs");
     }
 
     private void SetupGroups()
@@ -112,18 +113,23 @@ public sealed class ShockOsc
     {
         OnParamsChange?.Invoke(shockOscParam);
     }
-
-    private async Task FoundVrcClient(OscQueryServer oscQueryServer, IPEndPoint ipEndPoint)
+    
+    private Task FoundVrcClient(OscQueryServer arg1, IPEndPoint arg2)
     {
-        _logger.LogInformation("Found VRC client at {Ip}", ipEndPoint);
+        return SetupVrcClient((arg1, arg2));
+    }
+
+    private async Task SetupVrcClient((OscQueryServer, IPEndPoint)? client)
+    {
         // stop tasks
         _oscServerActive = false;
-        Task.Delay(1000).Wait(); // wait for tasks to stop
+        await Task.Delay(1000); // wait for tasks to stop
 
-        if (ipEndPoint != null)
+        if (client != null)
         {
-            _oscClient.CreateGameConnection(ipEndPoint.Address, oscQueryServer.OscReceivePort,
-                (ushort)ipEndPoint.Port);
+            _logger.LogInformation("Found VRC client at {Ip}", client.Value.Item2);
+            _oscClient.CreateGameConnection(client.Value.Item2.Address, client.Value.Item1.OscReceivePort,
+                (ushort)client.Value.Item2.Port);
         }
         else
         {

@@ -75,7 +75,7 @@ public sealed class ShockOSCModule : DesktopModuleBase
             return new OscQueryServer("ShockOsc", listenAddress);
         });
         
-        services.AddSingleton<Services.ShockOsc>();
+        services.AddSingleton<ShockOsc>();
         services.AddSingleton<UnderscoreConfig>();
         services.AddSingleton<MedalIcymiService>();
         
@@ -86,6 +86,9 @@ public sealed class ShockOSCModule : DesktopModuleBase
     public override async Task Start()
     {
         var config = ModuleServiceProvider.GetRequiredService<IModuleConfig<ShockOscConfig>>();
+
+        await ModuleServiceProvider.GetRequiredService<Services.ShockOsc>().Start();
+        
         if (config.Config.Osc.OscQuery) ModuleServiceProvider.GetRequiredService<OscQueryServer>().Start();
     }
 }
