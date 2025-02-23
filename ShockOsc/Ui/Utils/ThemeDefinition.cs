@@ -1,6 +1,6 @@
 using MudBlazor;
 
-namespace OpenShock.ShockOsc.Ui.Utils;
+namespace OpenShock.ShockOSC.Ui.Utils;
 
 public static class ThemeDefinition
 {

@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using MudBlazor;
 
-namespace OpenShock.ShockOsc.Utils;
+namespace OpenShock.ShockOSC.Utils;
 
 public static class UiUtils
 {

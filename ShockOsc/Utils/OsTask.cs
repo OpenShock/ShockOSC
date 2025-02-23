@@ -2,7 +2,7 @@
 using Serilog;
 using ILogger = Serilog.ILogger;
 
-namespace OpenShock.ShockOsc.Utils;
+namespace OpenShock.ShockOSC.Utils;
 
 public static class OsTask
 {

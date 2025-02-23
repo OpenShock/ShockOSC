@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace OpenShock.ShockOsc.Utils;
+namespace OpenShock.ShockOSC.Utils;
 
 public static class MathUtils
 {

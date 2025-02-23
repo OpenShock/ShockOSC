@@ -1,32 +1,31 @@
 using System.Globalization;
 using System.Net;
 using LucHeart.CoreOSC;
+using OpenShock.Desktop.ModuleBase.Api;
+using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.SDK.CSharp.Models;
 using OpenShock.SDK.CSharp.Utils;
-using OpenShock.ShockOsc.Backend;
-using OpenShock.ShockOsc.Config;
-using OpenShock.ShockOsc.Models;
-using OpenShock.ShockOsc.Utils;
+using OpenShock.ShockOSC.Config;
+using OpenShock.ShockOSC.Models;
+using OpenShock.ShockOSC.Utils;
 using OscQueryLibrary;
 
 #pragma warning disable CS4014
 
-namespace OpenShock.ShockOsc.Services;
+namespace OpenShock.ShockOSC.Services;
 
 public sealed class ShockOsc
 {
     private readonly ILogger<ShockOsc> _logger;
     private readonly OscClient _oscClient;
-    private readonly BackendHubManager _backendHubManager;
+    private readonly IOpenShockService _openShockService;
     private readonly MedalIcymiService _medalIcymiService;
     private readonly UnderscoreConfig _underscoreConfig;
-    private readonly ConfigManager _configManager;
+    private readonly IModuleConfig<ShockOscConfig> _moduleConfig;
     private readonly OscQueryServer _oscQueryServer;
     private readonly ShockOscData _dataLayer;
     private readonly OscHandler _oscHandler;
-    private readonly LiveControlManager _liveControlManager;
     private readonly ChatboxService _chatboxService;
-    private readonly ConfigUtils _configUtils;
 
     private bool _oscServerActive;
     private bool _isAfk;
@@ -60,25 +59,24 @@ public sealed class ShockOsc
 
     public ShockOsc(ILogger<ShockOsc> logger,
         OscClient oscClient,
-        BackendHubManager backendHubManager,
+        IOpenShockService openShockService,
         UnderscoreConfig underscoreConfig,
-        ConfigManager configManager,
+        IModuleConfig<ShockOscConfig> moduleConfig,
         OscQueryServer oscQueryServer,
         ShockOscData dataLayer,
-        OscHandler oscHandler, LiveControlManager liveControlManager,
-        ChatboxService chatboxService, ConfigUtils configUtils, MedalIcymiService medalIcymiService)
+        OscHandler oscHandler,
+        ChatboxService chatboxService,
+        MedalIcymiService medalIcymiService)
     {
         _logger = logger;
         _oscClient = oscClient;
-        _backendHubManager = backendHubManager;
+        _openShockService = openShockService;
         _underscoreConfig = underscoreConfig;
-        _configManager = configManager;
+        _moduleConfig = moduleConfig;
         _oscQueryServer = oscQueryServer;
         _dataLayer = dataLayer;
         _oscHandler = oscHandler;
-        _liveControlManager = liveControlManager;
         _chatboxService = chatboxService;
-        _configUtils = configUtils;
         _medalIcymiService = medalIcymiService;
 
         OnGroupsChanged += () =>
@@ -92,7 +90,7 @@ public sealed class ShockOsc
 
         SetupGroups();
 
-        if (!_configManager.Config.Osc.OscQuery)
+        if (!_moduleConfig.Config.Osc.OscQuery)
         {
             FoundVrcClient(null, null);
         }
@@ -104,7 +102,7 @@ public sealed class ShockOsc
     {
         _dataLayer.ProgramGroups.Clear();
         _dataLayer.ProgramGroups[Guid.Empty] = new ProgramGroup(Guid.Empty, "_All", _oscClient, null);
-        foreach (var (id, group) in _configManager.Config.Groups)
+        foreach (var (id, group) in _moduleConfig.Config.Groups)
             _dataLayer.ProgramGroups[id] = new ProgramGroup(id, group.Name, _oscClient, group);
     }
 
@@ -129,8 +127,8 @@ public sealed class ShockOsc
         }
         else
         {
-            _oscClient.CreateGameConnection(IPAddress.Loopback, _configManager.Config.Osc.OscReceivePort,
-                _configManager.Config.Osc.OscSendPort);
+            _oscClient.CreateGameConnection(IPAddress.Loopback, _moduleConfig.Config.Osc.OscReceivePort,
+                _moduleConfig.Config.Osc.OscSendPort);
         }
 
         _logger.LogInformation("Connecting UDP Clients...");
@@ -362,14 +360,14 @@ public sealed class ShockOsc
                     return;
                 }
 
-                if (_isAfk && _configManager.Config.Behaviour.DisableWhileAfk)
+                if (_isAfk && _moduleConfig.Config.Behaviour.DisableWhileAfk)
                 {
                     programGroup.TriggerMethod = TriggerMethod.None;
                     await LogIgnoredAfk();
                     return;
                 }
 
-                var cooldownTime = _configManager.Config.Behaviour.CooldownTime;
+                var cooldownTime = _moduleConfig.Config.Behaviour.CooldownTime;
                 if (programGroup.ConfigGroup is { OverrideCooldownTime: true })
                     cooldownTime = programGroup.ConfigGroup.CooldownTime;
 
@@ -410,16 +408,17 @@ public sealed class ShockOsc
                         programGroup.TriggerMethod = TriggerMethod.PhysBoneRelease;
                         programGroup.LastActive = DateTime.UtcNow;
                     }
-                    else if (_configUtils.GetGroupOrGlobal(programGroup, config => config.WhileBoneHeld, group => group.OverrideBoneHeldAction) != BoneAction.None)
+                    else if (_moduleConfig.Config.GetGroupOrGlobal(programGroup, config => config.WhileBoneHeld, group => group.OverrideBoneHeldAction) != BoneAction.None)
                     {
-                        await _backendHubManager.CancelControl(programGroup);
+                        _logger.LogTrace("Physbone released, stopping group {Group}", programGroup.Name);
+                        await ControlGroup(programGroup.Id, 0, 0, ControlType.Stop);
                     }
                 }
 
                 if (!programGroup.IsGrabbed && isGrabbed)
                 {
                     // on physbone grab
-                    var durationLimit = _configUtils.GetGroupOrGlobal(programGroup,
+                    var durationLimit = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                         config => config.BoneHeldDurationLimit, group => group.OverrideBoneHeldDurationLimit);
                     programGroup.PhysBoneGrabLimitTime = durationLimit == null ? null : DateTime.UtcNow.AddMilliseconds(durationLimit.Value);
                     _logger.LogDebug("Limiting hold duration of Group {Group} to {Duration}ms", programGroup.Name, durationLimit);
@@ -445,19 +444,19 @@ public sealed class ShockOsc
     private ValueTask LogIgnoredKillSwitchActive()
     {
         _logger.LogInformation("Ignoring shock, kill switch is active");
-        if (string.IsNullOrEmpty(_configManager.Config.Chatbox.IgnoredKillSwitchActive))
+        if (string.IsNullOrEmpty(_moduleConfig.Config.Chatbox.IgnoredKillSwitchActive))
             return ValueTask.CompletedTask;
 
-        return _chatboxService.SendGenericMessage(_configManager.Config.Chatbox.IgnoredKillSwitchActive);
+        return _chatboxService.SendGenericMessage(_moduleConfig.Config.Chatbox.IgnoredKillSwitchActive);
     }
 
     private ValueTask LogIgnoredAfk()
     {
         _logger.LogInformation("Ignoring shock, user is AFK");
-        if (string.IsNullOrEmpty(_configManager.Config.Chatbox.IgnoredAfk))
+        if (string.IsNullOrEmpty(_moduleConfig.Config.Chatbox.IgnoredAfk))
             return ValueTask.CompletedTask;
 
-        return _chatboxService.SendGenericMessage(_configManager.Config.Chatbox.IgnoredAfk);
+        return _chatboxService.SendGenericMessage(_moduleConfig.Config.Chatbox.IgnoredAfk);
     }
 
     private async Task SenderLoopAsync()
@@ -467,6 +466,39 @@ public sealed class ShockOsc
             await _oscHandler.SendParams();
             await Task.Delay(300);
         }
+    }
+    
+    public async Task<bool> ControlGroup(Guid groupId, ushort duration, byte intensity, ControlType type, bool exclusive = false)
+    {
+        if (groupId == Guid.Empty)
+        {
+            var controlCommandsAll = _moduleConfig.Config.OpenShock.Shockers
+                .Select(x => new SDK.CSharp.Hub.Models.Control
+                {
+                    Id = x.Key,
+                    Duration = duration,
+                    Intensity = intensity,
+                    Type = type,
+                    Exclusive = exclusive
+                });
+            await _openShockService.Control.Control(controlCommandsAll);
+            return true;
+        }
+
+
+        if (!_moduleConfig.Config.Groups.TryGetValue(groupId, out var group)) return false;
+
+        var controlCommands = group.Shockers.Select(x => new SDK.CSharp.Hub.Models.Control
+        {
+            Id = x,
+            Duration = duration,
+            Intensity = intensity,
+            Type = type,
+            Exclusive = exclusive
+        });
+
+        await _openShockService.Control.Control(controlCommands);
+        return true;
     }
 
     private async Task InstantAction(ProgramGroup programGroup, ushort duration, byte intensity, ControlType type,
@@ -488,7 +520,7 @@ public sealed class ShockOsc
         programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(actualDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
 
-        if (_configManager.Config.MedalIcymi.IcymiEnabled)
+        if (_moduleConfig.Config.MedalIcymi.IcymiEnabled)
         {
             await _medalIcymiService.TriggerMedalIcymiAction("evt_shockosc_triggered");
         }
@@ -497,7 +529,8 @@ public sealed class ShockOsc
             "Sending {Type} to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}", type,
             programGroup.Name, actualIntensity, inSeconds, exclusive);
 
-        await _backendHubManager.ControlGroup(programGroup.Id, actualDuration, actualIntensity, type, exclusive);
+        
+        await ControlGroup(programGroup.Id, actualDuration, actualIntensity, type, exclusive);
         await _chatboxService.SendLocalControlMessage(programGroup.Name, actualIntensity, actualDuration, type);
     }
 
@@ -520,29 +553,46 @@ public sealed class ShockOsc
 
     private async Task CheckLogic()
     {
-        var config = _configManager.Config.Behaviour;
+        var config = _moduleConfig.Config.Behaviour;
         foreach (var (pos, programGroup) in _dataLayer.ProgramGroups)
         {
             await CheckProgramGroup(programGroup, pos, config);
         }
+    }
+    
+    public void LiveontrolGroupFrameCheckLoop(ProgramGroup group, byte intensity, ControlType type)
+    {
+        if (group.Id == Guid.Empty)
+        {
+            _openShockService.Control.ControlAllShockers(intensity, type);
+            return;
+        }
+
+        if (group.ConfigGroup == null)
+        {
+            _logger.LogWarning("Group [{GroupId}] does not have a config group", group.Id);
+            return;
+        }
+        
+        _openShockService.Control.LiveControl(group.ConfigGroup.Shockers, intensity, type);
     }
 
     private async Task CheckProgramGroup(ProgramGroup programGroup, Guid pos, BehaviourConf config)
     {
         if (programGroup.ConcurrentIntensity != 0)
         {
-            _liveControlManager.ControlGroupFrameCheckLoop(programGroup, GetScaledIntensity(programGroup, programGroup.ConcurrentIntensity), programGroup.ConcurrentType);
+            LiveontrolGroupFrameCheckLoop(programGroup, GetScaledIntensity(programGroup, programGroup.ConcurrentIntensity), programGroup.ConcurrentType);
             programGroup.LastConcurrentIntensity = programGroup.ConcurrentIntensity;
             return;
         }
 
         if (programGroup.LastConcurrentIntensity != 0)
         {
-            _liveControlManager.ControlGroupFrameCheckLoop(programGroup, 0, ControlType.Stop);
+            LiveontrolGroupFrameCheckLoop(programGroup, 0, ControlType.Stop);
             programGroup.LastConcurrentIntensity = 0;
         }
 
-        var cooldownTime = _configManager.Config.Behaviour.CooldownTime;
+        var cooldownTime = _moduleConfig.Config.Behaviour.CooldownTime;
         if (programGroup.ConfigGroup is { OverrideCooldownTime: true })
             cooldownTime = programGroup.ConfigGroup.CooldownTime;
 
@@ -557,7 +607,7 @@ public sealed class ShockOsc
             !_underscoreConfig.KillSwitch &&
             programGroup.IsGrabbed)
         {
-            var heldAction = _configUtils.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
+            var heldAction = _moduleConfig.Config.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
                 group => group.OverrideBoneHeldAction);
 
             if (heldAction != BoneAction.None && (programGroup.PhysBoneGrabLimitTime == null || programGroup.PhysBoneGrabLimitTime > DateTime.UtcNow) &&
@@ -568,7 +618,7 @@ public sealed class ShockOsc
 
                 _logger.LogDebug("Vibrating/Shocking {Shocker} at {Intensity}", pos, pullIntensityTranslated);
 
-                _liveControlManager.ControlGroupFrameCheckLoop(programGroup, pullIntensityTranslated,
+                LiveontrolGroupFrameCheckLoop(programGroup, pullIntensityTranslated,
                     heldAction.ToControlType());
             }
         }
@@ -607,7 +657,7 @@ public sealed class ShockOsc
         if (programGroup.TriggerMethod == TriggerMethod.PhysBoneRelease)
         {
             programGroup.TriggerMethod = TriggerMethod.None;
-            var releaseAction = _configUtils.GetGroupOrGlobal(programGroup,
+            var releaseAction = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                 behaviourConfig => behaviourConfig.WhenBoneReleased, group => group.OverrideBoneReleasedAction);
 
             if (releaseAction == BoneAction.None)
@@ -637,7 +687,7 @@ public sealed class ShockOsc
         if (programGroup.ConfigGroup is not { OverrideDuration: true })
         {
             // Use global config
-            var config = _configManager.Config.Behaviour;
+            var config = _moduleConfig.Config.Behaviour;
 
             if (!config.RandomDuration) return (ushort) (config.FixedDuration * scale);
             var rdr = config.DurationRange;
@@ -661,7 +711,7 @@ public sealed class ShockOsc
         if (programGroup.ConfigGroup is not { OverrideIntensity: true })
         {
             // Use global config
-            var config = _configManager.Config.Behaviour;
+            var config = _moduleConfig.Config.Behaviour;
 
             if (!config.RandomIntensity) return (byte)MathUtils.LerpFloat(0, config.FixedIntensity, intensity / 100f);
             return (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, intensity / 100f);
@@ -680,7 +730,7 @@ public sealed class ShockOsc
         if (programGroup.ConfigGroup is not { OverrideIntensity: true })
         {
             // Use global config
-            var config = _configManager.Config.Behaviour;
+            var config = _moduleConfig.Config.Behaviour;
 
             if (!config.RandomIntensity) return config.FixedIntensity;
             return (byte)MathUtils.LerpFloat(config.IntensityRange.Min, config.IntensityRange.Max, stretch);
@@ -700,7 +750,7 @@ public sealed class ShockOsc
         if (programGroup.ConfigGroup is not { OverrideDuration: true })
         {
             // Use global config
-            var config = _configManager.Config.Behaviour;
+            var config = _moduleConfig.Config.Behaviour;
 
             if (!config.RandomDuration) return config.FixedDuration;
             var rdr = config.DurationRange;
@@ -722,7 +772,7 @@ public sealed class ShockOsc
         if (programGroup.ConfigGroup is not { OverrideIntensity: true })
         {
             // Use global config
-            var config = _configManager.Config.Behaviour;
+            var config = _moduleConfig.Config.Behaviour;
 
             if (!config.RandomIntensity) return config.FixedIntensity;
             var rir = config.IntensityRange;

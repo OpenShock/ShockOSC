@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Logging;
-using OpenShock.ShockOsc.Config;
-using OpenShock.ShockOsc.OscChangeTracker;
-using OpenShock.ShockOsc.Utils;
+using OpenShock.Desktop.ModuleBase.Config;
+using OpenShock.ShockOSC.Config;
+using OpenShock.ShockOSC.OscChangeTracker;
+using OpenShock.ShockOSC.Utils;
 
-namespace OpenShock.ShockOsc.Services;
+namespace OpenShock.ShockOSC.Services;
 
 public sealed class OscHandler
 {
@@ -14,14 +14,14 @@ public sealed class OscHandler
     
     private readonly ILogger<OscHandler> _logger;
     private readonly OscClient _oscClient;
-    private readonly ConfigManager _configManager;
+    private readonly IModuleConfig<ShockOscConfig> _moduleConfig;
     private readonly ShockOscData _shockOscData;
     
-    public OscHandler(ILogger<OscHandler> logger, OscClient oscClient, ConfigManager configManager, ShockOscData shockOscData)
+    public OscHandler(ILogger<OscHandler> logger, OscClient oscClient, IModuleConfig<ShockOscConfig> moduleConfig, ShockOscData shockOscData)
     {
         _logger = logger;
         _oscClient = oscClient;
-        _configManager = configManager;
+        _moduleConfig = moduleConfig;
         _shockOscData = shockOscData;
         
         _paramAnyActive = new ChangeTrackedOscParam<bool>("_Any", "_Active", false, _oscClient);
@@ -36,7 +36,7 @@ public sealed class OscHandler
     public async Task ForceUnmute()
     {
         // If we don't have to force unmute or we're not muted, also check config here.
-        if (!_configManager.Config.Behaviour.ForceUnmute || !_shockOscData.IsMuted) return;
+        if (!_moduleConfig.Config.Behaviour.ForceUnmute || !_shockOscData.IsMuted) return;
         
         _logger.LogDebug("Force unmuting...");
         
@@ -79,7 +79,7 @@ public sealed class OscHandler
         {
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             var isActiveOrOnCooldown =
-                shocker.LastExecuted.AddMilliseconds(_configManager.Config.Behaviour.CooldownTime)
+                shocker.LastExecuted.AddMilliseconds(_moduleConfig.Config.Behaviour.CooldownTime)
                     .AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             if (!isActiveOrOnCooldown && shocker.LastIntensity > 0)
                 shocker.LastIntensity = 0;
@@ -92,7 +92,7 @@ public sealed class OscHandler
                                                           (float)(DateTime.UtcNow -
                                                                   shocker.LastExecuted.AddMilliseconds(shocker.LastDuration))
                                                           .TotalMilliseconds /
-                                                          _configManager.Config.Behaviour.CooldownTime);
+                                                          _moduleConfig.Config.Behaviour.CooldownTime);
 
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);

@@ -2,22 +2,23 @@
 using System.Threading.Channels;
 using LucHeart.CoreOSC;
 using Microsoft.Extensions.Logging;
-using OpenShock.ShockOsc.Config;
+using OpenShock.Desktop.ModuleBase.Config;
+using OpenShock.ShockOSC.Config;
 
-namespace OpenShock.ShockOsc.Services;
+namespace OpenShock.ShockOSC.Services;
 
 public sealed class OscClient
 {
     private readonly ILogger<OscClient> _logger;
-    private readonly ConfigManager _configManager;
+    private readonly IModuleConfig<ShockOscConfig> _moduleConfig;
     private OscDuplex? _gameConnection;
     private readonly OscSender _hoscySenderClient;
 
-    public OscClient(ILogger<OscClient> logger, ConfigManager configManager)
+    public OscClient(ILogger<OscClient> logger, IModuleConfig<ShockOscConfig> moduleConfig)
     {
         _logger = logger;
-        _configManager = configManager;
-        _hoscySenderClient = new OscSender(new IPEndPoint(IPAddress.Loopback, _configManager.Config.Osc.HoscySendPort));
+        _moduleConfig = moduleConfig;
+        _hoscySenderClient = new OscSender(new IPEndPoint(IPAddress.Loopback, _moduleConfig.Config.Osc.HoscySendPort));
         
         Task.Run(GameSenderLoop);
         Task.Run(HoscySenderLoop);
@@ -49,8 +50,8 @@ public sealed class OscClient
     
     public ValueTask SendChatboxMessage(string message)
     {
-        if (_configManager.Config.Osc.Hoscy) return _hoscySenderChannel.Writer.WriteAsync(new OscMessage(
-            $"/hoscy/{_configManager.Config.Chatbox.HoscyType.ToString().ToLowerInvariant()}", message));
+        if (_moduleConfig.Config.Osc.Hoscy) return _hoscySenderChannel.Writer.WriteAsync(new OscMessage(
+            $"/hoscy/{_moduleConfig.Config.Chatbox.HoscyType.ToString().ToLowerInvariant()}", message));
         return _gameSenderChannel.Writer.WriteAsync(new OscMessage("/chatbox/input", message, true));
     }
 

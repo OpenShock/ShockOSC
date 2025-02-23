@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Size = MudBlazor.Size;
 
-namespace OpenShock.ShockOsc.Ui.Utils;
+namespace OpenShock.ShockOSC.Ui.Utils;
 
 public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : struct, INumber<T>
 {

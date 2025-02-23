@@ -1,8 +1,8 @@
-﻿using OpenShock.ShockOsc.Services;
+﻿using OpenShock.ShockOSC.Services;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
-namespace OpenShock.ShockOsc.OscChangeTracker;
+namespace OpenShock.ShockOSC.OscChangeTracker;
 
 public class ChangeTrackedOscParam<T> : IChangeTrackedOscParam
 {

@@ -1,4 +1,4 @@
-﻿namespace OpenShock.ShockOsc.Utils;
+﻿namespace OpenShock.ShockOSC.Utils;
 
 public static class StreamExtensions
 {

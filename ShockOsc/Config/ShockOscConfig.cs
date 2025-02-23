@@ -1,6 +1,7 @@
-﻿using Semver;
+﻿using OpenShock.ShockOSC.Models;
+using Semver;
 
-namespace OpenShock.ShockOsc.Config;
+namespace OpenShock.ShockOSC.Config;
 
 public sealed class ShockOscConfig
 {
@@ -11,5 +12,12 @@ public sealed class ShockOscConfig
     public ChatboxConf Chatbox { get; set; } = new();
     public IDictionary<Guid, Group> Groups { get; set; } = new Dictionary<Guid, Group>();
     
-    public AppConfig App { get; set; } = new();
+    public T GetGroupOrGlobal<T>(ProgramGroup group, Func<SharedBehaviourConfig, T> selector, Func<Group, bool> groupOverrideSelector)
+    {
+        if(group.ConfigGroup == null) return selector(Behaviour);
+        
+        var groupOverride = groupOverrideSelector(group.ConfigGroup);
+        SharedBehaviourConfig config = groupOverride ? group.ConfigGroup : Behaviour;
+        return selector(config);    
+    }
 }

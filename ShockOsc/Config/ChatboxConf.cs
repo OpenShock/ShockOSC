@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using OpenShock.SDK.CSharp.Models;
 
-namespace OpenShock.ShockOsc.Config;
+namespace OpenShock.ShockOSC.Config;
 
 public sealed class ChatboxConf
 {

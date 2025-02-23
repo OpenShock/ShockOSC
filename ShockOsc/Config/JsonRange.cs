@@ -1,5 +1,5 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
-namespace OpenShock.ShockOsc.Config;
+namespace OpenShock.ShockOSC.Config;
 
 public class JsonRange<T> where T : struct
 {

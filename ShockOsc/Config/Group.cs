@@ -1,4 +1,4 @@
-﻿namespace OpenShock.ShockOsc.Config;
+﻿namespace OpenShock.ShockOSC.Config;
 
 public sealed class Group : SharedBehaviourConfig
 {
