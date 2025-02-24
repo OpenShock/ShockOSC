@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Reactive.Subjects;
 using LucHeart.CoreOSC;
 using OpenShock.Desktop.ModuleBase.Api;
 using OpenShock.Desktop.ModuleBase.Config;
@@ -54,8 +55,8 @@ public sealed class ShockOsc
     public readonly Dictionary<string, object?> ShockOscParams = new();
     public readonly Dictionary<string, object?> AllAvatarParams = new();
 
-    public Action<bool>? OnParamsChange;
-
+    public IObservable<bool> OnParamsChangeObservable => _onParamsChange;
+    private readonly Subject<bool> _onParamsChange = new();
 
     public ShockOsc(ILogger<ShockOsc> logger,
         OscClient oscClient,
@@ -108,11 +109,7 @@ public sealed class ShockOsc
     }
 
     public Task RaiseOnGroupsChanged() => OnGroupsChanged.Raise();
-
-    private void OnParamChange(bool shockOscParam)
-    {
-        OnParamsChange?.Invoke(shockOscParam);
-    }
+    
     
     private Task FoundVrcClient(OscQueryServer arg1, IPEndPoint arg2)
     {
@@ -203,7 +200,7 @@ public sealed class ShockOsc
             _logger.LogError(e, "Error on avatar change logic");
         }
 
-        OnParamChange(true);
+        _onParamsChange.OnNext(true);
         return Task.CompletedTask;
     }
 
@@ -246,7 +243,7 @@ public sealed class ShockOsc
                 AllAvatarParams[fullName] = received.Arguments[0];
             else
                 AllAvatarParams.TryAdd(fullName, received.Arguments[0]);
-            OnParamChange(false);
+            _onParamsChange.OnNext(false);
         }
 
         switch (addr)
@@ -275,7 +272,7 @@ public sealed class ShockOsc
         if (ShockOscParams.ContainsKey(pos))
         {
             ShockOscParams[pos] = received.Arguments[0];
-            OnParamChange(true);
+            _onParamsChange.OnNext(true);
         }
         else
             ShockOscParams.TryAdd(pos, received.Arguments[0]);
@@ -478,10 +475,11 @@ public sealed class ShockOsc
     {
         if (groupId == Guid.Empty)
         {
-            var controlCommandsAll = _moduleConfig.Config.OpenShock.Shockers
+            _logger.LogDebug(string.Join(',', _openShockService.Data.Hubs.Value.SelectMany(x => x.Shockers).Select(x => x.Id)));
+            var controlCommandsAll = _openShockService.Data.Hubs.Value.SelectMany(x => x.Shockers)
                 .Select(x => new SDK.CSharp.Hub.Models.Control
                 {
-                    Id = x.Key,
+                    Id = x.Id,
                     Duration = duration,
                     Intensity = intensity,
                     Type = type,
@@ -490,7 +488,6 @@ public sealed class ShockOsc
             await _openShockService.Control.Control(controlCommandsAll);
             return true;
         }
-
 
         if (!_moduleConfig.Config.Groups.TryGetValue(groupId, out var group)) return false;
 

@@ -21,6 +21,12 @@ public sealed class ShockOSCModule : DesktopModuleBase
     [
         new()
         {
+            Name = "Settings",
+            ComponentType = typeof(ConfigTab),
+            Icon = IconOneOf.FromSvg(Icons.Material.Filled.Settings)
+        },
+        new()
+        {
             Name = "Groups",
             ComponentType = typeof(GroupsTab),
             Icon = IconOneOf.FromSvg(Icons.Material.Filled.Group)
@@ -29,19 +35,13 @@ public sealed class ShockOSCModule : DesktopModuleBase
         {
             Name = "Chatbox",
             ComponentType = typeof(ChatboxTab),
-            Icon = IconOneOf.FromSvg(Icons.Material.Filled.ChatBubble)
+            Icon = IconOneOf.FromSvg(Icons.Material.Filled.Chat)
         },
         new()
         {
             Name = "Debug",
             ComponentType = typeof(DebugTab),
             Icon = IconOneOf.FromSvg(Icons.Material.Filled.BugReport)
-        },
-        new()
-        {
-            Name = "Config",
-            ComponentType = typeof(ConfigTab),
-            Icon = IconOneOf.FromSvg(Icons.Material.Filled.Settings)
         }
     ];
 

@@ -1,4 +1,5 @@
 ﻿@using OpenShock.Desktop.ModuleBase
+@using OpenShock.Desktop.ModuleBase.Api
 @using OpenShock.ShockOSC.Services
 @using OpenShock.ShockOSC.Utils
 @implements IAsyncDisposable
@@ -51,6 +52,7 @@
 @code {
     
     [ModuleInject] private ShockOsc ShockOsc { get; set; } = null!;
+    [ModuleInject] private IOpenShockService OpenShock { get; set; } = null!;
     
     private bool _showAllAvatarParams = false;
     private string _search = "";
@@ -68,7 +70,8 @@
 
     protected override void OnInitialized()
     {
-        ShockOsc.OnParamsChange = OnParamsChange;
+        _onParamsVhangeSubscription = ShockOsc.OnParamsChangeObservable.Subscribe(OnParamsChange);
+
         OsTask.Run(UpdateParams);
     }
 
@@ -82,16 +85,18 @@
 
             await InvokeAsync(StateHasChanged);
 
-            await Task.Delay(200);
+            await Task.Delay(100);
         }
     }
 
     private CancellationTokenSource _cts = new CancellationTokenSource();
+    private IDisposable? _onParamsVhangeSubscription;
 
 
     public async ValueTask DisposeAsync()
     {
+        _onParamsVhangeSubscription?.Dispose();
         await _cts.CancelAsync();
     }
-
+    
 }
