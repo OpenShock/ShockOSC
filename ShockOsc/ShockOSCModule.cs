@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using OpenShock.Desktop.ModuleBase;
 using OpenShock.Desktop.ModuleBase.Api;

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Reactive.Subjects;
 using LucHeart.CoreOSC;
+using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Api;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.SDK.CSharp.Models;
@@ -475,7 +476,6 @@ public sealed class ShockOsc
     {
         if (groupId == Guid.Empty)
         {
-            _logger.LogDebug(string.Join(',', _openShockService.Data.Hubs.Value.SelectMany(x => x.Shockers).Select(x => x.Id)));
             var controlCommandsAll = _openShockService.Data.Hubs.Value.SelectMany(x => x.Shockers)
                 .Select(x => new SDK.CSharp.Hub.Models.Control
                 {

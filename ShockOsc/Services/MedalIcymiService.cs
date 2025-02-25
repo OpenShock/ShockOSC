@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.ShockOSC.Config;
 

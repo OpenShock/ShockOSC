@@ -1,4 +1,5 @@
 ﻿using System.Threading.Channels;
+using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOSC.Config;

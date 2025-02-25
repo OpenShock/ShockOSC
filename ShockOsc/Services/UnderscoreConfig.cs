@@ -1,4 +1,5 @@
-﻿using OpenShock.Desktop.ModuleBase.Config;
+﻿using Microsoft.Extensions.Logging;
+using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Models;
 using OpenShock.ShockOSC.Utils;

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
@@ -9,11 +9,11 @@
         <AssemblyName>OpenShock.ShockOSC</AssemblyName>
         <RootNamespace>OpenShock.ShockOSC</RootNamespace>
         <Company>OpenShock</Company>
-        <AssemblyVersion>2.4.2</AssemblyVersion>
-        <Version>2.4.2</Version>
+        
+        <AssemblyVersion>3.0.0</AssemblyVersion>
+        <Version>3.0.0-rc.1</Version>
+        
         <Product>ShockOsc</Product>
-
-        <PackageIcon>Resources\Icon512.png</PackageIcon>
 
         <ResourceLanguages>en</ResourceLanguages>
         <SatelliteResourceLanguages>en-US;en</SatelliteResourceLanguages>
@@ -44,7 +44,6 @@
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor"/>
     </ItemGroup>
-
 
     <ItemGroup>
       <ProjectReference Include="..\..\Desktop\ModuleBase\ModuleBase.csproj" />
