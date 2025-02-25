@@ -20,7 +20,7 @@ public class MedalIcymiService
     {
         _logger = logger;
         _moduleConfig = moduleConfig;
-        switch (_moduleConfig.Config.MedalIcymi.IcymiGame)
+        switch (_moduleConfig.Config.MedalIcymi.Game)
         {
             case IcymiGame.VRChat:
                 HttpClient.DefaultRequestHeaders.Add("publicKey", PubApiKeyVrc);
@@ -29,7 +29,7 @@ public class MedalIcymiService
                 HttpClient.DefaultRequestHeaders.Add("publicKey", PubApiKeyCvr);
                 break;
             default:
-                _logger.LogError("Game Selection was out of range. Value was: {value}", _moduleConfig.Config.MedalIcymi.IcymiGame);
+                _logger.LogError("Game Selection was out of range. Value was: {value}", _moduleConfig.Config.MedalIcymi.Game);
                 break;
         }
     }
@@ -39,22 +39,22 @@ public class MedalIcymiService
         var eventPayload = new
         {
             eventId,
-            eventName = _moduleConfig.Config.MedalIcymi.IcymiName,
+            eventName = _moduleConfig.Config.MedalIcymi.Name,
             
             contextTags = new
             {
-                location = _moduleConfig.Config.MedalIcymi.IcymiGame.ToString(),
-                description = _moduleConfig.Config.MedalIcymi.IcymiDescription
+                location = _moduleConfig.Config.MedalIcymi.Game.ToString(),
+                description = _moduleConfig.Config.MedalIcymi.Description
             },
             triggerActions = new[]
             {
-                _moduleConfig.Config.MedalIcymi.IcymiTriggerAction.ToString()
+                _moduleConfig.Config.MedalIcymi.TriggerAction.ToString()
             },
             
             clipOptions = new
             {
-                duration = _moduleConfig.Config.MedalIcymi.IcymiClipDuration,
-                alertType = _moduleConfig.Config.MedalIcymi.IcymiAlertType.ToString(),
+                duration = _moduleConfig.Config.MedalIcymi.ClipDuration,
+                alertType = _moduleConfig.Config.MedalIcymi.AlertType.ToString(),
             }
         };
 
@@ -65,14 +65,14 @@ public class MedalIcymiService
         {
             var response = await HttpClient.PostAsync($"{BaseUrl}/event/invoke", content);
 
-            _logger.LogInformation("{triggerAction} triggered.", _moduleConfig.Config.MedalIcymi.IcymiTriggerAction);
+            _logger.LogInformation("{triggerAction} triggered.", _moduleConfig.Config.MedalIcymi.TriggerAction);
                 
             var responseContent = await response.Content.ReadAsStringAsync();
             HandleApiResponse((int)response.StatusCode, responseContent);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error while creating Medal {triggerAction}: {exception}", _moduleConfig.Config.MedalIcymi.IcymiTriggerAction, ex);
+            _logger.LogError("Error while creating Medal {triggerAction}: {exception}", _moduleConfig.Config.MedalIcymi.TriggerAction, ex);
         }
     }
 
