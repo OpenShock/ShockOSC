@@ -10,6 +10,7 @@ using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Services;
 using OpenShock.ShockOSC.Ui.Pages.Dash.Tabs;
 using OscQueryLibrary;
+// ReSharper disable InconsistentNaming
 
 namespace OpenShock.ShockOSC;
 

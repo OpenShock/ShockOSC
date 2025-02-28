@@ -1,4 +1,4 @@
-using OpenShock.SDK.CSharp.Models;
+using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.OscChangeTracker;
 using OpenShock.ShockOSC.Services;

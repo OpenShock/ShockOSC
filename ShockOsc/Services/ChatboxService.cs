@@ -1,11 +1,10 @@
 ﻿using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Config;
-using OpenShock.SDK.CSharp.Models;
+using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Utils;
 using SmartFormat;
-using Timer = System.Timers.Timer;
 
 namespace OpenShock.ShockOSC.Services;
 

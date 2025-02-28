@@ -5,12 +5,12 @@ using LucHeart.CoreOSC;
 using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Api;
 using OpenShock.Desktop.ModuleBase.Config;
-using OpenShock.SDK.CSharp.Models;
-using OpenShock.SDK.CSharp.Utils;
+using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Models;
 using OpenShock.ShockOSC.Utils;
 using OscQueryLibrary;
+using OscQueryLibrary.Utils;
 
 #pragma warning disable CS4014
 
@@ -332,6 +332,8 @@ public sealed class ShockOsc
                 break;
             
             case "CShock":
+            case "CVibrate":
+            case "CSound":
                 if (value is not float intensity)
                 {
                     programGroup.ConcurrentIntensity = 0;
@@ -477,7 +479,7 @@ public sealed class ShockOsc
         if (groupId == Guid.Empty)
         {
             var controlCommandsAll = _openShockService.Data.Hubs.Value.SelectMany(x => x.Shockers)
-                .Select(x => new SDK.CSharp.Hub.Models.Control
+                .Select(x => new ShockerControl
                 {
                     Id = x.Id,
                     Duration = duration,
@@ -491,7 +493,7 @@ public sealed class ShockOsc
 
         if (!_moduleConfig.Config.Groups.TryGetValue(groupId, out var group)) return false;
 
-        var controlCommands = group.Shockers.Select(x => new SDK.CSharp.Hub.Models.Control
+        var controlCommands = group.Shockers.Select(x => new ShockerControl
         {
             Id = x,
             Duration = duration,
@@ -523,7 +525,7 @@ public sealed class ShockOsc
         programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(actualDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
 
-        if (_moduleConfig.Config.MedalIcymi.IcymiEnabled)
+        if (_moduleConfig.Config.MedalIcymi.Enabled)
         {
             await _medalIcymiService.TriggerMedalIcymiAction("evt_shockosc_triggered");
         }

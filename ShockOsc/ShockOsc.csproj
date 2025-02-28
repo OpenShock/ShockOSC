@@ -29,6 +29,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.2" />
         <PackageReference Include="MudBlazor" Version="7.15.0" />
         <PackageReference Include="EmbedIO" Version="3.5.2"/>
         <PackageReference Include="LucHeart.CoreOSC" Version="1.4.0" />

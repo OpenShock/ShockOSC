@@ -1,5 +1,4 @@
 ﻿using OpenShock.ShockOSC.Models;
-using Semver;
 
 namespace OpenShock.ShockOSC.Config;
 

@@ -1,4 +1,4 @@
-﻿using OpenShock.SDK.CSharp.Models;
+﻿using OpenShock.Desktop.ModuleBase.Models;
 
 namespace OpenShock.ShockOSC.Config;
 
