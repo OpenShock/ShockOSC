@@ -6,18 +6,18 @@ using OpenShock.Desktop.ModuleBase;
 using OpenShock.Desktop.ModuleBase.Api;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.Desktop.ModuleBase.Navigation;
+using OpenShock.ShockOSC;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Services;
 using OpenShock.ShockOSC.Ui.Pages.Dash.Tabs;
 using OscQueryLibrary;
 // ReSharper disable InconsistentNaming
 
+[assembly:DesktopModule(typeof(ShockOSCModule), "openshock.shockosc", "ShockOSC")]
 namespace OpenShock.ShockOSC;
 
 public sealed class ShockOSCModule : DesktopModuleBase
 {
-    public override string Id => "OpenShock.ShockOSC";
-    public override string Name => "ShockOSC";
     public override string IconPath => "OpenShock/ShockOSC/Resources/ShockOSC-Icon.svg";
 
     public override IReadOnlyCollection<NavigationItem> NavigationComponents { get; } =
