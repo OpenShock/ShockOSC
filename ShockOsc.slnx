@@ -1,5 +1,4 @@
 ﻿<Solution>
   <Configurations />
-  <Project Path="..\Desktop\ModuleBase\ModuleBase.csproj" Type="Classic C#" />
   <Project Path="ShockOsc\ShockOsc.csproj" />
 </Solution>

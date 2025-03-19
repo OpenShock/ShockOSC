@@ -28,14 +28,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.2" />
-        <PackageReference Include="MudBlazor" Version="7.15.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
+        <PackageReference Include="MudBlazor" Version="8.4.0" />
         <PackageReference Include="EmbedIO" Version="3.5.2"/>
         <PackageReference Include="LucHeart.CoreOSC" Version="1.4.0" />
         <PackageReference Include="MeaMod.DNS" Version="1.0.71" />
+        <PackageReference Include="OpenShock.Desktop.ModuleBase" Version="1.0.0-preview.1" />
         <PackageReference Include="OscQueryLibrary" Version="1.1.2" />
-        <PackageReference Include="SmartFormat.NET" Version="3.5.1" />
+        <PackageReference Include="SmartFormat.NET" Version="3.6.0" />
     </ItemGroup>
 
 
@@ -45,12 +46,7 @@
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor"/>
     </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\Desktop\ModuleBase\ModuleBase.csproj" />
-    </ItemGroup>
-
-
+    
     <ItemGroup>
       <EmbeddedResource Include="Resources\ShockOSC-Icon.svg" />
     </ItemGroup>

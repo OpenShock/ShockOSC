@@ -33,9 +33,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          key: ${{ runner.os }}-nuget
           restore-keys: |
-            ${{ runner.os }}-nuget-
+            ${{ runner.os }}-nuget
 
       - name: Publish ShockOSC
         run: dotnet publish ShockOsc/ShockOsc.csproj -c Release -o ./publish/
