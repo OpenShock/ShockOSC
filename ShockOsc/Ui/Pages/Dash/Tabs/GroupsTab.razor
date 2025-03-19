@@ -179,7 +179,7 @@
             <div class="d-flex" style="justify-content: space-between">
 
                 <MudToggleGroup T="string" @bind-Value="CurrentRandomIntensityString" Style="width: 330px; margin: 0 0 0 10px;"
-                                Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                                Delimiters="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
                     <MudToggleItem Value="@("Fixed Intensity")"/>
                     <MudToggleItem Value="@("Random Intensity")"/>
                 </MudToggleGroup>
@@ -220,7 +220,7 @@
             <div class="d-flex" style="justify-content: space-between">
 
                 <MudToggleGroup T="string" @bind-Value="CurrentRandomDurationString" Style="width: 330px; margin: 0 0 0 10px;"
-                                Delimiters="true" Rounded="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                                Delimiters="true"  CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
                     <MudToggleItem Value="@("Fixed Duration")"/>
                     <MudToggleItem Value="@("Random Duration")"/>
                 </MudToggleGroup>
