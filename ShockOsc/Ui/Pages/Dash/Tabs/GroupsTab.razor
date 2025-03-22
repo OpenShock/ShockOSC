@@ -36,7 +36,7 @@
 
         await InvokeAsync(StateHasChanged);
         ModuleConfig.SaveDeferred();
-        await ShockOsc.RaiseOnGroupsChanged();
+        ShockOsc.RaiseOnGroupsChanged();
     }
 
     public async Task DeleteGroup()
@@ -47,13 +47,13 @@
         Group = null;
         await InvokeAsync(StateHasChanged);
         ModuleConfig.SaveDeferred();
-        await ShockOsc.RaiseOnGroupsChanged();
+        ShockOsc.RaiseOnGroupsChanged();
     }
 
-    private async Task OnSettingsValueChange()
+    private void OnSettingsValueChange()
     {
         ModuleConfig.SaveDeferred();
-        await ShockOsc.RaiseOnGroupsChanged();
+        ShockOsc.RaiseOnGroupsChanged();
     }
 
     private void OnGroupSettingsValueChange()

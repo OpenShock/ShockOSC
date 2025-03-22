@@ -3,9 +3,11 @@ using System.Net;
 using System.Reactive.Subjects;
 using LucHeart.CoreOSC;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Extensions;
 using OpenShock.Desktop.ModuleBase.Api;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.Desktop.ModuleBase.Models;
+using OpenShock.MinimalEvents;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Models;
 using OpenShock.ShockOSC.Utils;
@@ -33,8 +35,8 @@ public sealed class ShockOsc
     private bool _isAfk;
     public string AvatarId = string.Empty;
     private readonly Random Random = new();
-
-    public event Func<Task>? OnGroupsChanged;
+    
+    private readonly MinimalEvent _onGroupsChanged = new();
 
     public static readonly string[] ShockerParams =
     {
@@ -81,14 +83,10 @@ public sealed class ShockOsc
         _chatboxService = chatboxService;
         _medalIcymiService = medalIcymiService;
 
-        OnGroupsChanged += () =>
-        {
-            SetupGroups();
-            return Task.CompletedTask;
-        };
+        _onGroupsChanged.Subscribe(SetupGroups);
 
-        oscQueryServer.FoundVrcClient += FoundVrcClient;
-        oscQueryServer.ParameterUpdate += OnAvatarChange;
+        oscQueryServer.FoundVrcClient.SubscribeAsync(endPoint => SetupVrcClient((oscQueryServer, endPoint))).AsTask().Wait();
+        oscQueryServer.ParameterUpdate.SubscribeAsync(OnAvatarChange).AsTask().Wait();
 
         SetupGroups();
     }
@@ -109,19 +107,13 @@ public sealed class ShockOsc
             _dataLayer.ProgramGroups[id] = new ProgramGroup(id, group.Name, _oscClient, group);
     }
 
-    public Task RaiseOnGroupsChanged() => OnGroupsChanged.Raise();
+    public void RaiseOnGroupsChanged() => _onGroupsChanged.Invoke();
     
-    
-    private Task FoundVrcClient(OscQueryServer arg1, IPEndPoint arg2)
-    {
-        return SetupVrcClient((arg1, arg2));
-    }
-
     private async Task SetupVrcClient((OscQueryServer, IPEndPoint)? client)
     {
         // stop tasks
         _oscServerActive = false;
-        await Task.Delay(1000); // wait for tasks to stop
+        await Task.Delay(1000); // wait for tasks to stop TODO: REWORK THIS
 
         if (client != null)
         {
@@ -149,9 +141,10 @@ public sealed class ShockOsc
         await _chatboxService.SendGenericMessage("Game Connected");
     }
 
-    private Task OnAvatarChange(Dictionary<string, object?> parameters, string avatarId)
+    private Task OnAvatarChange(OscQueryServer.ParameterUpdateArgs parameterUpdateArgs)
     {
-        AvatarId = avatarId;
+        AvatarId = parameterUpdateArgs.AvatarId;
+        var parameters = parameterUpdateArgs.Parameters;
         try
         {
             foreach (var obj in _dataLayer.ProgramGroups)
@@ -252,7 +245,7 @@ public sealed class ShockOsc
             case "/avatar/change":
                 var avatarId = received.Arguments.ElementAtOrDefault(0);
                 _logger.LogDebug("Avatar changed: {AvatarId}", avatarId);
-                OsTask.Run(_oscQueryServer.GetParameters);
+                OsTask.Run(_oscQueryServer.RefreshParameters);
                 OsTask.Run(_underscoreConfig.SendUpdateForAll);
                 return;
             case "/avatar/parameters/AFK":
