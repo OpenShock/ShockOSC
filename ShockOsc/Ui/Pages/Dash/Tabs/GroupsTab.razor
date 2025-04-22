@@ -5,9 +5,12 @@
 @using OpenShock.ShockOsc.Services
 @using OpenShock.ShockOsc.Ui.Utils
 @using Group = OpenShock.ShockOsc.Config.Group
+@using ProgramGroup = OpenShock.ShockOsc.Models.ProgramGroup
 @inject OpenShockApi OpenShockApi
 @inject ShockOsc ShockOsc
 @inject ConfigManager ConfigManager
+@inject UnderscoreConfig UnderscoreConfig
+
 
 @page "/dash/groups"
 
@@ -24,6 +27,8 @@
             OnGroupSelect();
         }
     }
+
+
 
     public async Task AddGroup()
     {
@@ -53,7 +58,7 @@
         await ShockOsc.RaiseOnGroupsChanged();
     }
 
-    private void OnGroupSettingsValueChange()
+    private Task OnGroupSettingsValueChange()
     {
         if (CurrentGroup != null)
         {
@@ -61,6 +66,7 @@
         }
 
         ConfigManager.Save();
+        return UnderscoreConfig.SendUpdateForAll();
     }
 
     private void OnGroupSelect()
@@ -80,6 +86,8 @@
     }
 
     private Group? CurrentGroup => Group == null ? null : ConfigManager.Config.Groups.TryGetValue(Group.Value, out var group) ? group : null;
+
+    private ProgramGroup? CurrentProgramGroup => Group == null ? null : UnderscoreConfig.GetProgramGroupFromGUID(Group.Value, out var group) ? group : null;
 
     private static Regex _nameRegex = new Regex(@"^[a-zA-Z0-9\/\\ -]+$", RegexOptions.Compiled);
 
@@ -143,8 +151,19 @@
     {
         _limitBoneHeldDurationEnabled = ConfigManager.Config.Behaviour.BoneHeldDurationLimit.HasValue;
         _limitBoneHeldDuration = ConfigManager.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
+
+        UnderscoreConfig.OnGroupConfigUpdate += OnGroupConfigUpdate;
     }
 
+    private void OnGroupConfigUpdate()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void Dispose()
+    {
+        UnderscoreConfig.OnGroupConfigUpdate -= OnGroupConfigUpdate;
+    }
 }
 
 <MudButton OnClick="AddGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add New Group</MudButton>
@@ -157,7 +176,7 @@
     }
 </MudSelect>
 
-@if (CurrentGroup != null)
+@if (CurrentGroup != null && CurrentProgramGroup != null)
 {
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudText>Group Settings</MudText>
@@ -165,6 +184,10 @@
         <br/>
 
         <MudTextField Label="Group Name" Validation="@(new Func<string, string>(NameValidation))" DebounceInterval="250" @bind-Value="@CurrentGroup.Name" @bind-Value:after="OnSettingsValueChange"/>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentProgramGroup.Paused" Label="Paused" @bind-Value:after="OnGroupSettingsValueChange" />
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">

@@ -7,6 +7,7 @@ namespace OpenShock.ShockOsc.Models;
 
 public sealed class ProgramGroup
 {
+    public bool Paused { get; set; } = false;
     public DateTime LastActive { get; set; }
     public DateTime LastExecuted { get; set; }
     public DateTime LastHeldAction { get; set; }

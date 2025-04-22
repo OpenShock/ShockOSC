@@ -41,6 +41,7 @@
 
         <MudTextField Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Chatbox.Prefix" Label="Prefix Text" @bind-Value:after="OnSettingsValueChange"/>
         <MudTextField Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Chatbox.IgnoredKillSwitchActive" Label="Ignored Kill Switch Text" @bind-Value:after="OnSettingsValueChange"/>
+        <MudTextField Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Chatbox.IgnoredGroupPauseActive" Label="Ignored Group Paused Text" @bind-Value:after="OnSettingsValueChange" />
         <MudTextField Variant="Variant.Filled" @bind-Value="ConfigManager.Config.Chatbox.IgnoredAfk" Label="Ignored Afk Text" @bind-Value:after="OnSettingsValueChange"/>
         <br/>
         <MudTabs Elevation="2" Outlined="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="rounded-lg">

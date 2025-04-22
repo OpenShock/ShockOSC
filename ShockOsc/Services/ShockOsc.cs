@@ -362,6 +362,13 @@ public sealed class ShockOsc
                     return;
                 }
 
+                if (programGroup.Paused)
+                {
+                    programGroup.TriggerMethod = TriggerMethod.None;
+                    await LogIgnoredGroupKillSwitchActive(programGroup);
+                    return;
+                }
+
                 if (_isAfk && _configManager.Config.Behaviour.DisableWhileAfk)
                 {
                     programGroup.TriggerMethod = TriggerMethod.None;
@@ -449,6 +456,15 @@ public sealed class ShockOsc
             return ValueTask.CompletedTask;
 
         return _chatboxService.SendGenericMessage(_configManager.Config.Chatbox.IgnoredKillSwitchActive);
+    }
+
+    private ValueTask LogIgnoredGroupKillSwitchActive(ProgramGroup programGroup)
+    {
+        _logger.LogInformation($"Ignoring shock, kill switch of {programGroup.Name} is active");
+        if (string.IsNullOrEmpty(_configManager.Config.Chatbox.IgnoredGroupPauseActive))
+            return ValueTask.CompletedTask;
+
+        return _chatboxService.SendGroupPausedMessage(programGroup);
     }
 
     private ValueTask LogIgnoredAfk()
@@ -552,10 +568,11 @@ public sealed class ShockOsc
 
 
         
-        if (programGroup.TriggerMethod == TriggerMethod.None &&
+        if (programGroup.TriggerMethod == 
+            TriggerMethod.None &&
             !isActiveOrOnCooldown &&
             !_underscoreConfig.KillSwitch &&
-            programGroup.IsGrabbed)
+            programGroup.IsGrabbed && !programGroup.Paused)
         {
             var heldAction = _configUtils.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
                 group => group.OverrideBoneHeldAction);
@@ -591,6 +608,13 @@ public sealed class ShockOsc
         {
             programGroup.TriggerMethod = TriggerMethod.None;
             await LogIgnoredKillSwitchActive();
+            return;
+        }
+
+        if (programGroup.Paused)
+        {
+            programGroup.TriggerMethod = TriggerMethod.None;
+            await LogIgnoredGroupKillSwitchActive(programGroup);
             return;
         }
 

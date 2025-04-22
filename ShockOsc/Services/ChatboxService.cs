@@ -1,6 +1,7 @@
 ﻿using System.Threading.Channels;
 using OpenShock.SDK.CSharp.Models;
 using OpenShock.ShockOsc.Config;
+using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.Utils;
 using SmartFormat;
 using Timer = System.Timers.Timer;
@@ -107,6 +108,20 @@ public sealed class ChatboxService : IAsyncDisposable
         await _messageChannel.Writer.WriteAsync(new Message(msg, _configManager.Config.Chatbox.TimeoutTimeSpan));
     }
     
+    public async ValueTask SendGroupPausedMessage(ProgramGroup programGroup)
+    {
+        if (!_configManager.Config.Chatbox.Enabled) return;
+
+        var dat = new
+        {
+            GroupName = programGroup.Name
+        };
+
+        var msg = $"{_configManager.Config.Chatbox.Prefix}{Smart.Format(_configManager.Config.Chatbox.IgnoredGroupPauseActive, dat)}";
+
+        await _messageChannel.Writer.WriteAsync(new Message(msg, _configManager.Config.Chatbox.TimeoutTimeSpan));
+    }
+
     public async ValueTask SendGenericMessage(string message)
     {
         if (!_configManager.Config.Chatbox.Enabled) return;
