@@ -1,6 +1,4 @@
-﻿using CommandLine;
-using Microsoft.Extensions.Logging;
-using OpenShock.ShockOsc.Config;
+﻿using OpenShock.ShockOsc.Config;
 using OpenShock.ShockOsc.Models;
 using OpenShock.ShockOsc.Utils;
 
