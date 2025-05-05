@@ -1,4 +1,4 @@
-namespace OpenShock.ShockOsc.Models;
+namespace OpenShock.ShockOSC.Models;
 
 public enum TriggerMethod
 {

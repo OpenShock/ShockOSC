@@ -1,4 +1,4 @@
-﻿namespace OpenShock.ShockOsc.OscChangeTracker;
+﻿namespace OpenShock.ShockOSC.OscChangeTracker;
 
 public interface IChangeTrackedOscParam
 {

@@ -1,24 +1,26 @@
 ﻿using System.Text;
 using System.Text.Json;
-using OpenShock.ShockOsc.Config;
+using Microsoft.Extensions.Logging;
+using OpenShock.Desktop.ModuleBase.Config;
+using OpenShock.ShockOSC.Config;
 
-namespace OpenShock.ShockOsc.Services;
+namespace OpenShock.ShockOSC.Services;
 
 public class MedalIcymiService
 {
     private readonly ILogger<MedalIcymiService> _logger;
-    private readonly ConfigManager _configManager;
+    private readonly IModuleConfig<ShockOscConfig> _moduleConfig;
     private static readonly HttpClient HttpClient = new();
     private const string BaseUrl = "http://localhost:12665/api/v1";
     // these are publicly generated and are not sensitive.
     private const string PubApiKeyVrc = "pub_x4PTxSGVk6sl8BYg5EB5qsn8QIVz4kRi";
     private const string PubApiKeyCvr = "pub_LRG3bA6XjoVSkSU4JuXmL51tJdGJWdVQ"; 
 
-    public MedalIcymiService(ILogger<MedalIcymiService> logger, ConfigManager configManager)
+    public MedalIcymiService(ILogger<MedalIcymiService> logger, IModuleConfig<ShockOscConfig> moduleConfig)
     {
         _logger = logger;
-        _configManager = configManager;
-        switch (_configManager.Config.MedalIcymi.IcymiGame)
+        _moduleConfig = moduleConfig;
+        switch (_moduleConfig.Config.MedalIcymi.Game)
         {
             case IcymiGame.VRChat:
                 HttpClient.DefaultRequestHeaders.Add("publicKey", PubApiKeyVrc);
@@ -27,7 +29,7 @@ public class MedalIcymiService
                 HttpClient.DefaultRequestHeaders.Add("publicKey", PubApiKeyCvr);
                 break;
             default:
-                _logger.LogError("Game Selection was out of range. Value was: {value}", _configManager.Config.MedalIcymi.IcymiGame);
+                _logger.LogError("Game Selection was out of range. Value was: {value}", _moduleConfig.Config.MedalIcymi.Game);
                 break;
         }
     }
@@ -37,22 +39,22 @@ public class MedalIcymiService
         var eventPayload = new
         {
             eventId,
-            eventName = _configManager.Config.MedalIcymi.IcymiName,
+            eventName = _moduleConfig.Config.MedalIcymi.Name,
             
             contextTags = new
             {
-                location = _configManager.Config.MedalIcymi.IcymiGame.ToString(),
-                description = _configManager.Config.MedalIcymi.IcymiDescription
+                location = _moduleConfig.Config.MedalIcymi.Game.ToString(),
+                description = _moduleConfig.Config.MedalIcymi.Description
             },
             triggerActions = new[]
             {
-                _configManager.Config.MedalIcymi.IcymiTriggerAction.ToString()
+                _moduleConfig.Config.MedalIcymi.TriggerAction.ToString()
             },
             
             clipOptions = new
             {
-                duration = _configManager.Config.MedalIcymi.IcymiClipDuration,
-                alertType = _configManager.Config.MedalIcymi.IcymiAlertType.ToString(),
+                duration = _moduleConfig.Config.MedalIcymi.ClipDuration,
+                alertType = _moduleConfig.Config.MedalIcymi.AlertType.ToString(),
             }
         };
 
@@ -63,14 +65,14 @@ public class MedalIcymiService
         {
             var response = await HttpClient.PostAsync($"{BaseUrl}/event/invoke", content);
 
-            _logger.LogInformation("{triggerAction} triggered.", _configManager.Config.MedalIcymi.IcymiTriggerAction);
+            _logger.LogInformation("{triggerAction} triggered.", _moduleConfig.Config.MedalIcymi.TriggerAction);
                 
             var responseContent = await response.Content.ReadAsStringAsync();
             HandleApiResponse((int)response.StatusCode, responseContent);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error while creating Medal {triggerAction}: {exception}", _configManager.Config.MedalIcymi.IcymiTriggerAction, ex);
+            _logger.LogError("Error while creating Medal {triggerAction}: {exception}", _moduleConfig.Config.MedalIcymi.TriggerAction, ex);
         }
     }
 

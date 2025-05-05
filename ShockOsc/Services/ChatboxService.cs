@@ -1,18 +1,19 @@
 ﻿using System.Threading.Channels;
-using OpenShock.SDK.CSharp.Models;
-using OpenShock.ShockOsc.Config;
-using OpenShock.ShockOsc.Utils;
+using Microsoft.Extensions.Logging;
+using OpenShock.Desktop.ModuleBase.Config;
+using OpenShock.Desktop.ModuleBase.Models;
+using OpenShock.ShockOSC.Config;
+using OpenShock.ShockOSC.Utils;
 using SmartFormat;
-using Timer = System.Timers.Timer;
 
-namespace OpenShock.ShockOsc.Services;
+namespace OpenShock.ShockOSC.Services;
 
 /// <summary>
 /// Handle chatbox interactions and behaviour
 /// </summary>
 public sealed class ChatboxService : IAsyncDisposable
 {
-    private readonly ConfigManager _configManager;
+    private readonly IModuleConfig<ShockOscConfig> _moduleConfig;
     private readonly OscClient _oscClient;
     private readonly ILogger<ChatboxService> _logger;
     private readonly System.Threading.Timer _clearTimer;
@@ -25,9 +26,9 @@ public sealed class ChatboxService : IAsyncDisposable
         FullMode = BoundedChannelFullMode.DropOldest
     });
 
-    public ChatboxService(ConfigManager configManager, OscClient oscClient, ILogger<ChatboxService> logger)
+    public ChatboxService(IModuleConfig<ShockOscConfig> moduleConfig, OscClient oscClient, ILogger<ChatboxService> logger)
     {
-        _configManager = configManager;
+        _moduleConfig = moduleConfig;
         _oscClient = oscClient;
         _logger = logger;
 
@@ -51,9 +52,9 @@ public sealed class ChatboxService : IAsyncDisposable
 
     public async ValueTask SendLocalControlMessage(string name, byte intensity, uint duration, ControlType type)
     {
-        if (!_configManager.Config.Chatbox.Enabled) return;
+        if (!_moduleConfig.Config.Chatbox.Enabled) return;
 
-        if (!_configManager.Config.Chatbox.Types.TryGetValue(type, out var template))
+        if (!_moduleConfig.Config.Chatbox.Types.TryGetValue(type, out var template))
         {
             _logger.LogError("No message template found for control type {ControlType}", type);
             return;
@@ -71,17 +72,17 @@ public sealed class ChatboxService : IAsyncDisposable
             DurationSeconds = duration.DurationInSecondsString()
         };
 
-        var msg = $"{_configManager.Config.Chatbox.Prefix}{Smart.Format(template.Local, dat)}";
+        var msg = $"{_moduleConfig.Config.Chatbox.Prefix}{Smart.Format(template.Local, dat)}";
 
-        await _messageChannel.Writer.WriteAsync(new Message(msg, _configManager.Config.Chatbox.TimeoutTimeSpan));
+        await _messageChannel.Writer.WriteAsync(new Message(msg, _moduleConfig.Config.Chatbox.TimeoutTimeSpan));
     }
 
     public async ValueTask SendRemoteControlMessage(string shockerName, string senderName, string? customName,
         byte intensity, uint duration, ControlType type)
     {
-        if (!_configManager.Config.Chatbox.Enabled || !_configManager.Config.Chatbox.DisplayRemoteControl) return;
+        if (!_moduleConfig.Config.Chatbox.Enabled || !_moduleConfig.Config.Chatbox.DisplayRemoteControl) return;
 
-        if (!_configManager.Config.Chatbox.Types.TryGetValue(type, out var template))
+        if (!_moduleConfig.Config.Chatbox.Types.TryGetValue(type, out var template))
         {
             _logger.LogError("No message template found for control type {ControlType}", type);
             return;
@@ -102,17 +103,17 @@ public sealed class ChatboxService : IAsyncDisposable
 
         var templateToUse = customName == null ? template.Remote : template.RemoteWithCustomName;
 
-        var msg = $"{_configManager.Config.Chatbox.Prefix}{Smart.Format(templateToUse, dat)}";
+        var msg = $"{_moduleConfig.Config.Chatbox.Prefix}{Smart.Format(templateToUse, dat)}";
 
-        await _messageChannel.Writer.WriteAsync(new Message(msg, _configManager.Config.Chatbox.TimeoutTimeSpan));
+        await _messageChannel.Writer.WriteAsync(new Message(msg, _moduleConfig.Config.Chatbox.TimeoutTimeSpan));
     }
     
     public async ValueTask SendGenericMessage(string message)
     {
-        if (!_configManager.Config.Chatbox.Enabled) return;
+        if (!_moduleConfig.Config.Chatbox.Enabled) return;
 
-        var msg = $"{_configManager.Config.Chatbox.Prefix}{message}";
-        await _messageChannel.Writer.WriteAsync(new Message(msg, _configManager.Config.Chatbox.TimeoutTimeSpan));
+        var msg = $"{_moduleConfig.Config.Chatbox.Prefix}{message}";
+        await _messageChannel.Writer.WriteAsync(new Message(msg, _moduleConfig.Config.Chatbox.TimeoutTimeSpan));
     }
 
     private async Task MessageLoop()
@@ -121,9 +122,9 @@ public sealed class ChatboxService : IAsyncDisposable
         {
             await _oscClient.SendChatboxMessage(message.Text);
             
-            if(_configManager.Config.Osc.Hoscy) continue;
+            if(_moduleConfig.Config.Osc.Hoscy) continue;
             // We dont need to worry about timeouts if we're using hoscy
-            if(_configManager.Config.Chatbox.TimeoutEnabled) _clearTimer.Change(message.Timeout, Timeout.InfiniteTimeSpan);
+            if(_moduleConfig.Config.Chatbox.TimeoutEnabled) _clearTimer.Change(message.Timeout, Timeout.InfiniteTimeSpan);
             await Task.Delay(1250); // VRChat chatbox rate limit
         }
     }

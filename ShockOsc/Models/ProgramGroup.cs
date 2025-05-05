@@ -1,9 +1,9 @@
-using OpenShock.SDK.CSharp.Models;
-using OpenShock.ShockOsc.Config;
-using OpenShock.ShockOsc.OscChangeTracker;
-using OpenShock.ShockOsc.Services;
+using OpenShock.Desktop.ModuleBase.Models;
+using OpenShock.ShockOSC.Config;
+using OpenShock.ShockOSC.OscChangeTracker;
+using OpenShock.ShockOSC.Services;
 
-namespace OpenShock.ShockOsc.Models;
+namespace OpenShock.ShockOSC.Models;
 
 public sealed class ProgramGroup
 {

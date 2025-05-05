@@ -1,6 +1,6 @@
-﻿using OpenShock.SDK.CSharp.Models;
+﻿using OpenShock.Desktop.ModuleBase.Models;
 
-namespace OpenShock.ShockOsc.Config;
+namespace OpenShock.ShockOSC.Config;
 
 public enum BoneAction
 {

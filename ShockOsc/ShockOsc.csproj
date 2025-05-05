@@ -1,115 +1,55 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <SingleProject>true</SingleProject>
+        <OutputType>Library</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
-        <ApplicationTitle>ShockOsc</ApplicationTitle>
 
-        <AssemblyName>OpenShock.ShockOsc</AssemblyName>
-        <RootNamespace>OpenShock.ShockOsc</RootNamespace>
+        <AssemblyName>OpenShock.ShockOSC</AssemblyName>
+        <RootNamespace>OpenShock.ShockOSC</RootNamespace>
         <Company>OpenShock</Company>
-        <AssemblyVersion>2.4.2</AssemblyVersion>
-        <Version>2.4.2</Version>
-        <ApplicationIcon>Resources\openshock-icon.ico</ApplicationIcon>
-        <SelfContained>true</SelfContained>
+        
+        <AssemblyVersion>3.0.0</AssemblyVersion>
+        <Version>3.0.0-rc.2</Version>
+        
         <Product>ShockOsc</Product>
-
-        <PackageIcon>Resources\Icon512.png</PackageIcon>
 
         <ResourceLanguages>en</ResourceLanguages>
         <SatelliteResourceLanguages>en-US;en</SatelliteResourceLanguages>
         <IsPackable>false</IsPackable>
-
-        <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
-
-        <Configurations>Release-Windows;Debug-Windows;Release-Photino;Debug-Photino;Release-Web;Debug-Web</Configurations>
+        
+        <Configurations>Debug;Release</Configurations>
 
         <Platforms>AnyCPU</Platforms>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Windows' Or '$(Configuration)' == 'Release-Windows'">
-        <TargetFramework>net9.0-windows10.0.19041</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
         <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-        <WindowsPackageType>None</WindowsPackageType>
-        <UseMaui>true</UseMaui>
-        <DefineConstants>MAUI</DefineConstants>
-        <StartupObject>OpenShock.ShockOsc.Platforms.Windows.WindowsEntryPoint</StartupObject>
-    </PropertyGroup>
-
-    <ItemGroup Condition="'$(Configuration)' == 'Debug-Windows' Or '$(Configuration)' == 'Release-Windows'">
-        <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.10" />
-        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.10" />
-    </ItemGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
-        <TargetFramework>net8.0</TargetFramework>
-        <StartupObject>OpenShock.ShockOsc.Platforms.Photino.PhotinoEntryPoint</StartupObject>
-        <DefineConstants>PHOTINO</DefineConstants>
-        <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-    </PropertyGroup>
-
-    <ItemGroup Condition="'$(Configuration)' == 'Debug-Photino' Or '$(Configuration)' == 'Release-Photino'">
-        <PackageReference Include="Photino.Blazor" Version="2.7.0"/>
-    </ItemGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug-Web' Or '$(Configuration)' == 'Release-Web' ">
-        <TargetFramework>net8.0</TargetFramework>
-        <StartupObject>OpenShock.ShockOsc.Platforms.Web.WebEntryPoint</StartupObject>
-        <DefineConstants>WEB</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Update="wwwroot\**">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <None Update="Resources\**">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="CommandLineParser" Version="2.9.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.10" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
-        <PackageReference Include="MudBlazor" Version="7.15.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
+        <PackageReference Include="MudBlazor" Version="8.4.0" />
         <PackageReference Include="EmbedIO" Version="3.5.2"/>
         <PackageReference Include="LucHeart.CoreOSC" Version="1.4.0" />
         <PackageReference Include="MeaMod.DNS" Version="1.0.71" />
-        <PackageReference Include="OpenShock.SDK.CSharp" Version="0.0.29" />
-        <PackageReference Include="OpenShock.SDK.CSharp.Hub" Version="0.0.29" />
-        <PackageReference Include="OpenShock.SDK.CSharp.Live" Version="0.0.29" />
-        <PackageReference Include="OscQueryLibrary" Version="1.1.2" />
-        <PackageReference Include="Semver" Version="3.0.0" />
-        <PackageReference Include="Serilog" Version="4.1.0" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
-        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0"/>
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-        <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
-        <PackageReference Include="SmartFormat.NET" Version="3.5.1" />
+        <PackageReference Include="OpenShock.Desktop.ModuleBase" Version="1.0.0-preview.1" />
+        <PackageReference Include="OscQueryLibrary" Version="1.2.0" />
+        <PackageReference Include="SmartFormat.NET" Version="3.6.0" />
         <PackageReference Include="System.Reactive" Version="6.0.1" />
     </ItemGroup>
 
 
     <ItemGroup>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\AppSettingsTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ChatboxTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ConfigTab.razor"/>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DashboardTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\DebugTab.razor"/>
         <AdditionalFiles Include="Ui\Pages\Dash\Tabs\GroupsTab.razor"/>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\LogsTab.razor"/>
-        <AdditionalFiles Include="Ui\Pages\Dash\Tabs\ShockersTab.razor"/>
     </ItemGroup>
-
-    <PropertyGroup>
-        <ServerGarbageCollection>false</ServerGarbageCollection>
-    </PropertyGroup>
+    
+    <ItemGroup>
+      <EmbeddedResource Include="Resources\ShockOSC-Icon.svg" />
+    </ItemGroup>
 
 </Project>

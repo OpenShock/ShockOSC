@@ -1,25 +1,26 @@
 ﻿using Microsoft.Extensions.Logging;
-using OpenShock.ShockOsc.Config;
-using OpenShock.ShockOsc.Models;
-using OpenShock.ShockOsc.Utils;
+using OpenShock.Desktop.ModuleBase.Config;
+using OpenShock.ShockOSC.Config;
+using OpenShock.ShockOSC.Models;
+using OpenShock.ShockOSC.Utils;
 
-namespace OpenShock.ShockOsc.Services;
+namespace OpenShock.ShockOSC.Services;
 
 public sealed class UnderscoreConfig
 {
     private readonly ILogger<UnderscoreConfig> _logger;
     private readonly OscClient _oscClient;
-    private readonly ConfigManager _configManager;
+    private readonly IModuleConfig<ShockOscConfig> _moduleConfig;
     private readonly ShockOscData _dataLayer;
 
     public event Action? OnConfigUpdate;
 
-    public UnderscoreConfig(ILogger<UnderscoreConfig> logger, OscClient oscClient, ConfigManager configManager,
+    public UnderscoreConfig(ILogger<UnderscoreConfig> logger, OscClient oscClient, IModuleConfig<ShockOscConfig> moduleConfig,
         ShockOscData dataLayer)
     {
         _logger = logger;
         _oscClient = oscClient;
-        _configManager = configManager;
+        _moduleConfig = moduleConfig;
         _dataLayer = dataLayer;
     }
 
@@ -83,9 +84,9 @@ public sealed class UnderscoreConfig
             case "ModeIntensity":
                 if (value is bool modeIntensity)
                 {
-                    if (_configManager.Config.Behaviour.RandomIntensity == modeIntensity) return;
-                    _configManager.Config.Behaviour.RandomIntensity = modeIntensity;
-                    _configManager.Save();
+                    if (_moduleConfig.Config.Behaviour.RandomIntensity == modeIntensity) return;
+                    _moduleConfig.Config.Behaviour.RandomIntensity = modeIntensity;
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
                 break;
@@ -93,9 +94,9 @@ public sealed class UnderscoreConfig
             case "ModeDuration":
                 if (value is bool modeDuration)
                 {
-                    if(_configManager.Config.Behaviour.RandomDuration == modeDuration) return;
-                    _configManager.Config.Behaviour.RandomDuration = modeDuration;
-                    _configManager.Save();
+                    if(_moduleConfig.Config.Behaviour.RandomDuration == modeDuration) return;
+                    _moduleConfig.Config.Behaviour.RandomDuration = modeDuration;
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
                 break;
@@ -105,14 +106,14 @@ public sealed class UnderscoreConfig
                 if (value is float intensityFloat)
                 {
                     var currentIntensity =
-                        MathUtils.Saturate(_configManager.Config.Behaviour.FixedIntensity / 100f);
+                        MathUtils.Saturate(_moduleConfig.Config.Behaviour.FixedIntensity / 100f);
                     if (Math.Abs(intensityFloat - currentIntensity) < 0.001) return;
 
-                    _configManager.Config.Behaviour.FixedIntensity =
+                    _moduleConfig.Config.Behaviour.FixedIntensity =
                         Math.Clamp((byte)Math.Round(intensityFloat * 100), (byte)0, (byte)100);
-                    _configManager.Config.Behaviour.RandomIntensity = false;
+                    _moduleConfig.Config.Behaviour.RandomIntensity = false;
                     ValidateSettings();
-                    _configManager.Save();
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -123,14 +124,14 @@ public sealed class UnderscoreConfig
                 if (value is float minIntensityFloat)
                 {
                     var currentMinIntensity =
-                        MathUtils.Saturate(_configManager.Config.Behaviour.IntensityRange.Min / 100f);
+                        MathUtils.Saturate(_moduleConfig.Config.Behaviour.IntensityRange.Min / 100f);
                     if (Math.Abs(minIntensityFloat - currentMinIntensity) < 0.001) return;
 
-                    _configManager.Config.Behaviour.IntensityRange.Min =
+                    _moduleConfig.Config.Behaviour.IntensityRange.Min =
                         MathUtils.ClampByte((byte)Math.Round(minIntensityFloat * 100), 0, 100);
-                    _configManager.Config.Behaviour.RandomIntensity = true;
+                    _moduleConfig.Config.Behaviour.RandomIntensity = true;
                     ValidateSettings();
-                    _configManager.Save();
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -141,14 +142,14 @@ public sealed class UnderscoreConfig
                 if (value is float maxIntensityFloat)
                 {
                     var currentMaxIntensity =
-                        MathUtils.Saturate(_configManager.Config.Behaviour.IntensityRange.Max / 100f);
+                        MathUtils.Saturate(_moduleConfig.Config.Behaviour.IntensityRange.Max / 100f);
                     if (Math.Abs(maxIntensityFloat - currentMaxIntensity) < 0.001) return;
 
-                    _configManager.Config.Behaviour.IntensityRange.Max =
+                    _moduleConfig.Config.Behaviour.IntensityRange.Max =
                         MathUtils.ClampByte((byte)Math.Round(maxIntensityFloat * 100), 0, 100);
-                    _configManager.Config.Behaviour.RandomIntensity = true;
+                    _moduleConfig.Config.Behaviour.RandomIntensity = true;
                     ValidateSettings();
-                    _configManager.Save();
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -158,14 +159,14 @@ public sealed class UnderscoreConfig
                 // 0..10sec
                 if (value is float minDurationFloat)
                 {
-                    var currentMinDuration = _configManager.Config.Behaviour.DurationRange.Min / 10_000f;
+                    var currentMinDuration = _moduleConfig.Config.Behaviour.DurationRange.Min / 10_000f;
                     if (Math.Abs(minDurationFloat - currentMinDuration) < 0.001) return;
 
-                    _configManager.Config.Behaviour.DurationRange.Min =
+                    _moduleConfig.Config.Behaviour.DurationRange.Min =
                         MathUtils.ClampUShort((ushort)Math.Round(minDurationFloat * 10_000), 300, 30_000);
-                    _configManager.Config.Behaviour.RandomDuration = true;
+                    _moduleConfig.Config.Behaviour.RandomDuration = true;
                     ValidateSettings();
-                    _configManager.Save();
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -175,14 +176,14 @@ public sealed class UnderscoreConfig
                 // 0..10sec
                 if (value is float maxDurationFloat)
                 {
-                    var currentMaxDuration = _configManager.Config.Behaviour.DurationRange.Max / 10_000f;
+                    var currentMaxDuration = _moduleConfig.Config.Behaviour.DurationRange.Max / 10_000f;
                     if (Math.Abs(maxDurationFloat - currentMaxDuration) < 0.001) return;
 
-                    _configManager.Config.Behaviour.DurationRange.Max =
+                    _moduleConfig.Config.Behaviour.DurationRange.Max =
                         MathUtils.ClampUShort((ushort)Math.Round(maxDurationFloat * 10_000), 300, 30_000);
-                    _configManager.Config.Behaviour.RandomDuration = true;
+                    _moduleConfig.Config.Behaviour.RandomDuration = true;
                     ValidateSettings();
-                    _configManager.Save();
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -192,14 +193,14 @@ public sealed class UnderscoreConfig
                 // 0..10sec
                 if (value is float durationFloat)
                 {
-                    var currentDuration = _configManager.Config.Behaviour.FixedDuration / 10000f;
+                    var currentDuration = _moduleConfig.Config.Behaviour.FixedDuration / 10000f;
                     if (Math.Abs(durationFloat - currentDuration) < 0.001) return;
 
-                    _configManager.Config.Behaviour.FixedDuration =
+                    _moduleConfig.Config.Behaviour.FixedDuration =
                         MathUtils.ClampUShort((ushort)Math.Round(durationFloat * 10_000), 300, 10_000);
-                    _configManager.Config.Behaviour.RandomDuration = false;
+                    _moduleConfig.Config.Behaviour.RandomDuration = false;
                     ValidateSettings();
-                    _configManager.Save();
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -210,13 +211,13 @@ public sealed class UnderscoreConfig
                 if (value is float cooldownTimeFloat)
                 {
                     var currentCooldownTime =
-                        MathUtils.Saturate(_configManager.Config.Behaviour.CooldownTime / 100000f);
+                        MathUtils.Saturate(_moduleConfig.Config.Behaviour.CooldownTime / 100000f);
                     if (Math.Abs(cooldownTimeFloat - currentCooldownTime) < 0.001) return;
 
-                    _configManager.Config.Behaviour.CooldownTime =
+                    _moduleConfig.Config.Behaviour.CooldownTime =
                         MathUtils.ClampUint((uint)Math.Round(cooldownTimeFloat * 100000), 0, 100000);
                     ValidateSettings();
-                    _configManager.Save();
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -226,13 +227,13 @@ public sealed class UnderscoreConfig
                 // 0..1sec
                 if (value is float holdTimeFloat)
                 {
-                    var currentHoldTime = MathUtils.Saturate(_configManager.Config.Behaviour.HoldTime / 1000f);
+                    var currentHoldTime = MathUtils.Saturate(_moduleConfig.Config.Behaviour.HoldTime / 1000f);
                     if (Math.Abs(holdTimeFloat - currentHoldTime) < 0.001) return;
 
-                    _configManager.Config.Behaviour.HoldTime =
+                    _moduleConfig.Config.Behaviour.HoldTime =
                         MathUtils.ClampUint((uint)Math.Round(holdTimeFloat * 1000), 0, 1000);
                     ValidateSettings();
-                    _configManager.Save();
+                    _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
 
@@ -259,11 +260,11 @@ public sealed class UnderscoreConfig
 
     private void ValidateSettings()
     {
-        var intensityRange = _configManager.Config.Behaviour.IntensityRange;
+        var intensityRange = _moduleConfig.Config.Behaviour.IntensityRange;
         if (intensityRange.Min > intensityRange.Max) intensityRange.Max = intensityRange.Min;
         if (intensityRange.Max < intensityRange.Min) intensityRange.Min = intensityRange.Max;
         
-        var durationRange = _configManager.Config.Behaviour.DurationRange;
+        var durationRange = _moduleConfig.Config.Behaviour.DurationRange;
         if (durationRange.Min > durationRange.Max) durationRange.Max = durationRange.Min;
         if (durationRange.Max < durationRange.Min) durationRange.Min = durationRange.Max;
     }
@@ -273,24 +274,24 @@ public sealed class UnderscoreConfig
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/Paused", KillSwitch);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Paused", KillSwitch);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MinIntensity",
-            MathUtils.Saturate(_configManager.Config.Behaviour.IntensityRange.Min / 100f));
+            MathUtils.Saturate(_moduleConfig.Config.Behaviour.IntensityRange.Min / 100f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxIntensity",
-            MathUtils.Saturate(_configManager.Config.Behaviour.IntensityRange.Max / 100f));
+            MathUtils.Saturate(_moduleConfig.Config.Behaviour.IntensityRange.Max / 100f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Duration",
-            MathUtils.Saturate(_configManager.Config.Behaviour.FixedDuration / 10000f));
+            MathUtils.Saturate(_moduleConfig.Config.Behaviour.FixedDuration / 10000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/CooldownTime",
-            MathUtils.Saturate(_configManager.Config.Behaviour.CooldownTime / 100000f));
+            MathUtils.Saturate(_moduleConfig.Config.Behaviour.CooldownTime / 100000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/HoldTime",
-            MathUtils.Saturate(_configManager.Config.Behaviour.HoldTime / 1000f));
+            MathUtils.Saturate(_moduleConfig.Config.Behaviour.HoldTime / 1000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/ModeIntensity",
-            _configManager.Config.Behaviour.RandomIntensity);
+            _moduleConfig.Config.Behaviour.RandomIntensity);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/ModeDuration",
-            _configManager.Config.Behaviour.RandomDuration);
+            _moduleConfig.Config.Behaviour.RandomDuration);
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/Intensity",
-            MathUtils.Saturate(_configManager.Config.Behaviour.FixedIntensity / 100f));
+            MathUtils.Saturate(_moduleConfig.Config.Behaviour.FixedIntensity / 100f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MinDuration",
-            MathUtils.Saturate(_configManager.Config.Behaviour.DurationRange.Min / 10_000f));
+            MathUtils.Saturate(_moduleConfig.Config.Behaviour.DurationRange.Min / 10_000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxDuration",
-            MathUtils.Saturate(_configManager.Config.Behaviour.DurationRange.Max / 10_000f));
+            MathUtils.Saturate(_moduleConfig.Config.Behaviour.DurationRange.Max / 10_000f));
     }
 }
