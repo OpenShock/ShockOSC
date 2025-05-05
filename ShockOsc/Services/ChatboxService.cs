@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.ShockOSC.Config;
+using OpenShock.ShockOSC.Models;
 using OpenShock.ShockOSC.Utils;
 using SmartFormat;
 
@@ -104,6 +105,20 @@ public sealed class ChatboxService : IAsyncDisposable
         var templateToUse = customName == null ? template.Remote : template.RemoteWithCustomName;
 
         var msg = $"{_moduleConfig.Config.Chatbox.Prefix}{Smart.Format(templateToUse, dat)}";
+
+        await _messageChannel.Writer.WriteAsync(new Message(msg, _moduleConfig.Config.Chatbox.TimeoutTimeSpan));
+    }
+    
+    public async ValueTask SendGroupPausedMessage(ProgramGroup programGroup)
+    {
+        if (!_moduleConfig.Config.Chatbox.Enabled) return;
+
+        var dat = new
+        {
+            GroupName = programGroup.Name
+        };
+
+        var msg = $"{_moduleConfig.Config.Chatbox.Prefix}{Smart.Format(_moduleConfig.Config.Chatbox.IgnoredGroupPauseActive, dat)}";
 
         await _messageChannel.Writer.WriteAsync(new Message(msg, _moduleConfig.Config.Chatbox.TimeoutTimeSpan));
     }

@@ -22,6 +22,7 @@ public sealed class ChatboxConf
     public HoscyMessageType HoscyType { get; set; } = HoscyMessageType.Message;
 
     public string IgnoredKillSwitchActive { get; set; } = "Ignoring Shock, kill switch is active";
+    public string IgnoredGroupPauseActive { get; set; } = "Ignoring Shock, {GroupName} is paused";
     public string IgnoredAfk { get; set; } = "Ignoring Shock, user is afk";
 
     public IDictionary<ControlType, ControlTypeConf> Types { get; set; } =

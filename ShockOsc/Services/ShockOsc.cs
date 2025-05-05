@@ -358,6 +358,13 @@ public sealed class ShockOsc
                     await LogIgnoredKillSwitchActive();
                     return;
                 }
+                
+                if (programGroup.Paused)
+                {
+                    programGroup.TriggerMethod = TriggerMethod.None;
+                    await LogIgnoredGroupKillSwitchActive(programGroup);
+                    return;
+                }
 
                 if (_isAfk && _moduleConfig.Config.Behaviour.DisableWhileAfk)
                 {
@@ -447,6 +454,15 @@ public sealed class ShockOsc
             return ValueTask.CompletedTask;
 
         return _chatboxService.SendGenericMessage(_moduleConfig.Config.Chatbox.IgnoredKillSwitchActive);
+    }
+    
+    private ValueTask LogIgnoredGroupKillSwitchActive(ProgramGroup programGroup)
+    {
+        _logger.LogInformation($"Ignoring shock, kill switch of {programGroup.Name} is active");
+        if (string.IsNullOrEmpty(_moduleConfig.Config.Chatbox.IgnoredGroupPauseActive))
+            return ValueTask.CompletedTask;
+
+        return _chatboxService.SendGroupPausedMessage(programGroup);
     }
 
     private ValueTask LogIgnoredAfk()
@@ -603,7 +619,8 @@ public sealed class ShockOsc
         if (programGroup.TriggerMethod == TriggerMethod.None &&
             !isActiveOrOnCooldown &&
             !_underscoreConfig.KillSwitch &&
-            programGroup.IsGrabbed)
+            programGroup.IsGrabbed &&
+            !programGroup.Paused)
         {
             var heldAction = _moduleConfig.Config.GetGroupOrGlobal(programGroup, behaviourConfig => behaviourConfig.WhileBoneHeld,
                 group => group.OverrideBoneHeldAction);
@@ -641,7 +658,14 @@ public sealed class ShockOsc
             await LogIgnoredKillSwitchActive();
             return;
         }
-
+        
+        if (programGroup.Paused)
+        {
+            programGroup.TriggerMethod = TriggerMethod.None;
+            await LogIgnoredGroupKillSwitchActive(programGroup);
+            return;
+        }
+        
         if (_isAfk && config.DisableWhileAfk)
         {
             programGroup.TriggerMethod = TriggerMethod.None;
