@@ -7,6 +7,7 @@
 @using OpenShock.ShockOSC.Services
 @using OpenShock.ShockOSC.Ui.Utils
 @using Group = OpenShock.ShockOSC.Config.Group
+@using ProgramGroup = OpenShock.ShockOSC.Models.ProgramGroup
 
 @page "/dash/groups"
 
@@ -15,7 +16,8 @@
     [ModuleInject] private IModuleConfig<ShockOscConfig> ModuleConfig { get; set; } = null!;
     [ModuleInject] private ShockOsc ShockOsc { get; set; } = null!;
     [ModuleInject] private IOpenShockService OpenShock { get; set; } = null!;
-
+    [ModuleInject] private UnderscoreConfig UnderscoreConfig { get; set; } = null!;
+    
     private Guid? _group = null;
 
     public Guid? Group
@@ -56,7 +58,7 @@
         ShockOsc.RaiseOnGroupsChanged();
     }
 
-    private void OnGroupSettingsValueChange()
+    private Task OnGroupSettingsValueChange()
     {
         if (CurrentGroup != null)
         {
@@ -64,6 +66,8 @@
         }
 
         ModuleConfig.SaveDeferred();
+        if (CurrentProgramGroup == null) throw new NullReferenceException("Program Group is null in GroupsTab");
+        return UnderscoreConfig.SendUpdateForGroup(CurrentProgramGroup);
     }
 
     private void OnGroupSelect()
@@ -84,6 +88,8 @@
 
     private Group? CurrentGroup => Group == null ? null : ModuleConfig.Config.Groups.TryGetValue(Group.Value, out var group) ? group : null;
 
+    private ProgramGroup? CurrentProgramGroup => Group == null ? null : UnderscoreConfig.GetProgramGroupFromGUID(Group.Value, out var group) ? group : null;
+    
     private static Regex _nameRegex = new Regex(@"^[a-zA-Z0-9\/\\ -]+$", RegexOptions.Compiled);
 
     private string NameValidation(string name)
@@ -146,8 +152,19 @@
     {
         _limitBoneHeldDurationEnabled = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit.HasValue;
         _limitBoneHeldDuration = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
+        
+        UnderscoreConfig.OnGroupConfigUpdate += OnGroupConfigUpdate;
     }
-
+    
+    private void OnGroupConfigUpdate()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+    
+    private void Dispose()
+    {
+        UnderscoreConfig.OnGroupConfigUpdate -= OnGroupConfigUpdate;
+    }
 }
 
 <MudButton OnClick="AddGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add New Group</MudButton>
@@ -160,7 +177,7 @@
     }
 </MudSelect>
 
-@if (CurrentGroup != null)
+@if (CurrentGroup != null && CurrentProgramGroup != null)
 {
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudText>Group Settings</MudText>
@@ -170,6 +187,11 @@
         <MudTextField Label="Group Name" Validation="@(new Func<string, string>(NameValidation))" DebounceInterval="250" @bind-Value="@CurrentGroup.Name" @bind-Value:after="OnSettingsValueChange"/>
     </MudPaper>
 
+    <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentProgramGroup.Paused" Label="Paused" @bind-Value:after="OnGroupSettingsValueChange" />
+        <MudDivider />
+    </MudPaper>
+    
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
         <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideIntensity" Label="Override Intensity Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
         <MudDivider/>
