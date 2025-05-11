@@ -1,0 +1,1 @@
+copy ShockOsc\bin\Debug\net9.0\OpenShock.ShockOSC.dll %appdata%\OpenShock\Desktop\modules\openshock.shockosc\OpenShock.ShockOSC.dll

@@ -16,8 +16,9 @@ using OscQueryLibrary;
 [assembly:DesktopModule(typeof(ShockOSCModule), "openshock.shockosc", "ShockOSC")]
 namespace OpenShock.ShockOSC;
 
-public sealed class ShockOSCModule : DesktopModuleBase
+public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
 {
+    private IAsyncDisposable? _onRemoteControlSubscription;
     public override string IconPath => "OpenShock/ShockOSC/Resources/ShockOSC-Icon.svg";
 
     public override IReadOnlyCollection<NavigationItem> NavigationComponents { get; } =
@@ -93,5 +94,26 @@ public sealed class ShockOSCModule : DesktopModuleBase
         await ModuleServiceProvider.GetRequiredService<Services.ShockOsc>().Start();
         
         if (config.Config.Osc.OscQuery) ModuleServiceProvider.GetRequiredService<OscQueryServer>().Start();
+        
+        var chatboxService = ModuleServiceProvider.GetRequiredService<ChatboxService>();
+
+        _onRemoteControlSubscription = await ModuleInstanceManager.OpenShock.Control.OnRemoteControlledShocker.SubscribeAsync(async args =>
+        {
+            foreach (var controlLog in args.Logs)
+            {
+                await chatboxService.SendRemoteControlMessage(controlLog.Shocker.Name, args.Sender.Name,
+                    args.Sender.CustomName, controlLog.Intensity, controlLog.Duration, controlLog.Type);
+            }
+        });
+    }
+    
+    private bool _disposed;
+
+    public async ValueTask DisposeAsync()
+    {
+        if(_disposed) return;
+        _disposed = true;
+
+        if (_onRemoteControlSubscription != null) await _onRemoteControlSubscription.DisposeAsync();
     }
 }
