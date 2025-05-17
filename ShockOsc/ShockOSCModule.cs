@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using OpenShock.Desktop.ModuleBase;
-using OpenShock.Desktop.ModuleBase.Api;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.Desktop.ModuleBase.Navigation;
 using OpenShock.ShockOSC;
@@ -67,13 +66,13 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
         services.AddLogging();
         services.AddSingleton(config);
 
-        services.AddSingleton<IOpenShockService>(ModuleInstanceManager.OpenShock);
+        services.AddSingleton(ModuleInstanceManager.OpenShock);
         services.AddSingleton<ShockOscData>();
         services.AddSingleton<OscClient>();
         services.AddSingleton<OscHandler>();
         services.AddSingleton<ChatboxService>();
         
-        services.AddSingleton(provider =>
+        services.AddSingleton(_ =>
         {
             var listenAddress = config.Config.Osc.QuestSupport ? IPAddress.Any : IPAddress.Loopback;
             return new OscQueryServer("ShockOsc", listenAddress);
@@ -91,7 +90,7 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
     {
         var config = ModuleServiceProvider.GetRequiredService<IModuleConfig<ShockOscConfig>>();
 
-        await ModuleServiceProvider.GetRequiredService<Services.ShockOsc>().Start();
+        await ModuleServiceProvider.GetRequiredService<ShockOsc>().Start();
         
         if (config.Config.Osc.OscQuery) ModuleServiceProvider.GetRequiredService<OscQueryServer>().Start();
         
