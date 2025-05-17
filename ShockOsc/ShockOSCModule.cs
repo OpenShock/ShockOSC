@@ -75,7 +75,7 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
         services.AddSingleton(_ =>
         {
             var listenAddress = config.Config.Osc.QuestSupport ? IPAddress.Any : IPAddress.Loopback;
-            return new OscQueryServer("ShockOsc", listenAddress);
+            return new OscQueryServer("ShockOSC", listenAddress);
         });
         
         services.AddSingleton<ShockOsc>();
