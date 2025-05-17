@@ -113,6 +113,20 @@
     <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Behaviour.ForceUnmute" Label="Force Unmute" @bind-Value:after="OnSettingsValueChangeAsync"/>
 </MudPaper>
 
+
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+    <MudText>OSC Options (changing requires restart)</MudText>
+    <MudDivider/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Osc.QuestSupport" Label="Allow any IP?" @bind-Value:after="OnSettingsValueChange"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Osc.OscQuery" Label="OSC Query" @bind-Value:after="OnSettingsValueChange"/>
+    @if (!ModuleConfig.Config.Osc.OscQuery)
+    {
+        <br/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendPort" Label="OSC Send Port" @bind-Value:after="OnSettingsValueChange"/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscReceivePort" Label="OSC Receive Port" @bind-Value:after="OnSettingsValueChange"/>
+    }
+</MudPaper>
+
 <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
     <MudText>Medal.TV ICYMI (Automatic bookmarking and clip capture)</MudText>
     <MudDivider/>
