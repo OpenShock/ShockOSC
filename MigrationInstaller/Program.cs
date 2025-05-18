@@ -26,7 +26,7 @@ public static class Program
         Console.ReadLine();
     }
 
-    private static void RelaunchAsAdmin()
+    private static bool RelaunchAsAdmin()
     {
         // Relaunch with admin rights
         var processInfo = new ProcessStartInfo
@@ -39,13 +39,13 @@ public static class Program
         try
         {
             Process.Start(processInfo);
+            return true;
         }
         catch
         {
             Console.WriteLine("User denied elevation.");
+            return false;
         }
-
-        return;
     }
     
     private static async Task<bool> RunMainLogic()
@@ -53,8 +53,7 @@ public static class Program
         if(!IsRunAsAdmin()) 
         {
             Console.WriteLine("❌ Please run this program as administrator.");
-            RelaunchAsAdmin();
-            return true;
+            return RelaunchAsAdmin();
         }
         
         Console.WriteLine("🔍 Searching for uninstaller...");
