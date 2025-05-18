@@ -1,4 +1,5 @@
 ﻿<Solution>
   <Configurations />
+  <Project Path="MigrationInstaller\MigrationInstaller.csproj" Type="Classic C#" />
   <Project Path="ShockOsc\ShockOsc.csproj" />
 </Solution>
