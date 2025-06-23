@@ -28,7 +28,7 @@ public sealed class OscClient
     {
         _gameConnection?.Dispose();
         _gameConnection = null;
-        _logger.LogDebug("Creating game connection with receive port {ReceivePort} and send port {SendPort}", receivePort, sendPort);
+        _logger.LogInformation("Creating game connection with receive port {ReceivePort} and send port {SendPort}", receivePort, sendPort);
         _gameConnection = new(new IPEndPoint(ipAddress, receivePort), new IPEndPoint(ipAddress, sendPort));
     }
 
