@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Security.Principal;
 using Microsoft.Win32;
 
-namespace MigrationInstaller;
+namespace OpenShock.ShockOSC.MigrationInstaller;
 
 public static class Program
 {

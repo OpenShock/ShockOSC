@@ -8,6 +8,13 @@
         <PublishAot>true</PublishAot>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <OptimizationPreference>Size</OptimizationPreference>
+        <AssemblyName>OpenShock.ShockOSC.MigrationInstaller</AssemblyName>
+        <RootNamespace>OpenShock.ShockOSC.MigrationInstaller</RootNamespace>
+        <Company>OpenShock</Company>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Semver" Version="3.0.0" />
+    </ItemGroup>
 
 </Project>

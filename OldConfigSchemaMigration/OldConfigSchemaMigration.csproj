@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AssemblyName>OpenShock.ShockOSC.OldConfigSchemaMigration</AssemblyName>
+        <RootNamespace>OpenShock.ShockOSC.OldConfigSchemaMigration</RootNamespace>
+        <Company>OpenShock</Company>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Semver" Version="3.0.0" />
+    </ItemGroup>
+
+</Project>
