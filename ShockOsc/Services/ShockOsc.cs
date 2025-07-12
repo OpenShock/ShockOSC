@@ -127,7 +127,7 @@ public sealed class ShockOsc
         }
         else
         {
-            _oscClient.CreateGameConnection(IPAddress.Loopback, _moduleConfig.Config.Osc.OscReceivePort,
+            _oscClient.CreateGameConnection(IPAddress.Parse(_moduleConfig.Config.Osc.OscSendIp), _moduleConfig.Config.Osc.OscReceivePort,
                 _moduleConfig.Config.Osc.OscSendPort);
         }
 

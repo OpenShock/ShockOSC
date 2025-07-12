@@ -1,4 +1,5 @@
 ﻿@using System.Globalization
+@using System.Net
 @using OpenShock.Desktop.ModuleBase
 @using OpenShock.Desktop.ModuleBase.Config
 @using OpenShock.ShockOSC.Config
@@ -124,6 +125,14 @@
         <br/>
         <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendPort" Label="OSC Send Port" @bind-Value:after="OnSettingsValueChange"/>
         <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscReceivePort" Label="OSC Receive Port" @bind-Value:after="OnSettingsValueChange"/>
+        @if (IPAddress.TryParse(ModuleConfig.Config.Osc.OscSendIp, out var _))
+        {
+            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendIp" Label="OSC Send IP" @bind-Value:after="OnSettingsValueChange"/>
+        }
+        else
+        {
+            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendIp" Label="OSC Send IP" HelperText="Invalid Formatting" @bind-Value:after="OnSettingsValueChange"/>
+        }
     }
 </MudPaper>
 
@@ -194,7 +203,7 @@
     private Task OnSettingsValueChangeAsync()
     {
         ModuleConfig.Config.Behaviour.BoneHeldDurationLimit = _limitBoneHeldDurationEnabled ? _limitBoneHeldDuration : null;
-
+        
         ModuleConfig.SaveDeferred();
         return UnderscoreConfig.SendUpdateForAll();
     }
@@ -203,7 +212,7 @@
     {
         _limitBoneHeldDurationEnabled = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit.HasValue;
         _limitBoneHeldDuration = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
-
+        
         UnderscoreConfig.OnConfigUpdate += OnConfigUpdate;
     }
 
