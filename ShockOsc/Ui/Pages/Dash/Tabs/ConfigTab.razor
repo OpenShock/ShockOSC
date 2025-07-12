@@ -1,6 +1,5 @@
 ﻿@using System.Globalization
 @using System.Net
-@using Microsoft.Extensions.Logging
 @using OpenShock.Desktop.ModuleBase
 @using OpenShock.Desktop.ModuleBase.Config
 @using OpenShock.ShockOSC.Config
@@ -180,7 +179,6 @@
 
     [ModuleInject] private UnderscoreConfig UnderscoreConfig { get; set; } = null!;
     [ModuleInject] private IModuleConfig<ShockOscConfig> ModuleConfig { get; set; } = null!;
-    [ModuleInject] private ILogger<OscClient> Logging { get; set; } = null!;
     
     private string RandomIntensityString
     {
