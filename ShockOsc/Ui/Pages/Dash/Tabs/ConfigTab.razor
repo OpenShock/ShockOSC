@@ -1,10 +1,14 @@
 ﻿@using System.Globalization
+@using System.Net
+@using System.Reflection
 @using OpenShock.Desktop.ModuleBase
 @using OpenShock.Desktop.ModuleBase.Config
 @using OpenShock.ShockOSC.Config
 @using OpenShock.ShockOSC.Services
 @using OpenShock.ShockOSC.Ui.Utils
 @using OpenShock.ShockOSC.Utils
+@using Microsoft.Extensions.Logging;
+@using Swan
 @implements IDisposable
 
 @page "/dash/config"
@@ -124,6 +128,7 @@
         <br/>
         <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendPort" Label="OSC Send Port" @bind-Value:after="OnSettingsValueChange"/>
         <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscReceivePort" Label="OSC Receive Port" @bind-Value:after="OnSettingsValueChange"/>
+        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendIp" Label="OSC Send IP" @bind-Value:after="OnSettingsValueChange"/>
     }
 </MudPaper>
 
@@ -170,7 +175,7 @@
 
     [ModuleInject] private UnderscoreConfig UnderscoreConfig { get; set; } = null!;
     [ModuleInject] private IModuleConfig<ShockOscConfig> ModuleConfig { get; set; } = null!;
-    
+
     private string RandomIntensityString
     {
         get => ModuleConfig.Config.Behaviour.RandomIntensity ? "Random Intensity" : "Fixed Intensity";
@@ -194,7 +199,7 @@
     private Task OnSettingsValueChangeAsync()
     {
         ModuleConfig.Config.Behaviour.BoneHeldDurationLimit = _limitBoneHeldDurationEnabled ? _limitBoneHeldDuration : null;
-
+        
         ModuleConfig.SaveDeferred();
         return UnderscoreConfig.SendUpdateForAll();
     }
@@ -203,7 +208,7 @@
     {
         _limitBoneHeldDurationEnabled = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit.HasValue;
         _limitBoneHeldDuration = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
-
+        
         UnderscoreConfig.OnConfigUpdate += OnConfigUpdate;
     }
 
