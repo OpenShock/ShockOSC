@@ -24,7 +24,6 @@ public sealed class ShockOsc
     private readonly ILogger<ShockOsc> _logger;
     private readonly OscClient _oscClient;
     private readonly IOpenShockService _openShockService;
-    private readonly MedalIcymiService _medalIcymiService;
     private readonly UnderscoreConfig _underscoreConfig;
     private readonly IModuleConfig<ShockOscConfig> _moduleConfig;
     private readonly OscQueryServer _oscQueryServer;
@@ -72,8 +71,7 @@ public sealed class ShockOsc
         OscQueryServer oscQueryServer,
         ShockOscData dataLayer,
         OscHandler oscHandler,
-        ChatboxService chatboxService,
-        MedalIcymiService medalIcymiService)
+        ChatboxService chatboxService)
     {
         _logger = logger;
         _oscClient = oscClient;
@@ -84,7 +82,6 @@ public sealed class ShockOsc
         _dataLayer = dataLayer;
         _oscHandler = oscHandler;
         _chatboxService = chatboxService;
-        _medalIcymiService = medalIcymiService;
 
         _onGroupsChanged.Subscribe(SetupGroups);
 
@@ -560,12 +557,7 @@ public sealed class ShockOsc
 
         programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(actualDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
-
-        if (_moduleConfig.Config.MedalIcymi.Enabled)
-        {
-            await _medalIcymiService.TriggerMedalIcymiAction("evt_shockosc_triggered");
-        }
-
+        
         _logger.LogInformation(
             "Sending {Type} to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}", type,
             programGroup.Name, actualIntensity, inSeconds, exclusive);
