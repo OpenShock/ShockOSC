@@ -11,7 +11,7 @@
         <Company>OpenShock</Company>
         
         <AssemblyVersion>3.0.0</AssemblyVersion>
-        <Version>3.0.0-rc.4</Version>
+        <Version>3.0.0-rc.5</Version>
         
         <Product>ShockOsc</Product>
 
@@ -29,11 +29,11 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
-        <PackageReference Include="MudBlazor" Version="8.9.0" />
+        <PackageReference Include="MudBlazor" Version="8.10.0" />
         <PackageReference Include="EmbedIO" Version="3.5.2"/>
         <PackageReference Include="LucHeart.CoreOSC" Version="1.5.0" />
         <PackageReference Include="MeaMod.DNS" Version="1.0.71" />
-        <PackageReference Include="OpenShock.Desktop.ModuleBase" Version="1.0.0-preview.5" />
+        <PackageReference Include="OpenShock.Desktop.ModuleBase" Version="1.0.0" />
         <PackageReference Include="OscQueryLibrary" Version="1.2.0" />
         <PackageReference Include="SmartFormat.NET" Version="3.6.0" />
         <PackageReference Include="System.Reactive" Version="6.0.1" />

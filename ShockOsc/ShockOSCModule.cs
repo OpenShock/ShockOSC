@@ -80,7 +80,6 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
         
         services.AddSingleton<ShockOsc>();
         services.AddSingleton<UnderscoreConfig>();
-        services.AddSingleton<MedalIcymiService>();
         
         
         return services.BuildServiceProvider();
