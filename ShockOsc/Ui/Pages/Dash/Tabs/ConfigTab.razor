@@ -68,6 +68,16 @@
                          OnSaveAction="_ => OnSettingsValueChange()">
             Max Intensity: @ModuleConfig.Config.Behaviour.IntensityRange.Max%
         </DebouncedSlider>
+        
+        <br />
+
+        <div style="display: flex; align-items: center;">
+            <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Behaviour.OnPullTriggerRandomBehavior" Label="Pull Trigger Random" @bind-Value:after="OnSettingsValueChangeAsync"/>
+        
+            <MudTooltip Text="When enabled, the shock will randomly choose between the two intensity values set above, Instead of using the intensity based on distance.">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Title="Information" />
+            </MudTooltip>
+        </div>
     }
 
 

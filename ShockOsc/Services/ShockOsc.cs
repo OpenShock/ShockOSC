@@ -14,6 +14,7 @@ using OpenShock.ShockOSC.Models;
 using OpenShock.ShockOSC.Utils;
 using OscQueryLibrary;
 using OscQueryLibrary.Utils;
+using Serilog;
 
 #pragma warning disable CS4014
 
@@ -403,6 +404,17 @@ public sealed class ShockOsc
             case true when !isGrabbed:
             {
                 programGroup.TriggerMethod = TriggerMethod.None;
+                
+                var pullTriggerBehavior = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
+                    behaviourConfig => behaviourConfig.OnPullTriggerRandomBehavior,
+                    group => group.OverrideIntensity);
+
+                if (pullTriggerBehavior)
+                {
+                    SendCommand(programGroup, GetDuration(programGroup), GetIntensity(programGroup), ControlType.Shock, false);
+                    
+                    return;
+                }
                 
                 // When the stretch value is not 0, we send the action
                 if (programGroup.LastStretchValue != 0)
