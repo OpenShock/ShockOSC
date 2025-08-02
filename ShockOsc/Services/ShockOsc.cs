@@ -405,17 +405,6 @@ public sealed class ShockOsc
             {
                 programGroup.TriggerMethod = TriggerMethod.None;
                 
-                var pullTriggerBehavior = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
-                    behaviourConfig => behaviourConfig.OnPullTriggerRandomBehavior,
-                    group => group.OverrideIntensity);
-
-                if (pullTriggerBehavior)
-                {
-                    SendCommand(programGroup, GetDuration(programGroup), GetIntensity(programGroup), ControlType.Shock, false);
-                    
-                    return;
-                }
-                
                 // When the stretch value is not 0, we send the action
                 if (programGroup.LastStretchValue != 0)
                 {
@@ -423,6 +412,17 @@ public sealed class ShockOsc
                     // Check all preconditions, maybe send stop command here aswell?
                     if (!await HandlePrecondition(CheckAndSetAllPreconditions(programGroup), programGroup)) return;
                         
+                    var pullTriggerBehavior = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
+                        behaviourConfig => behaviourConfig.OnPullTriggerRandomBehavior,
+                        group => group.OverrideIntensity);
+
+                    if (pullTriggerBehavior)
+                    {
+                        SendCommand(programGroup, GetDuration(programGroup), GetIntensity(programGroup), ControlType.Shock, false);
+                    
+                        return;
+                    }
+                    
                     var releaseAction = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                         behaviourConfig => behaviourConfig.WhenBoneReleased,
                         group => group.OverrideBoneReleasedAction);
@@ -433,6 +433,9 @@ public sealed class ShockOsc
                         return;
                     }
 
+                    _logger.LogInformation("Physbone released, sending {Action} to group {Group}", releaseAction, programGroup.Name);
+                    _logger.LogInformation("Physbone stretch value: {StretchValue}", programGroup.LastStretchValue);
+                    
                     var physBoneIntensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
                     programGroup.LastStretchValue = 0;
 
