@@ -414,7 +414,7 @@ public sealed class ShockOsc
                         
                     var pullTriggerBehavior = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                         behaviourConfig => behaviourConfig.OnPullTriggerRandomBehavior,
-                        group => group.OverrideIntensity);
+                        group => group.OnPullTriggerRandomBehavior);
 
                     if (pullTriggerBehavior)
                     {
