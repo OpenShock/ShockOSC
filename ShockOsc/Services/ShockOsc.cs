@@ -14,6 +14,7 @@ using OpenShock.ShockOSC.Models;
 using OpenShock.ShockOSC.Utils;
 using OscQueryLibrary;
 using OscQueryLibrary.Utils;
+using Serilog;
 
 #pragma warning disable CS4014
 
@@ -411,6 +412,17 @@ public sealed class ShockOsc
                     // Check all preconditions, maybe send stop command here aswell?
                     if (!await HandlePrecondition(CheckAndSetAllPreconditions(programGroup), programGroup)) return;
                         
+                    var pullTriggerBehavior = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
+                        behaviourConfig => behaviourConfig.OnPullTriggerRandomBehavior,
+                        group => group.OnPullTriggerRandomBehavior);
+
+                    if (pullTriggerBehavior)
+                    {
+                        SendCommand(programGroup, GetDuration(programGroup), GetIntensity(programGroup), ControlType.Shock, false);
+                    
+                        return;
+                    }
+                    
                     var releaseAction = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                         behaviourConfig => behaviourConfig.WhenBoneReleased,
                         group => group.OverrideBoneReleasedAction);
@@ -421,6 +433,9 @@ public sealed class ShockOsc
                         return;
                     }
 
+                    _logger.LogDebug("Physbone released, sending {Action} to group {Group}", releaseAction, programGroup.Name);
+                    _logger.LogDebug("Physbone stretch value: {StretchValue}", programGroup.LastStretchValue);
+                    
                     var physBoneIntensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
                     programGroup.LastStretchValue = 0;
 

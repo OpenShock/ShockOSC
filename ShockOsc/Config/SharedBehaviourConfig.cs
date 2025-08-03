@@ -16,4 +16,5 @@ public class SharedBehaviourConfig
     public BoneAction WhenBoneReleased { get; set; } = BoneAction.Shock;
 
     public uint? BoneHeldDurationLimit { get; set; } = null;
+    public bool OnPullTriggerRandomBehavior { get; set; }
 }
