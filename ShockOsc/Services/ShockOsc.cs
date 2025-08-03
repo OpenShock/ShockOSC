@@ -433,7 +433,7 @@ public sealed class ShockOsc
                         return;
                     }
 
-                    _logger.LogInformation("Physbone released, sending {Action} to group {Group}", releaseAction, programGroup.Name);
+                    _logger.LogDebug("Physbone released, sending {Action} to group {Group}", releaseAction, programGroup.Name);
                     _logger.LogInformation("Physbone stretch value: {StretchValue}", programGroup.LastStretchValue);
                     
                     var physBoneIntensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
