@@ -2,14 +2,21 @@
 using System.Diagnostics;
 using System.Security.Principal;
 using Microsoft.Win32;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Diagnostics.CodeAnalysis;
+using OpenShock.ShockOSC.MigrationInstaller.Schemas;
 
 namespace OpenShock.ShockOSC.MigrationInstaller;
 
 public static class Program
 {
     private const string AppDisplayName = "ShockOSC";
-    private const string DownloadUrl = "https://github.com/OpenShock/Desktop/releases/download/1.0.0-preview.4/OpenShock_Desktop_Setup.exe";
+    private const string DownloadUrl = "https://github.com/OpenShock/Desktop/releases/latest/download/OpenShock_Desktop_Setup.exe";
     private static string TempInstallerPath => Path.Combine(Path.GetTempPath(), "OpenShock_Desktop_Setup.exe");
+    
+    private static readonly string LocalAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    private static readonly string ExePath = Path.Combine(LocalAppData, "OpenShock", "Desktop", "OpenShock.Desktop.exe");
 
     public static async Task Main()
     {
@@ -56,6 +63,32 @@ public static class Program
             return RelaunchAsAdmin();
         }
         
+        try
+        {
+            await MigrateConfig();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Config migration failed: {ex.Message}");
+        }
+        
+        Console.WriteLine("ℹ️ Killing ShockOSC process if running...");
+        var processes = Process.GetProcessesByName("OpenShock.ShockOsc");
+        if (processes.Length > 0)
+        {
+            foreach (var process in processes)
+            {
+                Console.WriteLine($"🛑 Killing process {process.ProcessName} (ID: {process.Id})");
+                process.Kill();
+                await process.WaitForExitAsync();
+                Console.WriteLine($"✅ Process {process.ProcessName} (ID: {process.Id}) killed.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("ℹ️ No ShockOSC processes found.");
+        }
+        
         Console.WriteLine("🔍 Searching for uninstaller...");
         var uninstallerPath = FindUninstaller(AppDisplayName);
         if (string.IsNullOrEmpty(uninstallerPath))
@@ -65,15 +98,25 @@ public static class Program
         }
 
         Console.WriteLine($"🗑 Running uninstaller: {uninstallerPath}");
-        RunProcess(uninstallerPath, "/S");
+        await RunProcess(uninstallerPath, "/S");
 
         Console.WriteLine("🌐 Downloading new installer...");
         await DownloadFile(DownloadUrl, TempInstallerPath);
 
-        Console.WriteLine("🚀 Launching new installer...");
-        RunProcess(TempInstallerPath, "");
-
+        Console.WriteLine("🚀 Launching new installer... Please wait a few seconds for the installation to complete....");
+        await RunProcess(TempInstallerPath, "/S");
         Console.WriteLine("✅ Update process complete.");
+        
+        Console.WriteLine($"🔄 Relaunching OpenShock Desktop... ({ExePath})");
+        
+        var proc = new Process();
+        proc.StartInfo.FileName = ExePath;
+        proc.StartInfo.UseShellExecute = true;
+        proc.Start();
+
+        Console.WriteLine("✅ Done. Closing updater in 5 seconds...");
+
+        await Task.Delay(5000);
         return true;
     }
 
@@ -131,15 +174,15 @@ public static class Program
         await response.Content.CopyToAsync(fs);
     }
 
-    private static void RunProcess(string file, string args)
+    private static async Task RunProcess(string file, string args)
     {
         var proc = new Process();
         proc.StartInfo.FileName = file;
         proc.StartInfo.Arguments = args;
         proc.StartInfo.UseShellExecute = false;
-        proc.StartInfo.CreateNoWindow = true;
+        proc.StartInfo.CreateNoWindow = false;
         proc.Start();
-        proc.WaitForExit();
+        await proc.WaitForExitAsync();
     }
     
     private static bool IsRunAsAdmin()
@@ -148,4 +191,58 @@ public static class Program
         var principal = new WindowsPrincipal(identity);
         return principal.IsInRole(WindowsBuiltInRole.Administrator);
     }
+
+    #region Migration
+
+    private static readonly string AppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    private static readonly string OldConfigFolder = Path.Combine(AppData, "OpenShock", "ShockOSC");
+    private static readonly string OldConfigPath = Path.Combine(OldConfigFolder, "config.json");
+    private static readonly string ModuleDataFolder = Path.Combine(AppData, "OpenShock", "Desktop", "moduleData", "openshock.shockosc");
+    private static readonly string ModuleConfig = Path.Combine(ModuleDataFolder, "config.json");
+    
+    private static async Task MigrateConfig()
+    {
+        if (!File.Exists(OldConfigPath))
+        {
+            Console.WriteLine($"ℹ️ No old config found to migrate. Checked at {OldConfigPath}");
+            return;
+        }
+        
+        Directory.CreateDirectory(ModuleDataFolder);
+
+        if (File.Exists(ModuleConfig))
+        {
+            Console.WriteLine("ℹ️ New config already exists, skipping migration.");
+            return;
+        }
+
+        Console.WriteLine($"🔄 Migrating config from {OldConfigPath} -> {ModuleConfig}");
+
+        var json = await File.ReadAllTextAsync(OldConfigPath);
+        File.Move(OldConfigPath, $"{OldConfigPath}.bak", true);
+        OldSchema.ShockOscConfig? oldConfig;
+        try
+        {
+            oldConfig = JsonSerializer.Deserialize<OldSchema.ShockOscConfig>(json, OldSchemaSourceGenerationContext.Default.ShockOscConfig);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Failed to deserialize old config: {ex.Message}");
+            return;
+        }
+
+        if (oldConfig == null)
+        {
+            Console.WriteLine("❌ Old config deserialized to null, aborting migration.");
+            return;
+        }
+
+        var newConfig = oldConfig.ConvertToNew();
+        var newJson = JsonSerializer.Serialize(newConfig, NewSchemaSourceGenerationContext.Default.ShockOscConfig);
+
+        await File.WriteAllTextAsync(ModuleConfig, newJson);
+        Console.WriteLine("✅ Config migration complete.");
+    }
+    
+    #endregion
 }
