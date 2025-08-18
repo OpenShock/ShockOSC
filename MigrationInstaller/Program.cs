@@ -16,7 +16,8 @@ public static class Program
     private static string TempInstallerPath => Path.Combine(Path.GetTempPath(), "OpenShock_Desktop_Setup.exe");
     
     private static readonly string LocalAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private static readonly string ExePath = Path.Combine(LocalAppData, "OpenShock", "Desktop", "OpenShock.Desktop.exe");
+    private static readonly string DesktopProgramPath = Path.Combine(LocalAppData, "OpenShock", "Desktop");
+    private static readonly string DesktopExePath = Path.Combine(DesktopProgramPath, "OpenShock.Desktop.exe");
 
     public static async Task Main()
     {
@@ -107,10 +108,11 @@ public static class Program
         await RunProcess(TempInstallerPath, "/S");
         Console.WriteLine("✅ Update process complete.");
         
-        Console.WriteLine($"🔄 Relaunching OpenShock Desktop... ({ExePath})");
+        Console.WriteLine($"🔄 Relaunching OpenShock Desktop... ({DesktopExePath})");
         
         var proc = new Process();
-        proc.StartInfo.FileName = ExePath;
+        proc.StartInfo.WorkingDirectory = DesktopProgramPath;
+        proc.StartInfo.FileName = DesktopExePath;
         proc.StartInfo.UseShellExecute = true;
         proc.Start();
 
