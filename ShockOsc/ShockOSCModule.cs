@@ -18,7 +18,7 @@ namespace OpenShock.ShockOSC;
 public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
 {
     private IAsyncDisposable? _onRemoteControlSubscription;
-    public override string IconPath => "OpenShock/ShockOSC/Resources/ShockOSC-Icon.svg";
+    public override IconOneOf Icon => IconOneOf.FromPath("OpenShock/ShockOSC/Resources/ShockOSC-Icon.svg");
 
     public override IReadOnlyCollection<NavigationItem> NavigationComponents { get; } =
     [
