@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.Security.Principal;
 using Microsoft.Win32;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Diagnostics.CodeAnalysis;
 using OpenShock.ShockOSC.MigrationInstaller.Schemas;
 
 namespace OpenShock.ShockOSC.MigrationInstaller;
