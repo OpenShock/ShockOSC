@@ -11,7 +11,7 @@ public sealed class ShockOscConfig
     
     public T GetGroupOrGlobal<T>(ProgramGroup group, Func<SharedBehaviourConfig, T> selector, Func<Group, bool> groupOverrideSelector)
     {
-        if(group.ConfigGroup == null) return selector(Behaviour);
+        if(group.ConfigGroup is null) return selector(Behaviour);
         
         var groupOverride = groupOverrideSelector(group.ConfigGroup);
         SharedBehaviourConfig config = groupOverride ? group.ConfigGroup : Behaviour;

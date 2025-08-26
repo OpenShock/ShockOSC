@@ -411,17 +411,6 @@ public sealed class ShockOsc
                     
                     // Check all preconditions, maybe send stop command here aswell?
                     if (!await HandlePrecondition(CheckAndSetAllPreconditions(programGroup), programGroup)) return;
-                        
-                    var pullTriggerBehavior = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
-                        behaviourConfig => behaviourConfig.OnPullTriggerRandomBehavior,
-                        group => group.OnPullTriggerRandomBehavior);
-
-                    if (pullTriggerBehavior)
-                    {
-                        SendCommand(programGroup, GetDuration(programGroup), GetIntensity(programGroup), ControlType.Shock, false);
-                    
-                        return;
-                    }
                     
                     var releaseAction = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                         behaviourConfig => behaviourConfig.WhenBoneReleased,
@@ -436,11 +425,21 @@ public sealed class ShockOsc
                     _logger.LogDebug("Physbone released, sending {Action} to group {Group}", releaseAction, programGroup.Name);
                     _logger.LogDebug("Physbone stretch value: {StretchValue}", programGroup.LastStretchValue);
                     
-                    var physBoneIntensity = GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
+                    // Random intensity for physbone release
+                    var pullTriggerBehavior = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
+                        behaviourConfig => behaviourConfig.OnPullTriggerRandomBehavior,
+                        group => group.OnPullTriggerRandomBehavior);
+
+                    var isRandomMode = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
+                        behaviourConfig => behaviourConfig.RandomIntensity,
+                        group => group.RandomIntensity);
+                    
+                    var physBoneIntensity = pullTriggerBehavior && isRandomMode
+                        ? GetIntensity(programGroup)
+                        : GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
                     programGroup.LastStretchValue = 0;
 
-                    SendCommand(programGroup, GetDuration(programGroup), physBoneIntensity, releaseAction.ToControlType(),
-                        true);
+                    SendCommand(programGroup, GetDuration(programGroup), physBoneIntensity, releaseAction.ToControlType(), true);
                     
                     return;
                 }
