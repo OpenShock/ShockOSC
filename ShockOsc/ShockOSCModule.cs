@@ -10,9 +10,11 @@ using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Services;
 using OpenShock.ShockOSC.Ui.Pages.Dash.Tabs;
 using OscQueryLibrary;
+
 // ReSharper disable InconsistentNaming
 
-[assembly:DesktopModule(typeof(ShockOSCModule), "openshock.shockosc", "ShockOSC")]
+[assembly: DesktopModule(typeof(ShockOSCModule), "openshock.shockosc", "ShockOSC")]
+
 namespace OpenShock.ShockOSC;
 
 public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
@@ -50,16 +52,14 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
 
     public override async Task Setup()
     {
-
         var config = await ModuleInstanceManager.GetModuleConfig<ShockOscConfig>();
         ModuleServiceProvider = BuildServices(config);
-        
     }
 
     private IServiceProvider BuildServices(IModuleConfig<ShockOscConfig> config)
     {
         var loggerFactory = ModuleInstanceManager.AppServiceProvider.GetRequiredService<ILoggerFactory>();
-        
+
         var services = new ServiceCollection();
 
         services.AddSingleton(loggerFactory);
@@ -71,45 +71,58 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
         services.AddSingleton<OscClient>();
         services.AddSingleton<OscHandler>();
         services.AddSingleton<ChatboxService>();
-        
+
         services.AddSingleton(_ =>
         {
             var listenAddress = config.Config.Osc.QuestSupport ? IPAddress.Any : IPAddress.Loopback;
             return new OscQueryServer("ShockOSC", listenAddress);
         });
-        
+
         services.AddSingleton<ShockOsc>();
         services.AddSingleton<UnderscoreConfig>();
-        
-        
+
+
         return services.BuildServiceProvider();
-    }        
+    }
 
     public override async Task Start()
     {
         var config = ModuleServiceProvider.GetRequiredService<IModuleConfig<ShockOscConfig>>();
 
         await ModuleServiceProvider.GetRequiredService<ShockOsc>().Start();
-        
-        if (config.Config.Osc.OscQuery) ModuleServiceProvider.GetRequiredService<OscQueryServer>().Start();
-        
-        var chatboxService = ModuleServiceProvider.GetRequiredService<ChatboxService>();
 
-        _onRemoteControlSubscription = await ModuleInstanceManager.OpenShock.Control.OnRemoteControlledShocker.SubscribeAsync(async args =>
-        {
-            foreach (var controlLog in args.Logs)
+        if (config.Config.Osc.OscQuery) ModuleServiceProvider.GetRequiredService<OscQueryServer>().Start();
+
+        var chatboxService = ModuleServiceProvider.GetRequiredService<ChatboxService>();
+        var oscHandler = ModuleServiceProvider.GetRequiredService<OscHandler>();
+
+        _onRemoteControlSubscription =
+            await ModuleInstanceManager.OpenShock.Control.OnRemoteControlledShocker.SubscribeAsync(async args =>
             {
-                await chatboxService.SendRemoteControlMessage(controlLog.Shocker.Name, args.Sender.Name,
-                    args.Sender.CustomName, controlLog.Intensity, controlLog.Duration, controlLog.Type);
-            }
-        });
+                // Dont do anything if there are no logs
+                if (args.Logs.Count <= 0) return;
+                
+                foreach (var controlLog in args.Logs)
+                {
+                    await chatboxService.SendRemoteControlMessage(controlLog.Shocker.Name, args.Sender.Name,
+                        args.Sender.CustomName, controlLog.Intensity, controlLog.Duration, controlLog.Type);
+
+                    var now = DateTimeOffset.UtcNow;
+                    
+                    oscHandler.SetLastControlCommand(new OscHandler.LastControlLogEntry()
+                    {
+                        ControlLog = controlLog,
+                        Timestamp = now,
+                    });
+                }
+            });
     }
-    
+
     private bool _disposed;
 
     public async ValueTask DisposeAsync()
     {
-        if(_disposed) return;
+        if (_disposed) return;
         _disposed = true;
 
         if (_onRemoteControlSubscription != null) await _onRemoteControlSubscription.DisposeAsync();
