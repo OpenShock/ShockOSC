@@ -10,7 +10,14 @@ namespace OpenShock.ShockOSC.MigrationInstaller.Schemas;
     AllowTrailingCommas = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     PropertyNameCaseInsensitive = true,
-    Converters = [typeof(JsonStringEnumConverter), typeof(SemVersionJsonConverter)])]
+    Converters =
+    [
+        typeof(JsonStringEnumConverter<OldSchema.ChatboxConf.HoscyMessageType>),
+        typeof(JsonStringEnumConverter<OldSchema.ControlType>),
+        typeof(JsonStringEnumConverter<OldSchema.UpdateChannel>),
+        typeof(JsonStringEnumConverter<OldSchema.BoneAction>),
+        typeof(SemVersionJsonConverter)
+    ])]
 internal partial class OldSchemaSourceGenerationContext : JsonSerializerContext;
 
 [JsonSerializable(typeof(NewSchema.ShockOscConfig))]
@@ -20,5 +27,11 @@ internal partial class OldSchemaSourceGenerationContext : JsonSerializerContext;
     AllowTrailingCommas = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     PropertyNameCaseInsensitive = true,
-    Converters = [typeof(JsonStringEnumConverter), typeof(SemVersionJsonConverter)])]
+    Converters =
+    [
+        typeof(JsonStringEnumConverter<NewSchema.ChatboxConf.HoscyMessageType>),
+        typeof(JsonStringEnumConverter<NewSchema.ControlType>),
+        typeof(JsonStringEnumConverter<NewSchema.BoneAction>),
+        typeof(SemVersionJsonConverter)
+    ])]
 internal partial class NewSchemaSourceGenerationContext : JsonSerializerContext;
