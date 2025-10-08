@@ -10,8 +10,8 @@
         <RootNamespace>OpenShock.ShockOSC</RootNamespace>
         <Company>OpenShock</Company>
 
-        <AssemblyVersion>3.0.0</AssemblyVersion>
-        <Version>3.0.0</Version>
+        <AssemblyVersion>3.1.0</AssemblyVersion>
+        <Version>3.1.0</Version>
 
         <Product>ShockOsc</Product>
 
