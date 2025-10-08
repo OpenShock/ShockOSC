@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Config;
+using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.OscChangeTracker;
 using OpenShock.ShockOSC.Utils;
@@ -12,6 +14,8 @@ public sealed class OscHandler
     private readonly ChangeTrackedOscParam<bool> _paramAnyCooldown;
     private readonly ChangeTrackedOscParam<float> _paramAnyCooldownPercentage;
     private readonly ChangeTrackedOscParam<float> _paramAnyIntensity;
+    
+    private readonly ConcurrentDictionary<Guid, LastControlLogEntry> _lastControlLogs = new();
     
     private readonly ILogger<OscHandler> _logger;
     private readonly OscClient _oscClient;
@@ -71,10 +75,11 @@ public sealed class OscHandler
     public async Task SendParams()
     {
         // TODO: maybe force resend on avatar change
-        var anyActive = false;
+
+        await UpdateAnyActive();
+        
         var anyCooldown = false;
         var anyCooldownPercentage = 0f;
-        var anyIntensity = 0f;
 
         foreach (var shocker in _shockOscData.ProgramGroups.Values)
         {
@@ -99,16 +104,46 @@ public sealed class OscHandler
             await shocker.ParamCooldown.SetValue(onCoolDown);
             await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
             await shocker.ParamIntensity.SetValue(intensity);
-
-            if (isActive) anyActive = true;
+            
             if (onCoolDown) anyCooldown = true;
             anyCooldownPercentage = MathF.Max(anyCooldownPercentage, cooldownPercentage);
-            anyIntensity = MathF.Max(anyIntensity, intensity);
         }
-
-        await _paramAnyActive.SetValue(anyActive);
+        
         await _paramAnyCooldown.SetValue(anyCooldown);
         await _paramAnyCooldownPercentage.SetValue(anyCooldownPercentage);
-        await _paramAnyIntensity.SetValue(anyIntensity);
     }
+    
+    private async Task UpdateAnyActive()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var anyActive = false;
+        var maxIntensity = 0f;
+        
+        foreach (var logEntry in _lastControlLogs.Values)
+        {
+            if(logEntry.ControlLog.Type != ControlType.Shock) continue;
+            var activeUntil = logEntry.Timestamp.AddMilliseconds(logEntry.ControlLog.Duration);
+
+            if (activeUntil < now) continue;
+            
+            anyActive = true;
+            var intensity = MathUtils.Saturate(logEntry.ControlLog.Intensity / 100f);
+            maxIntensity = MathF.Max(maxIntensity, intensity);
+        }
+        
+        await _paramAnyActive.SetValue(anyActive);
+        await _paramAnyIntensity.SetValue(maxIntensity);
+    }
+
+    public void SetLastControlCommand(LastControlLogEntry controlLogs)
+    {
+        _lastControlLogs[controlLogs.ControlLog.Shocker.Id] = controlLogs;
+    }
+
+    public class LastControlLogEntry
+    {
+        public required DateTimeOffset Timestamp { get; set; }
+        public required ControlLog ControlLog { get; set; }
+    }
+
 }
