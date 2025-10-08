@@ -16,7 +16,8 @@ public sealed class UnderscoreConfig
     public event Action? OnConfigUpdate;
     public event Action? OnGroupConfigUpdate;
 
-    public UnderscoreConfig(ILogger<UnderscoreConfig> logger, OscClient oscClient, IModuleConfig<ShockOscConfig> moduleConfig,
+    public UnderscoreConfig(ILogger<UnderscoreConfig> logger, OscClient oscClient,
+        IModuleConfig<ShockOscConfig> moduleConfig,
         ShockOscData dataLayer)
     {
         _logger = logger;
@@ -26,12 +27,12 @@ public sealed class UnderscoreConfig
     }
 
     public bool KillSwitch { get; set; } = false;
-    
+
     public bool GetProgramGroupFromGUID(Guid guid, out ProgramGroup? group)
     {
         return _dataLayer.ProgramGroups.TryGetValue(guid, out group);
     }
-    
+
     public void HandleCommand(string parameterName, object?[] arguments)
     {
         var settingName = parameterName[8..];
@@ -95,18 +96,20 @@ public sealed class UnderscoreConfig
                     _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
+
                 break;
-            
+
             case "ModeDuration":
                 if (value is bool modeDuration)
                 {
-                    if(_moduleConfig.Config.Behaviour.RandomDuration == modeDuration) return;
+                    if (_moduleConfig.Config.Behaviour.RandomDuration == modeDuration) return;
                     _moduleConfig.Config.Behaviour.RandomDuration = modeDuration;
                     _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
                 }
+
                 break;
-            
+
             case "Intensity":
                 // 0..10sec
                 if (value is float intensityFloat)
@@ -135,8 +138,10 @@ public sealed class UnderscoreConfig
                     _moduleConfig.Config.Behaviour.IntensityRange.Min =
                         MathUtils.ClampByte((byte)Math.Round(minIntensityFloat * 100), 0, 100);
                     _moduleConfig.Config.Behaviour.RandomIntensity = true;
-                    if (_moduleConfig.Config.Behaviour.IntensityRange.Max < _moduleConfig.Config.Behaviour.IntensityRange.Min)
-                        _moduleConfig.Config.Behaviour.IntensityRange.Max = _moduleConfig.Config.Behaviour.IntensityRange.Min;
+                    if (_moduleConfig.Config.Behaviour.IntensityRange.Max <
+                        _moduleConfig.Config.Behaviour.IntensityRange.Min)
+                        _moduleConfig.Config.Behaviour.IntensityRange.Max =
+                            _moduleConfig.Config.Behaviour.IntensityRange.Min;
 
                     _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -155,8 +160,10 @@ public sealed class UnderscoreConfig
                     _moduleConfig.Config.Behaviour.IntensityRange.Max =
                         MathUtils.ClampByte((byte)Math.Round(maxIntensityFloat * 100), 0, 100);
                     _moduleConfig.Config.Behaviour.RandomIntensity = true;
-                    if (_moduleConfig.Config.Behaviour.IntensityRange.Max < _moduleConfig.Config.Behaviour.IntensityRange.Min)
-                        _moduleConfig.Config.Behaviour.IntensityRange.Min = _moduleConfig.Config.Behaviour.IntensityRange.Max;
+                    if (_moduleConfig.Config.Behaviour.IntensityRange.Max <
+                        _moduleConfig.Config.Behaviour.IntensityRange.Min)
+                        _moduleConfig.Config.Behaviour.IntensityRange.Min =
+                            _moduleConfig.Config.Behaviour.IntensityRange.Max;
 
                     _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -174,8 +181,10 @@ public sealed class UnderscoreConfig
                     _moduleConfig.Config.Behaviour.DurationRange.Min =
                         MathUtils.ClampUShort((ushort)Math.Round(minDurationFloat * 10_000), 300, 30_000);
                     _moduleConfig.Config.Behaviour.RandomDuration = true;
-                    if (_moduleConfig.Config.Behaviour.DurationRange.Max < _moduleConfig.Config.Behaviour.DurationRange.Min)
-                        _moduleConfig.Config.Behaviour.DurationRange.Max = _moduleConfig.Config.Behaviour.DurationRange.Min;
+                    if (_moduleConfig.Config.Behaviour.DurationRange.Max <
+                        _moduleConfig.Config.Behaviour.DurationRange.Min)
+                        _moduleConfig.Config.Behaviour.DurationRange.Max =
+                            _moduleConfig.Config.Behaviour.DurationRange.Min;
 
                     _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -193,8 +202,10 @@ public sealed class UnderscoreConfig
                     _moduleConfig.Config.Behaviour.DurationRange.Max =
                         MathUtils.ClampUShort((ushort)Math.Round(maxDurationFloat * 10_000), 300, 30_000);
                     _moduleConfig.Config.Behaviour.RandomDuration = true;
-                    if (_moduleConfig.Config.Behaviour.DurationRange.Max < _moduleConfig.Config.Behaviour.DurationRange.Min) 
-                        _moduleConfig.Config.Behaviour.DurationRange.Min = _moduleConfig.Config.Behaviour.DurationRange.Max;
+                    if (_moduleConfig.Config.Behaviour.DurationRange.Max <
+                        _moduleConfig.Config.Behaviour.DurationRange.Min)
+                        _moduleConfig.Config.Behaviour.DurationRange.Min =
+                            _moduleConfig.Config.Behaviour.DurationRange.Max;
 
                     _moduleConfig.SaveDeferred();
                     OnConfigUpdate?.Invoke(); // update Ui
@@ -265,10 +276,10 @@ public sealed class UnderscoreConfig
 
     private void HandleGroupConfigCommand(ProgramGroup group, string action, object? value)
     {
-                //dont know if this is needed since all normal groups have a ConfigGroup, if it doesnt have it you are fucked anyway
+        //dont know if this is needed since all normal groups have a ConfigGroup, if it doesnt have it you are fucked anyway
         if (group.ConfigGroup == null) throw new ArgumentException("ConfigGroup is Null");
-        
-                switch (action)
+
+        switch (action)
         {
             case "ModeIntensity":
                 if (value is bool modeIntensity)
@@ -280,6 +291,7 @@ public sealed class UnderscoreConfig
                     _moduleConfig.SaveDeferred();
                     OnGroupConfigUpdate?.Invoke(); // update Ui
                 }
+
                 break;
 
             case "ModeDuration":
@@ -292,6 +304,7 @@ public sealed class UnderscoreConfig
                     _moduleConfig.SaveDeferred();
                     OnGroupConfigUpdate?.Invoke(); // update Ui
                 }
+
                 break;
 
             case "Intensity":
@@ -323,7 +336,7 @@ public sealed class UnderscoreConfig
 
                     group.ConfigGroup.IntensityRange.Min =
                         MathUtils.ClampByte((byte)Math.Round(minIntensityFloat * 100), 0, 100);
-                    if (group.ConfigGroup.IntensityRange.Max < group.ConfigGroup.IntensityRange.Min) 
+                    if (group.ConfigGroup.IntensityRange.Max < group.ConfigGroup.IntensityRange.Min)
                         group.ConfigGroup.IntensityRange.Max = group.ConfigGroup.IntensityRange.Min;
 
                     group.ConfigGroup.RandomIntensity = true;
@@ -345,7 +358,7 @@ public sealed class UnderscoreConfig
 
                     group.ConfigGroup.IntensityRange.Max =
                         MathUtils.ClampByte((byte)Math.Round(maxIntensityFloat * 100), 0, 100);
-                    if (group.ConfigGroup.IntensityRange.Max < group.ConfigGroup.IntensityRange.Min) 
+                    if (group.ConfigGroup.IntensityRange.Max < group.ConfigGroup.IntensityRange.Min)
                         group.ConfigGroup.IntensityRange.Min = group.ConfigGroup.IntensityRange.Max;
 
                     group.ConfigGroup.RandomIntensity = true;
@@ -366,7 +379,7 @@ public sealed class UnderscoreConfig
 
                     group.ConfigGroup.DurationRange.Min =
                         MathUtils.ClampUShort((ushort)Math.Round(minDurationFloat * 10_000), 300, 30_000);
-                    if (group.ConfigGroup.DurationRange.Max < group.ConfigGroup.DurationRange.Min) 
+                    if (group.ConfigGroup.DurationRange.Max < group.ConfigGroup.DurationRange.Min)
                         group.ConfigGroup.DurationRange.Max = group.ConfigGroup.DurationRange.Min;
 
                     group.ConfigGroup.RandomDuration = true;
@@ -387,8 +400,8 @@ public sealed class UnderscoreConfig
 
                     group.ConfigGroup.DurationRange.Max =
                         MathUtils.ClampUShort((ushort)Math.Round(maxDurationFloat * 10_000), 300, 30_000);
-                    if(group.ConfigGroup.DurationRange.Max < group.ConfigGroup.DurationRange.Min) 
-                       group.ConfigGroup.DurationRange.Min = group.ConfigGroup.DurationRange.Max;
+                    if (group.ConfigGroup.DurationRange.Max < group.ConfigGroup.DurationRange.Min)
+                        group.ConfigGroup.DurationRange.Min = group.ConfigGroup.DurationRange.Max;
 
                     group.ConfigGroup.RandomDuration = true;
                     group.ConfigGroup.OverrideDuration = true;
@@ -481,7 +494,7 @@ public sealed class UnderscoreConfig
                 break;
         }
     }
-    
+
     public async Task SendUpdateForAll()
     {
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/Paused", KillSwitch);
@@ -506,7 +519,7 @@ public sealed class UnderscoreConfig
             MathUtils.Saturate(_moduleConfig.Config.Behaviour.DurationRange.Min / 10_000f));
         await _oscClient.SendGameMessage("/avatar/parameters/ShockOsc/_Config/_All/MaxDuration",
             MathUtils.Saturate(_moduleConfig.Config.Behaviour.DurationRange.Max / 10_000f));
-        
+
         foreach (var (guid, programGroup) in _dataLayer.ProgramGroups)
             await SendUpdateForGroup(programGroup);
     }
@@ -514,7 +527,8 @@ public sealed class UnderscoreConfig
     public async Task SendUpdateForGroup(ProgramGroup programGroup)
     {
         if (programGroup.ConfigGroup == null) return;
-        await _oscClient.SendGameMessage($"/avatar/parameters/ShockOsc/_Config/{programGroup.Name}/Paused", programGroup.Paused);
+        await _oscClient.SendGameMessage($"/avatar/parameters/ShockOsc/_Config/{programGroup.Name}/Paused",
+            programGroup.Paused);
         await _oscClient.SendGameMessage($"/avatar/parameters/ShockOsc/_Config/{programGroup.Name}/MinIntensity",
             MathUtils.Saturate(programGroup.ConfigGroup.IntensityRange.Min / 100f));
         await _oscClient.SendGameMessage($"/avatar/parameters/ShockOsc/_Config/{programGroup.Name}/MaxIntensity",
@@ -537,7 +551,8 @@ public sealed class UnderscoreConfig
             programGroup.ConfigGroup.OverrideIntensity);
         await _oscClient.SendGameMessage($"/avatar/parameters/ShockOsc/_Config/{programGroup.Name}/OverrideDuration",
             programGroup.ConfigGroup.OverrideDuration);
-        await _oscClient.SendGameMessage($"/avatar/parameters/ShockOsc/_Config/{programGroup.Name}/OverrideCooldownTime",
+        await _oscClient.SendGameMessage(
+            $"/avatar/parameters/ShockOsc/_Config/{programGroup.Name}/OverrideCooldownTime",
             programGroup.ConfigGroup.OverrideCooldownTime);
     }
 }

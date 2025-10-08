@@ -12,7 +12,8 @@
 <MudPaper Outlined="true" Class="mud-paper-padding-margin">
     <MudText>OSC Parameters</MudText>
     <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams" Label="Show all avatar parameters"/>
+    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams"
+                 Label="Show all avatar parameters"/>
     <MudTextField DebounceInterval="50" Variant="Variant.Outlined" @bind-Value="_search" Label="Search Parameter"/>
     <MudDivider/>
     <br/>
@@ -21,7 +22,7 @@
         if (ShockOsc.AllAvatarParams.Count > 0)
         {
             @foreach (var param in ShockOsc.AllAvatarParams
-                          .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
+                              .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
             {
                 <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
             }
@@ -36,7 +37,7 @@
         if (ShockOsc.ShockOscParams.Count > 0)
         {
             @foreach (var param in ShockOsc.ShockOscParams
-                          .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
+                              .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
             {
                 <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
             }
@@ -50,10 +51,10 @@
 </MudPaper>
 
 @code {
-    
+
     [ModuleInject] private ShockOsc ShockOsc { get; set; } = null!;
     [ModuleInject] private IOpenShockService OpenShock { get; set; } = null!;
-    
+
     private bool _showAllAvatarParams = false;
     private string _search = "";
 
@@ -98,5 +99,5 @@
         _onParamsVhangeSubscription?.Dispose();
         await _cts.CancelAsync();
     }
-    
+
 }

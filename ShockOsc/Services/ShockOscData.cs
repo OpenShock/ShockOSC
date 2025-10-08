@@ -8,6 +8,6 @@ namespace OpenShock.ShockOSC.Services;
 public sealed class ShockOscData
 {
     public ConcurrentDictionary<Guid, ProgramGroup> ProgramGroups { get; } = new();
-    
+
     public bool IsMuted { get; set; }
 }

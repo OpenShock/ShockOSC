@@ -8,13 +8,14 @@ public sealed class ShockOscConfig
     public BehaviourConf Behaviour { get; set; } = new();
     public ChatboxConf Chatbox { get; set; } = new();
     public IDictionary<Guid, Group> Groups { get; set; } = new Dictionary<Guid, Group>();
-    
-    public T GetGroupOrGlobal<T>(ProgramGroup group, Func<SharedBehaviourConfig, T> selector, Func<Group, bool> groupOverrideSelector)
+
+    public T GetGroupOrGlobal<T>(ProgramGroup group, Func<SharedBehaviourConfig, T> selector,
+        Func<Group, bool> groupOverrideSelector)
     {
-        if(group.ConfigGroup is null) return selector(Behaviour);
-        
+        if (group.ConfigGroup is null) return selector(Behaviour);
+
         var groupOverride = groupOverrideSelector(group.ConfigGroup);
         SharedBehaviourConfig config = groupOverride ? group.ConfigGroup : Behaviour;
-        return selector(config);    
+        return selector(config);
     }
 }

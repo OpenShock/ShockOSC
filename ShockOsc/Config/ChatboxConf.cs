@@ -8,7 +8,7 @@ public sealed class ChatboxConf
     public bool Enabled { get; set; } = true;
     public string Prefix { get; set; } = "[ShockOSC] ";
     public bool DisplayRemoteControl { get; set; } = true;
-    
+
     public bool TimeoutEnabled { get; set; } = true;
     public uint Timeout { get; set; } = 5000;
 
@@ -17,8 +17,8 @@ public sealed class ChatboxConf
     {
         get => TimeSpan.FromMilliseconds(Timeout);
         set => Timeout = (uint)value.TotalMilliseconds;
-    } 
-    
+    }
+
     public HoscyMessageType HoscyType { get; set; } = HoscyMessageType.Message;
 
     public string IgnoredKillSwitchActive { get; set; } = "Ignoring Shock, kill switch is active";

@@ -10,6 +10,6 @@ public sealed class OscConf
     public bool OscQuery { get; set; } = true;
     public ushort OscSendPort { get; set; } = 9000;
     public ushort OscReceivePort { get; set; } = 9001;
-    
+
     public string OscSendIp { get; set; } = IPAddress.Loopback.ToString();
 }

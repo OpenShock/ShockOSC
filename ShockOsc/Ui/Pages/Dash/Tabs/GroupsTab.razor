@@ -12,12 +12,12 @@
 @page "/dash/groups"
 
 @code {
-    
+
     [ModuleInject] private IModuleConfig<ShockOscConfig> ModuleConfig { get; set; } = null!;
     [ModuleInject] private ShockOsc ShockOsc { get; set; } = null!;
     [ModuleInject] private IOpenShockService OpenShock { get; set; } = null!;
     [ModuleInject] private UnderscoreConfig UnderscoreConfig { get; set; } = null!;
-    
+
     private Guid? _group = null;
 
     public Guid? Group
@@ -89,7 +89,7 @@
     private Group? CurrentGroup => Group == null ? null : ModuleConfig.Config.Groups.TryGetValue(Group.Value, out var group) ? group : null;
 
     private ProgramGroup? CurrentProgramGroup => Group == null ? null : UnderscoreConfig.GetProgramGroupFromGUID(Group.Value, out var group) ? group : null;
-    
+
     private static Regex _nameRegex = new Regex(@"^[a-zA-Z0-9\/\\ -]+$", RegexOptions.Compiled);
 
     private string NameValidation(string name)
@@ -152,25 +152,31 @@
     {
         _limitBoneHeldDurationEnabled = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit.HasValue;
         _limitBoneHeldDuration = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
-        
+
         UnderscoreConfig.OnGroupConfigUpdate += OnGroupConfigUpdate;
     }
-    
+
     private void OnGroupConfigUpdate()
     {
         InvokeAsync(StateHasChanged);
     }
-    
+
     private void Dispose()
     {
         UnderscoreConfig.OnGroupConfigUpdate -= OnGroupConfigUpdate;
     }
+
 }
 
-<MudButton OnClick="AddGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add New Group</MudButton>
-<MudButton OnClick="DeleteGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Delete Group</MudButton>
+<MudButton OnClick="AddGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add
+    New Group
+</MudButton>
+<MudButton OnClick="DeleteGroup" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">
+    Delete Group
+</MudButton>
 <br/> <br/>
-<MudSelect Variant="Variant.Outlined" T="Guid?" Label="Select Group" Dense="true" Margin="Margin.Dense" @bind-Value="Group" Clearable>
+<MudSelect Variant="Variant.Outlined" T="Guid?" Label="Select Group" Dense="true" Margin="Margin.Dense"
+           @bind-Value="Group" Clearable>
     @foreach (var group in ModuleConfig.Config.Groups)
     {
         <MudSelectItem T="Guid?" Value="@group.Key">@group.Value.Name</MudSelectItem>
@@ -184,58 +190,71 @@
         <MudDivider/>
         <br/>
 
-        <MudTextField Label="Group Name" Validation="@(new Func<string, string>(NameValidation))" DebounceInterval="250" @bind-Value="@CurrentGroup.Name" @bind-Value:after="OnSettingsValueChange"/>
+        <MudTextField Label="Group Name" Validation="@(new Func<string, string>(NameValidation))" DebounceInterval="250"
+                      @bind-Value="@CurrentGroup.Name" @bind-Value:after="OnSettingsValueChange"/>
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentProgramGroup.Paused" Label="Paused" @bind-Value:after="OnGroupSettingsValueChange" />
-        <MudDivider />
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentProgramGroup.Paused" Label="Paused"
+                     @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudDivider/>
     </MudPaper>
-    
+
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideIntensity" Label="Override Intensity Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideIntensity"
+                     Label="Override Intensity Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
         <MudDivider/>
         <MudCollapse Expanded="CurrentGroup.OverrideIntensity">
             <br/>
 
             <div class="d-flex" style="justify-content: space-between">
 
-                <MudToggleGroup T="string" @bind-Value="CurrentRandomIntensityString" Style="width: 330px; margin: 0 0 0 10px;"
-                                Delimiters="true" CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                <MudToggleGroup T="string" @bind-Value="CurrentRandomIntensityString"
+                                Style="width: 330px; margin: 0 0 0 10px;"
+                                Delimiters="true" CheckMark="false" FixedContent="false"
+                                @bind-Value:after="OnGroupSettingsValueChange">
                     <MudToggleItem Value="@("Fixed Intensity")"/>
                     <MudToggleItem Value="@("Random Intensity")"/>
                 </MudToggleGroup>
-                <MudButton OnClick="ResetIntensity" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.LockReset" Color="Color.Primary">Reset</MudButton>
+                <MudButton OnClick="ResetIntensity" Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.LockReset" Color="Color.Primary">Reset
+                </MudButton>
             </div>
             <br/>
             @if (!CurrentGroup.RandomIntensity)
             {
-                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedIntensity"
+                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
+                                 @bind-SliderValue="@CurrentGroup.FixedIntensity"
                                  OnSaveAction="_ => ModuleConfig.SaveDeferred()">
                     Intensity: @CurrentGroup.FixedIntensity%
                 </DebouncedSlider>
             }
             else
             {
-                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
+                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
+                                 @bind-SliderValue="@CurrentGroup.IntensityRange.Min"
                                  OnValueChanged="u => { if (CurrentGroup.IntensityRange.Max < u) CurrentGroup.IntensityRange.Max = u; }"
                                  OnSaveAction="_ => ModuleConfig.SaveDeferred()">
                     Min Intensity: @CurrentGroup.IntensityRange.Min%
                 </DebouncedSlider>
 
-                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
+                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
+                                 @bind-SliderValue="@CurrentGroup.IntensityRange.Max"
                                  OnValueChanged="u => { if (CurrentGroup.IntensityRange.Min > u) CurrentGroup.IntensityRange.Min = u; }"
                                  OnSaveAction="_ => ModuleConfig.SaveDeferred()">
                     Max Intensity: @CurrentGroup.IntensityRange.Max%
                 </DebouncedSlider>
 
-                <br />
+                <br/>
 
                 <div style="display: flex; align-items: center;">
-                    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="@CurrentGroup.OnPullTriggerRandomBehavior" Label="Pull Trigger Random" @bind-Value:after="OnGroupSettingsValueChange"/>
-        
-                    <MudTooltip Text="When enabled, the shock will randomly choose between the two intensity values set above, instead of using the intensity based on distance.">
-                        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Title="Information" />
+                    <MudCheckBox Class="option-width option-checkbox-height"
+                                 @bind-Value="@CurrentGroup.OnPullTriggerRandomBehavior" Label="Pull Trigger Random"
+                                 @bind-Value:after="OnGroupSettingsValueChange"/>
+
+                    <MudTooltip
+                        Text="When enabled, the shock will randomly choose between the two intensity values set above, instead of using the intensity based on distance.">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Title="Information"/>
                     </MudTooltip>
                 </div>
             }
@@ -244,24 +263,30 @@
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideDuration" Label="Override Duration Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideDuration"
+                     Label="Override Duration Settings" @bind-Value:after="OnGroupSettingsValueChange"/>
         <MudDivider/>
         <MudCollapse Expanded="CurrentGroup.OverrideDuration">
             <br/>
 
             <div class="d-flex" style="justify-content: space-between">
 
-                <MudToggleGroup T="string" @bind-Value="CurrentRandomDurationString" Style="width: 330px; margin: 0 0 0 10px;"
-                                Delimiters="true"  CheckMark="false" FixedContent="false" @bind-Value:after="OnGroupSettingsValueChange">
+                <MudToggleGroup T="string" @bind-Value="CurrentRandomDurationString"
+                                Style="width: 330px; margin: 0 0 0 10px;"
+                                Delimiters="true" CheckMark="false" FixedContent="false"
+                                @bind-Value:after="OnGroupSettingsValueChange">
                     <MudToggleItem Value="@("Fixed Duration")"/>
                     <MudToggleItem Value="@("Random Duration")"/>
                 </MudToggleGroup>
-                <MudButton OnClick="ResetDuration" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.LockReset" Color="Color.Primary">Reset</MudButton>
+                <MudButton OnClick="ResetDuration" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.LockReset"
+                           Color="Color.Primary">Reset
+                </MudButton>
             </div>
             <br/>
             @if (!CurrentGroup.RandomDuration)
             {
-                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.FixedDuration"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length"
+                                 @bind-SliderValue="@CurrentGroup.FixedDuration"
                                  OnSaveAction="_ => ModuleConfig.SaveDeferred()"
                                  Min="300" Max="30000" Step="100">
                     Duration: @MathF.Round(CurrentGroup.FixedDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
@@ -269,18 +294,22 @@
             }
             else
             {
-                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Min"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length"
+                                 @bind-SliderValue="@CurrentGroup.DurationRange.Min"
                                  OnValueChanged="u => { if (CurrentGroup.DurationRange.Max < u) CurrentGroup.DurationRange.Max = u; }"
                                  OnSaveAction="_ => ModuleConfig.SaveDeferred()"
                                  Min="300" Max="30000" Step="100">
-                    Min Duration: @MathF.Round(CurrentGroup.DurationRange.Min / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
+                    Min
+                    Duration: @MathF.Round(CurrentGroup.DurationRange.Min / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
                 </DebouncedSlider>
 
-                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length" @bind-SliderValue="@CurrentGroup.DurationRange.Max"
+                <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length"
+                                 @bind-SliderValue="@CurrentGroup.DurationRange.Max"
                                  OnValueChanged="u => { if (CurrentGroup.DurationRange.Min > u) CurrentGroup.DurationRange.Min = u; }"
                                  OnSaveAction="_ => ModuleConfig.SaveDeferred()"
                                  Min="300" Max="30000" Step="100">
-                    Max Duration: @MathF.Round(CurrentGroup.DurationRange.Max / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
+                    Max
+                    Duration: @MathF.Round(CurrentGroup.DurationRange.Max / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
                 </DebouncedSlider>
             }
 
@@ -288,23 +317,27 @@
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideCooldownTime" Label="Override Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideCooldownTime"
+                     Label="Override Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
         <MudDivider/>
         <MudCollapse Expanded="CurrentGroup.OverrideCooldownTime">
             <br/>
 
-            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="CurrentGroup.CooldownTime" Label="Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
+            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="CurrentGroup.CooldownTime"
+                          Label="Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
 
         </MudCollapse>
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldAction" Label="Override PhysBone Held Action" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldAction"
+                     Label="Override PhysBone Held Action" @bind-Value:after="OnGroupSettingsValueChange"/>
         <MudDivider/>
         <MudCollapse Expanded="CurrentGroup.OverrideBoneHeldAction">
             <br/>
 
-            <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhileBoneHeld" Label="When PhysBone Held" @bind-Value:after="OnGroupSettingsValueChange">
+            <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhileBoneHeld" Label="When PhysBone Held"
+                       @bind-Value:after="OnGroupSettingsValueChange">
                 @foreach (var boneHeldAction in BoneActionExtensions.BoneActions)
                 {
                     <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
@@ -314,12 +347,14 @@
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneReleasedAction" Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneReleasedAction"
+                     Label="Override PhysBone Release Action" @bind-Value:after="OnGroupSettingsValueChange"/>
         <MudDivider/>
         <MudCollapse Expanded="CurrentGroup.OverrideBoneReleasedAction">
             <br/>
 
-            <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhenBoneReleased" Label="When PhysBone Released" @bind-Value:after="OnGroupSettingsValueChange">
+            <MudSelect Class="option-width" @bind-Value="CurrentGroup.WhenBoneReleased" Label="When PhysBone Released"
+                       @bind-Value:after="OnGroupSettingsValueChange">
                 @foreach (var boneReleasedAction in BoneActionExtensions.BoneActions)
                 {
                     <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
@@ -329,12 +364,16 @@
     </MudPaper>
 
     <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldDurationLimit" Label="Override PhysBone Held Duration Limit" @bind-Value:after="OnGroupSettingsValueChange"/>
+        <MudCheckBox Class="checkbox-title" @bind-Value="@CurrentGroup.OverrideBoneHeldDurationLimit"
+                     Label="Override PhysBone Held Duration Limit" @bind-Value:after="OnGroupSettingsValueChange"/>
         <MudDivider/>
         <MudCollapse Expanded="CurrentGroup.OverrideBoneHeldDurationLimit">
             <div style="display: flex; width: 600px; padding-top: 20px;">
-                <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_limitBoneHeldDurationEnabled" Label="Limit Physbone held duration" @bind-Value:after="OnGroupSettingsValueChange"/>
-                <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_limitBoneHeldDuration" Label="Limit Duration (ms)" Disabled="!_limitBoneHeldDurationEnabled" @bind-Value:after="OnGroupSettingsValueChange"/>
+                <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_limitBoneHeldDurationEnabled"
+                             Label="Limit Physbone held duration" @bind-Value:after="OnGroupSettingsValueChange"/>
+                <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_limitBoneHeldDuration"
+                              Label="Limit Duration (ms)" Disabled="!_limitBoneHeldDurationEnabled"
+                              @bind-Value:after="OnGroupSettingsValueChange"/>
             </div>
         </MudCollapse>
     </MudPaper>
@@ -345,12 +384,16 @@
         <MudDivider/>
         <br/>
 
-        <MudTable Elevation="0" Height="300px" T="Guid" Items="OpenShock.Data.Hubs.Value.SelectMany(x => x.Shockers).Select(x => x.Id)" MultiSelection="true" Hover="true" @bind-SelectedItems="@_selectedShockers" @bind-SelectedItems:after="OnSelectedShockersUpdate">
+        <MudTable Elevation="0" Height="300px" T="Guid"
+                  Items="OpenShock.Data.Hubs.Value.SelectMany(x => x.Shockers).Select(x => x.Id)" MultiSelection="true"
+                  Hover="true" @bind-SelectedItems="@_selectedShockers"
+                  @bind-SelectedItems:after="OnSelectedShockersUpdate">
             <HeaderContent>
                 <MudTh>Name</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Name">@OpenShock.Data.Hubs.Value.SelectMany(x => x.Shockers).First(x => x.Id == context).Name</MudTd>
+                <MudTd
+                    DataLabel="Name">@OpenShock.Data.Hubs.Value.SelectMany(x => x.Shockers).First(x => x.Id == context).Name</MudTd>
             </RowTemplate>
         </MudTable>
     </MudPaper>

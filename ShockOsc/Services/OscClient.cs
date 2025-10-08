@@ -19,7 +19,7 @@ public sealed class OscClient
         _logger = logger;
         _moduleConfig = moduleConfig;
         _hoscySenderClient = new OscSender(new IPEndPoint(IPAddress.Loopback, _moduleConfig.Config.Osc.HoscySendPort));
-        
+
         Task.Run(GameSenderLoop);
         Task.Run(HoscySenderLoop);
     }
@@ -28,30 +28,35 @@ public sealed class OscClient
     {
         _gameConnection?.Dispose();
         _gameConnection = null;
-        _logger.LogInformation("Creating game connection with IP Address {ipAddress}, receive port {ReceivePort} and send port {SendPort}", ipAddress, receivePort, sendPort);
+        _logger.LogInformation(
+            "Creating game connection with IP Address {ipAddress}, receive port {ReceivePort} and send port {SendPort}",
+            ipAddress, receivePort, sendPort);
         _gameConnection = new(new IPEndPoint(ipAddress, receivePort), new IPEndPoint(ipAddress, sendPort));
     }
 
-    private readonly Channel<OscMessage> _gameSenderChannel = Channel.CreateUnbounded<OscMessage>(new UnboundedChannelOptions
-    {
-        SingleReader = true
-    });
-    
-    private readonly Channel<OscMessage> _hoscySenderChannel = Channel.CreateUnbounded<OscMessage>(new UnboundedChannelOptions
-    {
-        SingleReader = true
-    });
-    
-    public ValueTask SendGameMessage(string address, params object?[]?arguments)
+    private readonly Channel<OscMessage> _gameSenderChannel = Channel.CreateUnbounded<OscMessage>(
+        new UnboundedChannelOptions
+        {
+            SingleReader = true
+        });
+
+    private readonly Channel<OscMessage> _hoscySenderChannel = Channel.CreateUnbounded<OscMessage>(
+        new UnboundedChannelOptions
+        {
+            SingleReader = true
+        });
+
+    public ValueTask SendGameMessage(string address, params object?[]? arguments)
     {
         arguments ??= [];
         return _gameSenderChannel.Writer.WriteAsync(new OscMessage(address, arguments));
     }
-    
+
     public ValueTask SendChatboxMessage(string message)
     {
-        if (_moduleConfig.Config.Osc.Hoscy) return _hoscySenderChannel.Writer.WriteAsync(new OscMessage(
-            $"/hoscy/{_moduleConfig.Config.Chatbox.HoscyType.ToString().ToLowerInvariant()}", message));
+        if (_moduleConfig.Config.Osc.Hoscy)
+            return _hoscySenderChannel.Writer.WriteAsync(new OscMessage(
+                $"/hoscy/{_moduleConfig.Config.Chatbox.HoscyType.ToString().ToLowerInvariant()}", message));
         return _gameSenderChannel.Writer.WriteAsync(new OscMessage("/chatbox/input", message, true));
     }
 

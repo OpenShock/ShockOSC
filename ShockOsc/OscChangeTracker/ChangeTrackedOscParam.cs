@@ -10,7 +10,7 @@ public class ChangeTrackedOscParam<T> : IChangeTrackedOscParam
 
     // ReSharper disable once StaticMemberInGenericType
     private static readonly ILogger Logger = Log.ForContext(typeof(ChangeTrackedOscParam<>));
-    
+
     public string Address { get; }
     public T Value { get; private set; }
 
@@ -29,8 +29,8 @@ public class ChangeTrackedOscParam<T> : IChangeTrackedOscParam
     public ValueTask Send()
     {
         Logger.Debug("Sending parameter update for [{ParameterAddress}] with value [{Value}]", Address, Value);
-        return _oscClient.SendGameMessage(Address, Value);  
-    } 
+        return _oscClient.SendGameMessage(Address, Value);
+    }
 
     public ValueTask SetValue(T value)
     {

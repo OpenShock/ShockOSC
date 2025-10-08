@@ -101,14 +101,14 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
             {
                 // Dont do anything if there are no logs
                 if (args.Logs.Count <= 0) return;
-                
+
                 foreach (var controlLog in args.Logs)
                 {
                     await chatboxService.SendRemoteControlMessage(controlLog.Shocker.Name, args.Sender.Name,
                         args.Sender.CustomName, controlLog.Intensity, controlLog.Duration, controlLog.Type);
 
                     var now = DateTimeOffset.UtcNow;
-                    
+
                     oscHandler.SetLastControlCommand(new OscHandler.LastControlLogEntry()
                     {
                         ControlLog = controlLog,

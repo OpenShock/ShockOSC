@@ -59,13 +59,14 @@ public static class MapExtensions
             IgnoredKillSwitchActive = old.IgnoredKillSwitchActive,
             IgnoredGroupPauseActive = "Ignoring Shock, {GroupName} is paused", // New default message
             IgnoredAfk = old.IgnoredAfk,
-            Types = old.Types.ToDictionary(k => (NewSchema.ControlType)k.Key, v => new NewSchema.ChatboxConf.ControlTypeConf
-            {
-                Enabled = v.Value.Enabled,
-                Local = v.Value.Local,
-                Remote = v.Value.Remote,
-                RemoteWithCustomName = v.Value.RemoteWithCustomName
-            })
+            Types = old.Types.ToDictionary(k => (NewSchema.ControlType)k.Key, v =>
+                new NewSchema.ChatboxConf.ControlTypeConf
+                {
+                    Enabled = v.Value.Enabled,
+                    Local = v.Value.Local,
+                    Remote = v.Value.Remote,
+                    RemoteWithCustomName = v.Value.RemoteWithCustomName
+                })
         };
     }
 

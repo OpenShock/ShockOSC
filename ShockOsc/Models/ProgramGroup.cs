@@ -21,21 +21,21 @@ public sealed class ProgramGroup
     ///  Scaled to 0-100
     /// </summary>
     public byte NextIntensity { get; set; } = 0;
-    
+
     /// <summary>
     /// Not scaled, 0-1 float, needs to be scaled to duration limits
     /// </summary>
     public float NextDuration { get; set; } = 0;
-    
+
     public ChangeTrackedOscParam<bool> ParamActive { get; }
     public ChangeTrackedOscParam<bool> ParamCooldown { get; }
     public ChangeTrackedOscParam<float> ParamCooldownPercentage { get; }
     public ChangeTrackedOscParam<float> ParamIntensity { get; }
-    
+
     public byte LastConcurrentIntensity { get; set; } = 0;
     public byte ConcurrentIntensity { get; set; } = 0;
     public ControlType ConcurrentType { get; set; } = ControlType.Stop;
-    
+
     public Guid Id { get; }
     public string Name { get; }
     public TriggerMethod TriggerMethod { get; set; }

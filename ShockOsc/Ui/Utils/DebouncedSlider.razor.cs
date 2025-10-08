@@ -11,7 +11,6 @@ namespace OpenShock.ShockOSC.Ui.Utils;
 
 public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : struct, INumber<T>
 {
-    
     private BehaviorSubject<T>? _subject;
 
     private T ValueProp
@@ -30,10 +29,10 @@ public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : s
         _subject.Throttle(DebounceTime).Subscribe(value => OnSaveAction?.Invoke(value));
     }
 
-    [Parameter] 
+    [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public string Label { get; set; } = string.Empty;
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public TimeSpan DebounceTime { get; set; } = TimeSpan.FromMilliseconds(500);
@@ -41,13 +40,13 @@ public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : s
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public EventCallback<T> SliderValueChanged { get; set; }
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Action<T>? OnValueChanged { get; set; }
 
     private T _sliderValue = default!;
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
 #pragma warning disable BL0007
@@ -58,29 +57,29 @@ public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : s
         set
         {
             _subject?.OnNext(value);
-            if(_sliderValue.Equals(value)) return;
-                
+            if (_sliderValue.Equals(value)) return;
+
             SliderValueChanged.InvokeAsync(value);
             _sliderValue = value!;
         }
     }
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public Action<T>? OnSaveAction { get; set; }
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public Size Size { get; set; } = Size.Small;
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public string? Style { get; set; }
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public string? Class { get; set; }
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
     public RenderFragment? ChildContent { get; set; }
@@ -88,22 +87,22 @@ public partial class DebouncedSlider<T> : ComponentBase, IDisposable where T : s
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public T Min { get; set; } = T.Zero;
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public T Max { get; set; } = T.CreateTruncating(100);
-    
+
     [Parameter]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public T Step { get; set; } = T.One;
 
     private bool _disposed;
-    
+
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
-        
+
         _subject?.Dispose();
     }
 }

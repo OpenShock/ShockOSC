@@ -10,6 +10,6 @@ public sealed class Group : SharedBehaviourConfig
 
     public bool OverrideBoneHeldAction { get; set; }
     public bool OverrideBoneReleasedAction { get; set; }
-    
+
     public bool OverrideBoneHeldDurationLimit { get; set; }
 }

@@ -13,7 +13,7 @@ public enum BoneAction
 public static class BoneActionExtensions
 {
     public static readonly BoneAction[] BoneActions = Enum.GetValues(typeof(BoneAction)).Cast<BoneAction>().ToArray();
-    
+
     public static ControlType ToControlType(this BoneAction action)
     {
         return action switch

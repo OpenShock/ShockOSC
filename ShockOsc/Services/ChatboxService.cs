@@ -18,7 +18,7 @@ public sealed class ChatboxService : IAsyncDisposable
     private readonly OscClient _oscClient;
     private readonly ILogger<ChatboxService> _logger;
     private readonly System.Threading.Timer _clearTimer;
-    
+
     private readonly CancellationTokenSource _cts = new();
 
     private readonly Channel<Message> _messageChannel = Channel.CreateBounded<Message>(new BoundedChannelOptions(4)
@@ -27,7 +27,8 @@ public sealed class ChatboxService : IAsyncDisposable
         FullMode = BoundedChannelFullMode.DropOldest
     });
 
-    public ChatboxService(IModuleConfig<ShockOscConfig> moduleConfig, OscClient oscClient, ILogger<ChatboxService> logger)
+    public ChatboxService(IModuleConfig<ShockOscConfig> moduleConfig, OscClient oscClient,
+        ILogger<ChatboxService> logger)
     {
         _moduleConfig = moduleConfig;
         _oscClient = oscClient;
@@ -108,7 +109,7 @@ public sealed class ChatboxService : IAsyncDisposable
 
         await _messageChannel.Writer.WriteAsync(new Message(msg, _moduleConfig.Config.Chatbox.TimeoutTimeSpan));
     }
-    
+
     public async ValueTask SendGroupPausedMessage(ProgramGroup programGroup)
     {
         if (!_moduleConfig.Config.Chatbox.Enabled) return;
@@ -118,11 +119,12 @@ public sealed class ChatboxService : IAsyncDisposable
             GroupName = programGroup.Name
         };
 
-        var msg = $"{_moduleConfig.Config.Chatbox.Prefix}{Smart.Format(_moduleConfig.Config.Chatbox.IgnoredGroupPauseActive, dat)}";
+        var msg =
+            $"{_moduleConfig.Config.Chatbox.Prefix}{Smart.Format(_moduleConfig.Config.Chatbox.IgnoredGroupPauseActive, dat)}";
 
         await _messageChannel.Writer.WriteAsync(new Message(msg, _moduleConfig.Config.Chatbox.TimeoutTimeSpan));
     }
-    
+
     public async ValueTask SendGenericMessage(string message)
     {
         if (!_moduleConfig.Config.Chatbox.Enabled) return;
@@ -136,10 +138,11 @@ public sealed class ChatboxService : IAsyncDisposable
         await foreach (var message in _messageChannel.Reader.ReadAllAsync())
         {
             await _oscClient.SendChatboxMessage(message.Text);
-            
-            if(_moduleConfig.Config.Osc.Hoscy) continue;
+
+            if (_moduleConfig.Config.Osc.Hoscy) continue;
             // We dont need to worry about timeouts if we're using hoscy
-            if(_moduleConfig.Config.Chatbox.TimeoutEnabled) _clearTimer.Change(message.Timeout, Timeout.InfiniteTimeSpan);
+            if (_moduleConfig.Config.Chatbox.TimeoutEnabled)
+                _clearTimer.Change(message.Timeout, Timeout.InfiniteTimeSpan);
             await Task.Delay(1250); // VRChat chatbox rate limit
         }
     }
@@ -152,13 +155,13 @@ public sealed class ChatboxService : IAsyncDisposable
         _disposed = true;
 
         await _clearTimer.DisposeAsync();
-        
+
         await _cts.CancelAsync();
         _cts.Dispose();
-        
+
         GC.SuppressFinalize(this);
     }
-    
+
     ~ChatboxService()
     {
         if (_disposed) return;

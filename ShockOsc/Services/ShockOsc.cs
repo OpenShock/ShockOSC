@@ -125,7 +125,8 @@ public sealed class ShockOsc
         }
         else
         {
-            _oscClient.CreateGameConnection(IPAddress.Parse(_moduleConfig.Config.Osc.OscSendIp), _moduleConfig.Config.Osc.OscReceivePort,
+            _oscClient.CreateGameConnection(IPAddress.Parse(_moduleConfig.Config.Osc.OscSendIp),
+                _moduleConfig.Config.Osc.OscReceivePort,
                 _moduleConfig.Config.Osc.OscSendPort);
         }
 
@@ -356,7 +357,7 @@ public sealed class ShockOsc
                 if (value is not true) return;
 
                 if (!await HandlePrecondition(CheckAndSetAllPreconditions(programGroup), programGroup)) return;
-                
+
 
                 var type = action switch
                 {
@@ -404,14 +405,13 @@ public sealed class ShockOsc
             case true when !isGrabbed:
             {
                 programGroup.TriggerMethod = TriggerMethod.None;
-                
+
                 // When the stretch value is not 0, we send the action
                 if (programGroup.LastStretchValue != 0)
                 {
-                    
                     // Check all preconditions, maybe send stop command here aswell?
                     if (!await HandlePrecondition(CheckAndSetAllPreconditions(programGroup), programGroup)) return;
-                    
+
                     var releaseAction = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                         behaviourConfig => behaviourConfig.WhenBoneReleased,
                         group => group.OverrideBoneReleasedAction);
@@ -422,9 +422,10 @@ public sealed class ShockOsc
                         return;
                     }
 
-                    _logger.LogDebug("Physbone released, sending {Action} to group {Group}", releaseAction, programGroup.Name);
+                    _logger.LogDebug("Physbone released, sending {Action} to group {Group}", releaseAction,
+                        programGroup.Name);
                     _logger.LogDebug("Physbone stretch value: {StretchValue}", programGroup.LastStretchValue);
-                    
+
                     // Random intensity for physbone release
                     var pullTriggerBehavior = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                         behaviourConfig => behaviourConfig.OnPullTriggerRandomBehavior,
@@ -433,17 +434,18 @@ public sealed class ShockOsc
                     var isRandomMode = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                         behaviourConfig => behaviourConfig.RandomIntensity,
                         group => group.RandomIntensity);
-                    
+
                     var physBoneIntensity = pullTriggerBehavior && isRandomMode
                         ? GetIntensity(programGroup)
                         : GetPhysbonePullIntensity(programGroup, programGroup.LastStretchValue);
                     programGroup.LastStretchValue = 0;
 
-                    SendCommand(programGroup, GetDuration(programGroup), physBoneIntensity, releaseAction.ToControlType(), true);
-                    
+                    SendCommand(programGroup, GetDuration(programGroup), physBoneIntensity,
+                        releaseAction.ToControlType(), true);
+
                     return;
                 }
-                
+
                 // If the stretch value is 0, we stop the group
                 if (_moduleConfig.Config.GetGroupOrGlobal(programGroup, config => config.WhileBoneHeld,
                         group => group.OverrideBoneHeldAction) != BoneAction.None)
@@ -469,8 +471,9 @@ public sealed class ShockOsc
             }
         }
     }
-    
-    private async ValueTask<bool> HandlePrecondition(OneOf.OneOf<Success, KillSwitch, Cooldown, Paused, Afk> result, ProgramGroup programGroup)
+
+    private async ValueTask<bool> HandlePrecondition(OneOf.OneOf<Success, KillSwitch, Cooldown, Paused, Afk> result,
+        ProgramGroup programGroup)
     {
         await result.Match(
             success => ValueTask.CompletedTask,
@@ -571,7 +574,7 @@ public sealed class ShockOsc
 
         programGroup.TriggerMethod = TriggerMethod.None;
         var inSeconds = MathF.Round(actualDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture);
-        
+
         _logger.LogInformation(
             "Sending {Type} to {GroupName} Intensity: {Intensity} Length:{Length}s Exclusive: {Exclusive}", type,
             programGroup.Name, actualIntensity, inSeconds, exclusive);
@@ -626,7 +629,7 @@ public sealed class ShockOsc
     private async Task CheckProgramGroup(ProgramGroup programGroup, Guid pos)
     {
         var pass = CheckAndSetAllPreconditions(programGroup);
-        
+
         # region Concurrent Handling
 
         if (programGroup.ConcurrentIntensity != 0 && pass.IsT0)
@@ -649,8 +652,8 @@ public sealed class ShockOsc
         // Physbone while held handling
         if (programGroup.TriggerMethod == TriggerMethod.None && programGroup.IsGrabbed)
         {
-            if(!await HandlePrecondition(pass, programGroup)) return;
-            
+            if (!await HandlePrecondition(pass, programGroup)) return;
+
             var heldAction = _moduleConfig.Config.GetGroupOrGlobal(programGroup,
                 behaviourConfig => behaviourConfig.WhileBoneHeld,
                 group => group.OverrideBoneHeldAction);
@@ -668,23 +671,24 @@ public sealed class ShockOsc
                     heldAction.ToControlType());
             }
         }
-        
+
         // Regular touch trigger
-        
+
         if (programGroup.TriggerMethod == TriggerMethod.None)
             return;
 
         if (programGroup.TriggerMethod == TriggerMethod.Manual &&
             programGroup.LastActive.AddMilliseconds(_moduleConfig.Config.Behaviour.HoldTime) > DateTime.UtcNow)
             return;
-        
-       if(!await HandlePrecondition(pass, programGroup)) return;
+
+        if (!await HandlePrecondition(pass, programGroup)) return;
 
 
         SendCommand(programGroup, GetDuration(programGroup), GetIntensity(programGroup), ControlType.Shock, false);
     }
 
-    private OneOf.OneOf<Success, KillSwitch, Cooldown, Paused, Afk> CheckAndSetAllPreconditions(ProgramGroup programGroup)
+    private OneOf.OneOf<Success, KillSwitch, Cooldown, Paused, Afk> CheckAndSetAllPreconditions(
+        ProgramGroup programGroup)
     {
         var configBehaviour = _moduleConfig.Config.Behaviour;
 
@@ -705,7 +709,7 @@ public sealed class ShockOsc
             programGroup.TriggerMethod = TriggerMethod.None;
             return new Afk();
         }
-        
+
         var cooldownTime = configBehaviour.CooldownTime;
         if (programGroup.ConfigGroup is { OverrideCooldownTime: true })
             cooldownTime = programGroup.ConfigGroup.CooldownTime;
@@ -836,6 +840,9 @@ public sealed class ShockOsc
 }
 
 public struct KillSwitch;
+
 public struct Cooldown;
+
 public struct Paused;
+
 public struct Afk;

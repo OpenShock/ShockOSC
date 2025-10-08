@@ -22,7 +22,7 @@ public static class NewSchema
         public bool OscQuery { get; set; } = true;
         public ushort OscSendPort { get; set; } = 9000;
         public ushort OscReceivePort { get; set; } = 9001;
-    
+
         public string OscSendIp { get; set; } = IPAddress.Loopback.ToString();
     }
 
@@ -52,14 +52,14 @@ public static class NewSchema
     {
         public bool RandomIntensity { get; set; }
         public bool RandomDuration { get; set; }
-    
+
         public JsonRange<ushort> DurationRange { get; set; } = new JsonRange<ushort> { Min = 1000, Max = 5000 };
         public JsonRange<byte> IntensityRange { get; set; } = new JsonRange<byte> { Min = 1, Max = 30 };
         public byte FixedIntensity { get; set; } = 50;
         public ushort FixedDuration { get; set; } = 2000;
-    
+
         public uint CooldownTime { get; set; } = 5000;
-    
+
         public BoneAction WhileBoneHeld { get; set; } = BoneAction.Vibrate;
         public BoneAction WhenBoneReleased { get; set; } = BoneAction.Shock;
 
@@ -141,6 +141,7 @@ public static class NewSchema
                     }
                 }
             };
+
         public sealed class ControlTypeConf
         {
             public bool Enabled { get; set; }
