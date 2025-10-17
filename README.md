@@ -4,6 +4,8 @@
 
 <h1><b>ShockOSC</b></h1>
 
+[![Download OpenShock Desktop](https://custom-icon-badges.demolab.com/badge/-Download_OpenShock_Desktop-e14a6d?style=for-the-badge&logo=download&logoColor=white "Download OpenShock Desktop")](https://github.com/OpenShock/Desktop/releases/latest/download/OpenShock_Desktop_Setup.exe)
+
 [![Release Version](https://img.shields.io/github/v/release/OpenShock/ShockOsc?style=for-the-badge&color=e14a6d)](https://github.com/OpenShock/ShockOsc/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/OpenShock/ShockOsc/total?style=for-the-badge&color=e14a6d)](https://github.com/OpenShock/ShockOsc/releases/latest)
 [![Discord](https://img.shields.io/discord/1078124408775901204?style=for-the-badge&color=e14a6d&label=OpenShock%20Discord&logo=discord)](https://openshock.net/discord)
