@@ -18,7 +18,7 @@ Used as an interface for OpenShock to communicate with applications that support
 
 ## Setup
 
-[Wiki](https://wiki.openshock.org/guides/shockosc-basic/)
+[Wiki](https://wiki.openshock.org/guides/shockosc/basic)
 
 ### Visual parameters
 
