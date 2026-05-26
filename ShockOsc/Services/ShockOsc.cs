@@ -34,6 +34,9 @@ public sealed class ShockOsc
 
     private bool _oscServerActive;
     private bool _isAfk;
+    public bool IsGameConnected { get; private set; }
+    public bool IsConnectedViaOscQuery { get; private set; }
+    public event Action? OnGameConnectionChanged;
     public string AvatarId = string.Empty;
     private readonly Random Random = new();
 
@@ -120,6 +123,9 @@ public sealed class ShockOsc
     {
         // stop tasks
         _oscServerActive = false;
+        IsGameConnected = false;
+        IsConnectedViaOscQuery = false;
+        OnGameConnectionChanged?.Invoke();
         await Task.Delay(1000); // wait for tasks to stop TODO: REWORK THIS
 
         if (client != null)
@@ -139,6 +145,9 @@ public sealed class ShockOsc
 
         // Start tasks
         _oscServerActive = true;
+        IsGameConnected = true;
+        IsConnectedViaOscQuery = client != null;
+        OnGameConnectionChanged?.Invoke();
         OsTask.Run(ReceiverLoopAsync);
         OsTask.Run(SenderLoopAsync);
         OsTask.Run(CheckLoop);
