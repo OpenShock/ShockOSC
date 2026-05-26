@@ -581,10 +581,10 @@ public sealed class ShockOsc
 
     private async Task SenderLoopAsync(CancellationToken ct)
     {
-        while (!ct.IsCancellationRequested)
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(300));
+        while (await timer.WaitForNextTickAsync(ct))
         {
             await _oscHandler.SendParams();
-            await Task.Delay(300, ct);
         }
     }
 
@@ -653,7 +653,8 @@ public sealed class ShockOsc
 
     private async Task CheckLoop(CancellationToken ct)
     {
-        while (!ct.IsCancellationRequested)
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
+        while (await timer.WaitForNextTickAsync(ct))
         {
             try
             {
@@ -663,8 +664,6 @@ public sealed class ShockOsc
             {
                 _logger.LogError(e, "Error in check loop");
             }
-
-            await Task.Delay(20, ct);
         }
     }
 
