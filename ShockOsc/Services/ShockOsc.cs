@@ -38,6 +38,7 @@ public sealed class ShockOsc
     public bool IsGameConnected { get; private set; }
     public bool IsConnectedViaOscQuery { get; private set; }
     public event Action? OnGameConnectionChanged;
+    public event Action<AvatarParameterAction>? OnAvatarActionTriggered;
     public string AvatarId = string.Empty;
     private readonly Random Random = new();
 
@@ -236,6 +237,7 @@ public sealed class ShockOsc
             var shouldTrigger = action.TriggerKind switch
             {
                 ParameterTriggerKind.OnTrue => newValue is true && oldValue is not true,
+                ParameterTriggerKind.OnFalse => newValue is false && oldValue is not false,
                 ParameterTriggerKind.Threshold => newValue is float f && f >= action.Threshold &&
                                                   (oldValue is not float oldF || oldF < action.Threshold),
                 ParameterTriggerKind.OnChange => !Equals(newValue, oldValue) && newValue is not null &&
@@ -265,6 +267,7 @@ public sealed class ShockOsc
                 "Custom parameter action triggered: {Param} -> {Action} on group {Group} (intensity: {Intensity}, duration: {Duration}ms)",
                 paramName, action.Action, programGroup.Name, intensity, duration);
 
+            OnAvatarActionTriggered?.Invoke(action);
             OsTask.Run(() => SendCommand(programGroup, duration, intensity, action.Action));
         }
     }

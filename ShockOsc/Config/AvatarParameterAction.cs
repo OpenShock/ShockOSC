@@ -21,6 +21,11 @@ public enum ParameterTriggerKind
     OnTrue,
 
     /// <summary>
+    /// Triggers when a bool parameter becomes false
+    /// </summary>
+    OnFalse,
+
+    /// <summary>
     /// Triggers when a float parameter exceeds the threshold
     /// </summary>
     Threshold,

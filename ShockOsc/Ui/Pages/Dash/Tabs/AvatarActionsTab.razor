@@ -5,8 +5,10 @@
 @using OpenShock.ShockOSC.Config
 @using OpenShock.ShockOSC.Services
 @using OpenShock.ShockOSC.Ui.Utils
+@using OpenShock.ShockOSC.Utils
 
 @page "/dash/avatar-actions"
+@implements IAsyncDisposable
 
 @code {
 
@@ -29,6 +31,54 @@
 
     private AvatarParameterAction? _selectedAction;
     private string _parameterSearch = "";
+
+    private readonly Dictionary<AvatarParameterAction, DateTime> _lastTriggered = new();
+    private IDisposable? _paramsSubscription;
+    private readonly CancellationTokenSource _cts = new();
+    private bool _updateQueued;
+
+    protected override void OnInitialized()
+    {
+        _paramsSubscription = ShockOsc.OnParamsChangeObservable.Subscribe(_ => _updateQueued = true);
+        ShockOsc.OnAvatarActionTriggered += OnActionTriggered;
+        OsTask.Run(UpdateLoop);
+    }
+
+    private async Task UpdateLoop()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(200));
+        while (await timer.WaitForNextTickAsync(_cts.Token))
+        {
+            if (!_updateQueued) continue;
+            _updateQueued = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnActionTriggered(AvatarParameterAction action)
+    {
+        _lastTriggered[action] = DateTime.UtcNow;
+        _updateQueued = true;
+    }
+
+    private bool IsRecentlyTriggered(AvatarParameterAction action)
+    {
+        return _lastTriggered.TryGetValue(action, out var time) &&
+               (DateTime.UtcNow - time).TotalSeconds < 2;
+    }
+
+    private string GetCurrentValue(string paramName)
+    {
+        if (string.IsNullOrEmpty(paramName)) return "";
+        return ShockOsc.AllAvatarParams.TryGetValue(paramName, out var val) ? $"{val}" : "";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        ShockOsc.OnAvatarActionTriggered -= OnActionTriggered;
+        _paramsSubscription?.Dispose();
+        await _cts.CancelAsync();
+    }
 
     private void AddAction()
     {
@@ -62,6 +112,7 @@
         if (_selectedAction == action)
             _selectedAction = null;
 
+        _lastTriggered.Remove(action);
         ModuleConfig.SaveDeferred();
         InvokeAsync(StateHasChanged);
     }
@@ -97,6 +148,7 @@
         var trigger = action.TriggerKind switch
         {
             ParameterTriggerKind.OnTrue => "On True",
+            ParameterTriggerKind.OnFalse => "On False",
             ParameterTriggerKind.Threshold => $"Threshold >= {action.Threshold:F2}",
             ParameterTriggerKind.OnChange => "On Change",
             _ => "Unknown"
@@ -194,13 +246,24 @@ else
             <MudTable T="AvatarParameterAction" Items="CurrentActions" Hover="true" Dense="true"
                       SelectedItem="_selectedAction" SelectedItemChanged="OnSelectAction">
                 <HeaderContent>
+                    <MudTh Style="width: 16px;"></MudTh>
                     <MudTh>Parameter</MudTh>
+                    <MudTh>Value</MudTh>
                     <MudTh>Configuration</MudTh>
                     <MudTh Style="width: 50px;"></MudTh>
                 </HeaderContent>
                 <RowTemplate>
+                    <MudTd>
+                        @if (IsRecentlyTriggered(context))
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ElectricBolt" Color="Color.Warning" Size="Size.Small"/>
+                        }
+                    </MudTd>
                     <MudTd DataLabel="Parameter">
                         @(string.IsNullOrEmpty(context.ParameterName) ? "(not set)" : context.ParameterName)
+                    </MudTd>
+                    <MudTd DataLabel="Value">
+                        <MudText Typo="Typo.body2" Style="opacity: 0.7;">@GetCurrentValue(context.ParameterName)</MudText>
                     </MudTd>
                     <MudTd DataLabel="Configuration">@GetActionSummary(context)</MudTd>
                     <MudTd>
