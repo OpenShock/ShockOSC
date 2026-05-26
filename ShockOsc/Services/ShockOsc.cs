@@ -653,7 +653,8 @@ public sealed class ShockOsc
 
     private async Task CheckLoop(CancellationToken ct)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
+        var intervalMs = Math.Max(10, _moduleConfig.Config.Behaviour.CheckLoopIntervalMs);
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(intervalMs));
         while (await timer.WaitForNextTickAsync(ct))
         {
             try

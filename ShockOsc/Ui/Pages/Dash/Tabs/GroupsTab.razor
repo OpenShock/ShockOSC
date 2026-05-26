@@ -324,8 +324,18 @@
         <MudCollapse Expanded="CurrentGroup.OverrideCooldownTime">
             <br/>
 
-            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="CurrentGroup.CooldownTime"
-                          Label="Cooldown Time (ms)" @bind-Value:after="OnGroupSettingsValueChange"/>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length"
+                                 @bind-SliderValue="@CurrentGroup.CooldownTime"
+                                 OnSaveAction="_ => ModuleConfig.SaveDeferred()"
+                                 Min="0" Max="30000" Step="500">
+                    Cooldown: @MathF.Round(CurrentGroup.CooldownTime / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
+                </DebouncedSlider>
+                <MudNumericField T="uint" Variant="Variant.Outlined" Style="max-width: 90px;"
+                                 @bind-Value="CurrentGroup.CooldownTime"
+                                 @bind-Value:after="OnGroupSettingsValueChange"
+                                 Min="0" Label="ms"/>
+            </div>
 
         </MudCollapse>
     </MudPaper>
