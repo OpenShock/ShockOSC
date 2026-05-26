@@ -11,6 +11,9 @@ public sealed class AvatarParameterAction
     public float Threshold { get; set; } = 0.5f;
     public byte? OverrideIntensity { get; set; }
     public ushort? OverrideDuration { get; set; }
+    public bool IsLiveControl { get; set; }
+    public float LiveControlMin { get; set; }
+    public float LiveControlMax { get; set; } = 1f;
 }
 
 public enum ParameterTriggerKind

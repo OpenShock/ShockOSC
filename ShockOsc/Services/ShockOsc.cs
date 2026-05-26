@@ -234,6 +234,40 @@ public sealed class ShockOsc
         {
             if (action.ParameterName != paramName) continue;
 
+            if (!_dataLayer.ProgramGroups.TryGetValue(action.GroupId, out var programGroup))
+            {
+                _logger.LogWarning("Custom parameter action references unknown group {GroupId}", action.GroupId);
+                continue;
+            }
+
+            if (action.IsLiveControl)
+            {
+                var rawValue = newValue switch
+                {
+                    float f => f,
+                    int i => i,
+                    true => action.LiveControlMax,
+                    _ => action.LiveControlMin
+                };
+
+                var range = action.LiveControlMax - action.LiveControlMin;
+                var liveIntensity = range == 0f
+                    ? 0f
+                    : MathUtils.Saturate((rawValue - action.LiveControlMin) / range);
+
+                var scaledIntensity = Convert.ToByte(liveIntensity * 100f);
+                if (action.OverrideIntensity.HasValue && scaledIntensity > 0)
+                    scaledIntensity = GetScaledIntensity(programGroup, scaledIntensity);
+
+                programGroup.ConcurrentIntensity = scaledIntensity;
+                programGroup.ConcurrentType = scaledIntensity > 0 ? action.Action : ControlType.Stop;
+
+                if (scaledIntensity > 0)
+                    OnAvatarActionTriggered?.Invoke(action);
+
+                continue;
+            }
+
             var shouldTrigger = action.TriggerKind switch
             {
                 ParameterTriggerKind.OnTrue => newValue is true && oldValue is not true,
@@ -246,12 +280,6 @@ public sealed class ShockOsc
             };
 
             if (!shouldTrigger) continue;
-
-            if (!_dataLayer.ProgramGroups.TryGetValue(action.GroupId, out var programGroup))
-            {
-                _logger.LogWarning("Custom parameter action references unknown group {GroupId}", action.GroupId);
-                continue;
-            }
 
             if (!CheckAndSetAllPreconditions(programGroup).IsT0)
             {

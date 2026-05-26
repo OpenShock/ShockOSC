@@ -145,6 +145,9 @@
 
     private string GetActionSummary(AvatarParameterAction action)
     {
+        if (action.IsLiveControl)
+            return $"{action.Action} | Live Control | {GetGroupName(action.GroupId)}";
+
         var trigger = action.TriggerKind switch
         {
             ParameterTriggerKind.OnTrue => "On True",
@@ -311,22 +314,40 @@ else
                 }
             </MudSelect>
 
-            <MudSelect T="ParameterTriggerKind" Label="Trigger" @bind-Value="_selectedAction.TriggerKind"
-                       @bind-Value:after="OnActionChanged" Variant="Variant.Filled" Style="margin-bottom: 16px;">
-                @foreach (var trigger in TriggerKinds)
-                {
-                    <MudSelectItem Value="@trigger">@trigger</MudSelectItem>
-                }
-            </MudSelect>
+            <MudCheckBox @bind-Value="_selectedAction.IsLiveControl" Label="Live Control (continuous, driven by parameter value)"
+                         @bind-Value:after="OnActionChanged" Style="margin-bottom: 16px;"/>
 
-            @if (_selectedAction.TriggerKind == ParameterTriggerKind.Threshold)
+            @if (_selectedAction.IsLiveControl)
             {
-                <MudSlider T="float" Size="Size.Large" Min="0f" Max="1f" Step="0.01f"
-                           Class="openshock-slider-length"
-                           @bind-Value="_selectedAction.Threshold"
-                           @bind-Value:after="OnActionChanged">
-                    Threshold: @_selectedAction.Threshold.ToString("F2")
-                </MudSlider>
+                <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                    <MudNumericField T="float" Variant="Variant.Filled" @bind-Value="_selectedAction.LiveControlMin"
+                                     @bind-Value:after="OnActionChanged" Label="Input Min" Style="flex: 1;"
+                                     Step="0.1f"/>
+                    <MudNumericField T="float" Variant="Variant.Filled" @bind-Value="_selectedAction.LiveControlMax"
+                                     @bind-Value:after="OnActionChanged" Label="Input Max" Style="flex: 1;"
+                                     Step="0.1f"/>
+                </div>
+            }
+
+            @if (!_selectedAction.IsLiveControl)
+            {
+                <MudSelect T="ParameterTriggerKind" Label="Trigger" @bind-Value="_selectedAction.TriggerKind"
+                           @bind-Value:after="OnActionChanged" Variant="Variant.Filled" Style="margin-bottom: 16px;">
+                    @foreach (var trigger in TriggerKinds)
+                    {
+                        <MudSelectItem Value="@trigger">@trigger</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (_selectedAction.TriggerKind == ParameterTriggerKind.Threshold)
+                {
+                    <MudSlider T="float" Size="Size.Large" Min="0f" Max="1f" Step="0.01f"
+                               Class="openshock-slider-length"
+                               @bind-Value="_selectedAction.Threshold"
+                               @bind-Value:after="OnActionChanged">
+                        Threshold: @_selectedAction.Threshold.ToString("F2")
+                    </MudSlider>
+                }
             }
 
             <MudSelect T="Guid" Label="Target Group" @bind-Value="_selectedAction.GroupId"
@@ -338,19 +359,22 @@ else
                 }
             </MudSelect>
 
-            <MudCheckBox @bind-Value="_overrideIntensity" Label="Override Intensity"
-                         @bind-Value:after="() => OnOverrideIntensityChanged(_overrideIntensity)"/>
-            @if (_overrideIntensity)
+            @if (!_selectedAction.IsLiveControl)
             {
-                <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
-                                 @bind-SliderValue="@IntensityValue"
-                                 OnSaveAction="_ => ModuleConfig.SaveDeferred()">
-                    Intensity: @IntensityValue%
-                </DebouncedSlider>
-            }
+                <MudCheckBox @bind-Value="_overrideIntensity" Label="Override Intensity"
+                             @bind-Value:after="() => OnOverrideIntensityChanged(_overrideIntensity)"/>
+                @if (_overrideIntensity)
+                {
+                    <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
+                                     @bind-SliderValue="@IntensityValue"
+                                     OnSaveAction="_ => ModuleConfig.SaveDeferred()">
+                        Intensity: @IntensityValue%
+                    </DebouncedSlider>
+                }
 
-            <MudCheckBox @bind-Value="_overrideDuration" Label="Override Duration"
-                         @bind-Value:after="() => OnOverrideDurationChanged(_overrideDuration)"/>
+                <MudCheckBox @bind-Value="_overrideDuration" Label="Override Duration"
+                             @bind-Value:after="() => OnOverrideDurationChanged(_overrideDuration)"/>
+            }
             @if (_overrideDuration)
             {
                 <DebouncedSlider T="ushort" Size="Size.Large" Min="300" Max="30000" Step="100"
