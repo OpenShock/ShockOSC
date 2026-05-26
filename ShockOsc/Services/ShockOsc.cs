@@ -125,7 +125,8 @@ public sealed class ShockOsc
     {
         // Stop existing loops
         await _loopCts.CancelAsync();
-        await Task.WhenAll(_loopTasks);
+        try { await Task.WhenAll(_loopTasks); }
+        catch (OperationCanceledException) { }
         _loopCts.Dispose();
         _loopCts = new CancellationTokenSource();
 
