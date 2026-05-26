@@ -9,6 +9,12 @@ public sealed class ShockOscConfig
     public ChatboxConf Chatbox { get; set; } = new();
     public IDictionary<Guid, Group> Groups { get; set; } = new Dictionary<Guid, Group>();
 
+    /// <summary>
+    /// Custom parameter-to-action mappings, keyed by avatar ID
+    /// </summary>
+    public IDictionary<string, IList<AvatarParameterAction>> AvatarParameterActions { get; set; } =
+        new Dictionary<string, IList<AvatarParameterAction>>();
+
     public T GetGroupOrGlobal<T>(ProgramGroup group, Func<SharedBehaviourConfig, T> selector,
         Func<Group, bool> groupOverrideSelector)
     {

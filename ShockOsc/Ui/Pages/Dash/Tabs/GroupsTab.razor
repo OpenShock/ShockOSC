@@ -10,6 +10,7 @@
 @using ProgramGroup = OpenShock.ShockOSC.Models.ProgramGroup
 
 @page "/dash/groups"
+@implements IDisposable
 
 @code {
 
@@ -161,7 +162,7 @@
         InvokeAsync(StateHasChanged);
     }
 
-    private void Dispose()
+    public void Dispose()
     {
         UnderscoreConfig.OnGroupConfigUpdate -= OnGroupConfigUpdate;
     }
@@ -324,7 +325,7 @@
             <br/>
 
             <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="CurrentGroup.CooldownTime"
-                          Label="Cooldown Time" @bind-Value:after="OnGroupSettingsValueChange"/>
+                          Label="Cooldown Time (ms)" @bind-Value:after="OnGroupSettingsValueChange"/>
 
         </MudCollapse>
     </MudPaper>

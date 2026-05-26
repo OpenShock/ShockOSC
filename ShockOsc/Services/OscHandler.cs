@@ -84,9 +84,13 @@ public sealed class OscHandler
 
         foreach (var shocker in _shockOscData.ProgramGroups.Values)
         {
+            var cooldownTime = _moduleConfig.Config.Behaviour.CooldownTime;
+            if (shocker.ConfigGroup is { OverrideCooldownTime: true })
+                cooldownTime = shocker.ConfigGroup.CooldownTime;
+
             var isActive = shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             var isActiveOrOnCooldown =
-                shocker.LastExecuted.AddMilliseconds(_moduleConfig.Config.Behaviour.CooldownTime)
+                shocker.LastExecuted.AddMilliseconds(cooldownTime)
                     .AddMilliseconds(shocker.LastDuration) > DateTime.UtcNow;
             if (!isActiveOrOnCooldown && shocker.LastIntensity > 0)
                 shocker.LastIntensity = 0;
@@ -100,7 +104,7 @@ public sealed class OscHandler
                                                                 shocker.LastExecuted.AddMilliseconds(
                                                                     shocker.LastDuration))
                                                         .TotalMilliseconds /
-                                                        _moduleConfig.Config.Behaviour.CooldownTime);
+                                                        cooldownTime);
 
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);

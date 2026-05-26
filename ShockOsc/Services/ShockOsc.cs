@@ -61,6 +61,11 @@ public sealed class ShockOsc
     public readonly Dictionary<string, object?> ShockOscParams = new();
     public readonly Dictionary<string, object?> AllAvatarParams = new();
 
+    /// <summary>
+    /// Tracks previous values of avatar parameters for custom action trigger detection
+    /// </summary>
+    private readonly Dictionary<string, object?> _previousParamValues = new();
+
     public IObservable<bool> OnParamsChangeObservable => _onParamsChange;
     private readonly Subject<bool> _onParamsChange = new();
 
@@ -159,6 +164,7 @@ public sealed class ShockOsc
 
             ShockOscParams.Clear();
             AllAvatarParams.Clear();
+            _previousParamValues.Clear();
 
             foreach (var param in parameters.Keys)
             {
@@ -201,6 +207,51 @@ public sealed class ShockOsc
         return Task.CompletedTask;
     }
 
+    private void CheckCustomParameterAction(string paramName, object? oldValue, object? newValue)
+    {
+        if (string.IsNullOrEmpty(AvatarId)) return;
+        if (!_moduleConfig.Config.AvatarParameterActions.TryGetValue(AvatarId, out var actions)) return;
+
+        foreach (var action in actions)
+        {
+            if (action.ParameterName != paramName) continue;
+
+            var shouldTrigger = action.TriggerKind switch
+            {
+                ParameterTriggerKind.OnTrue => newValue is true && oldValue is not true,
+                ParameterTriggerKind.Threshold => newValue is float f && f >= action.Threshold &&
+                                                  (oldValue is not float oldF || oldF < action.Threshold),
+                ParameterTriggerKind.OnChange => !Equals(newValue, oldValue) && newValue is not null &&
+                                                 newValue is not false && newValue is not 0 && newValue is not 0f,
+                _ => false
+            };
+
+            if (!shouldTrigger) continue;
+
+            if (!_dataLayer.ProgramGroups.TryGetValue(action.GroupId, out var programGroup))
+            {
+                _logger.LogWarning("Custom parameter action references unknown group {GroupId}", action.GroupId);
+                continue;
+            }
+
+            if (!CheckAndSetAllPreconditions(programGroup).IsT0)
+            {
+                _logger.LogDebug("Custom parameter action skipped due to preconditions for group {Group}",
+                    programGroup.Name);
+                continue;
+            }
+
+            var intensity = action.OverrideIntensity ?? GetIntensity(programGroup);
+            var duration = action.OverrideDuration ?? GetDuration(programGroup);
+
+            _logger.LogInformation(
+                "Custom parameter action triggered: {Param} -> {Action} on group {Group} (intensity: {Intensity}, duration: {Duration}ms)",
+                paramName, action.Action, programGroup.Name, intensity, duration);
+
+            OsTask.Run(() => SendCommand(programGroup, duration, intensity, action.Action));
+        }
+    }
+
     private async Task ReceiverLoopAsync()
     {
         while (_oscServerActive)
@@ -236,11 +287,15 @@ public sealed class ShockOsc
         {
             // FIXME: less alloc pls
             var fullName = addr[19..];
+            var oldValue = AllAvatarParams.GetValueOrDefault(fullName);
             if (AllAvatarParams.ContainsKey(fullName))
                 AllAvatarParams[fullName] = received.Arguments[0];
             else
                 AllAvatarParams.TryAdd(fullName, received.Arguments[0]);
             _onParamsChange.OnNext(false);
+
+            // Check custom avatar parameter actions
+            CheckCustomParameterAction(fullName, oldValue, received.Arguments[0]);
         }
 
         switch (addr)
