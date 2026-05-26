@@ -32,7 +32,8 @@ public sealed class ShockOsc
     private readonly OscHandler _oscHandler;
     private readonly ChatboxService _chatboxService;
 
-    private bool _oscServerActive;
+    private CancellationTokenSource _loopCts = new();
+    private Task[] _loopTasks = [];
     private bool _isAfk;
     public bool IsGameConnected { get; private set; }
     public bool IsConnectedViaOscQuery { get; private set; }
@@ -121,12 +122,15 @@ public sealed class ShockOsc
 
     private async Task SetupVrcClient((OscQueryServer, IPEndPoint)? client)
     {
-        // stop tasks
-        _oscServerActive = false;
+        // Stop existing loops
+        await _loopCts.CancelAsync();
+        await Task.WhenAll(_loopTasks);
+        _loopCts.Dispose();
+        _loopCts = new CancellationTokenSource();
+
         IsGameConnected = false;
         IsConnectedViaOscQuery = false;
         OnGameConnectionChanged?.Invoke();
-        await Task.Delay(1000); // wait for tasks to stop TODO: REWORK THIS
 
         if (client != null)
         {
@@ -144,13 +148,17 @@ public sealed class ShockOsc
         _logger.LogInformation("Connecting UDP Clients...");
 
         // Start tasks
-        _oscServerActive = true;
+        var ct = _loopCts.Token;
+        _loopTasks =
+        [
+            Task.Run(() => ReceiverLoopAsync(ct), ct),
+            Task.Run(() => SenderLoopAsync(ct), ct),
+            Task.Run(() => CheckLoop(ct), ct)
+        ];
+
         IsGameConnected = true;
         IsConnectedViaOscQuery = client != null;
         OnGameConnectionChanged?.Invoke();
-        OsTask.Run(ReceiverLoopAsync);
-        OsTask.Run(SenderLoopAsync);
-        OsTask.Run(CheckLoop);
 
         _logger.LogInformation("Ready");
         OsTask.Run(_underscoreConfig.SendUpdateForAll);
@@ -261,35 +269,30 @@ public sealed class ShockOsc
         }
     }
 
-    private async Task ReceiverLoopAsync()
+    private async Task ReceiverLoopAsync(CancellationToken ct)
     {
-        while (_oscServerActive)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await ReceiveLogic();
+                var receiveTask = _oscClient.ReceiveGameMessage();
+                if (receiveTask == null) break;
+                await receiveTask.WaitAsync(ct);
+                await ReceiveLogic(receiveTask.Result);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Error in receiver loop");
             }
         }
-        // ReSharper disable once FunctionNeverReturns
     }
 
-    private async Task ReceiveLogic()
+    private async Task ReceiveLogic(OscMessage received)
     {
-        OscMessage received;
-        try
-        {
-            received = await _oscClient.ReceiveGameMessage()!;
-        }
-        catch (Exception e)
-        {
-            _logger.LogTrace(e, "Error receiving message");
-            return;
-        }
-
         var addr = received.Address;
 
         if (addr.StartsWith("/avatar/parameters/"))
@@ -576,12 +579,12 @@ public sealed class ShockOsc
         return _chatboxService.SendGenericMessage(_moduleConfig.Config.Chatbox.IgnoredAfk);
     }
 
-    private async Task SenderLoopAsync()
+    private async Task SenderLoopAsync(CancellationToken ct)
     {
-        while (_oscServerActive)
+        while (!ct.IsCancellationRequested)
         {
             await _oscHandler.SendParams();
-            await Task.Delay(300);
+            await Task.Delay(300, ct);
         }
     }
 
@@ -648,9 +651,9 @@ public sealed class ShockOsc
         await _chatboxService.SendLocalControlMessage(programGroup.Name, actualIntensity, actualDuration, type);
     }
 
-    private async Task CheckLoop()
+    private async Task CheckLoop(CancellationToken ct)
     {
-        while (_oscServerActive)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
@@ -661,7 +664,7 @@ public sealed class ShockOsc
                 _logger.LogError(e, "Error in check loop");
             }
 
-            await Task.Delay(20);
+            await Task.Delay(20, ct);
         }
     }
 
