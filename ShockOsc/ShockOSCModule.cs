@@ -38,6 +38,12 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
         },
         new()
         {
+            Name = "Avatar Actions",
+            ComponentType = typeof(AvatarActionsTab),
+            Icon = IconOneOf.FromSvg(Icons.Material.Filled.Tune)
+        },
+        new()
+        {
             Name = "Chatbox",
             ComponentType = typeof(ChatboxTab),
             Icon = IconOneOf.FromSvg(Icons.Material.Filled.Chat)

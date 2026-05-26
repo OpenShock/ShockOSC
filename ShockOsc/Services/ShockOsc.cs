@@ -32,8 +32,13 @@ public sealed class ShockOsc
     private readonly OscHandler _oscHandler;
     private readonly ChatboxService _chatboxService;
 
-    private bool _oscServerActive;
+    private CancellationTokenSource _loopCts = new();
+    private Task[] _loopTasks = [];
     private bool _isAfk;
+    public bool IsGameConnected { get; private set; }
+    public bool IsConnectedViaOscQuery { get; private set; }
+    public event Action? OnGameConnectionChanged;
+    public event Action<AvatarParameterAction>? OnAvatarActionTriggered;
     public string AvatarId = string.Empty;
     private readonly Random Random = new();
 
@@ -60,6 +65,11 @@ public sealed class ShockOsc
 
     public readonly Dictionary<string, object?> ShockOscParams = new();
     public readonly Dictionary<string, object?> AllAvatarParams = new();
+
+    /// <summary>
+    /// Tracks previous values of avatar parameters for custom action trigger detection
+    /// </summary>
+    private readonly Dictionary<string, object?> _previousParamValues = new();
 
     public IObservable<bool> OnParamsChangeObservable => _onParamsChange;
     private readonly Subject<bool> _onParamsChange = new();
@@ -113,9 +123,16 @@ public sealed class ShockOsc
 
     private async Task SetupVrcClient((OscQueryServer, IPEndPoint)? client)
     {
-        // stop tasks
-        _oscServerActive = false;
-        await Task.Delay(1000); // wait for tasks to stop TODO: REWORK THIS
+        // Stop existing loops
+        await _loopCts.CancelAsync();
+        try { await Task.WhenAll(_loopTasks); }
+        catch (OperationCanceledException) { }
+        _loopCts.Dispose();
+        _loopCts = new CancellationTokenSource();
+
+        IsGameConnected = false;
+        IsConnectedViaOscQuery = false;
+        OnGameConnectionChanged?.Invoke();
 
         if (client != null)
         {
@@ -133,10 +150,17 @@ public sealed class ShockOsc
         _logger.LogInformation("Connecting UDP Clients...");
 
         // Start tasks
-        _oscServerActive = true;
-        OsTask.Run(ReceiverLoopAsync);
-        OsTask.Run(SenderLoopAsync);
-        OsTask.Run(CheckLoop);
+        var ct = _loopCts.Token;
+        _loopTasks =
+        [
+            Task.Run(() => ReceiverLoopAsync(ct), ct),
+            Task.Run(() => SenderLoopAsync(ct), ct),
+            Task.Run(() => CheckLoop(ct), ct)
+        ];
+
+        IsGameConnected = true;
+        IsConnectedViaOscQuery = client != null;
+        OnGameConnectionChanged?.Invoke();
 
         _logger.LogInformation("Ready");
         OsTask.Run(_underscoreConfig.SendUpdateForAll);
@@ -159,6 +183,7 @@ public sealed class ShockOsc
 
             ShockOscParams.Clear();
             AllAvatarParams.Clear();
+            _previousParamValues.Clear();
 
             foreach (var param in parameters.Keys)
             {
@@ -201,46 +226,120 @@ public sealed class ShockOsc
         return Task.CompletedTask;
     }
 
-    private async Task ReceiverLoopAsync()
+    private void CheckCustomParameterAction(string paramName, object? oldValue, object? newValue)
     {
-        while (_oscServerActive)
+        if (string.IsNullOrEmpty(AvatarId)) return;
+        if (!_moduleConfig.Config.AvatarParameterActions.TryGetValue(AvatarId, out var actions)) return;
+
+        foreach (var action in actions)
+        {
+            if (action.ParameterName != paramName) continue;
+
+            if (!_dataLayer.ProgramGroups.TryGetValue(action.GroupId, out var programGroup))
+            {
+                _logger.LogWarning("Custom parameter action references unknown group {GroupId}", action.GroupId);
+                continue;
+            }
+
+            if (action.IsLiveControl)
+            {
+                var rawValue = newValue switch
+                {
+                    float f => f,
+                    int i => i,
+                    true => action.LiveControlMax,
+                    _ => action.LiveControlMin
+                };
+
+                var range = action.LiveControlMax - action.LiveControlMin;
+                var liveIntensity = range == 0f
+                    ? 0f
+                    : MathUtils.Saturate((rawValue - action.LiveControlMin) / range);
+
+                var scaledIntensity = Convert.ToByte(liveIntensity * 100f);
+                if (action.OverrideIntensity.HasValue && scaledIntensity > 0)
+                    scaledIntensity = GetScaledIntensity(programGroup, scaledIntensity);
+
+                programGroup.ConcurrentIntensity = scaledIntensity;
+                programGroup.ConcurrentType = scaledIntensity > 0 ? action.Action : ControlType.Stop;
+
+                if (scaledIntensity > 0)
+                    OnAvatarActionTriggered?.Invoke(action);
+
+                continue;
+            }
+
+            var shouldTrigger = action.TriggerKind switch
+            {
+                ParameterTriggerKind.OnTrue => newValue is true && oldValue is not true,
+                ParameterTriggerKind.OnFalse => newValue is false && oldValue is not false,
+                ParameterTriggerKind.Threshold => newValue is float f && f >= action.Threshold &&
+                                                  (oldValue is not float oldF || oldF < action.Threshold),
+                ParameterTriggerKind.OnChange => !Equals(newValue, oldValue) && newValue is not null &&
+                                                 newValue is not false && newValue is not 0 && newValue is not 0f,
+                _ => false
+            };
+
+            if (!shouldTrigger) continue;
+
+            if (!CheckAndSetAllPreconditions(programGroup).IsT0)
+            {
+                _logger.LogDebug("Custom parameter action skipped due to preconditions for group {Group}",
+                    programGroup.Name);
+                continue;
+            }
+
+            var intensity = action.OverrideIntensity ?? GetIntensity(programGroup);
+            var duration = action.OverrideDuration ?? GetDuration(programGroup);
+
+            _logger.LogInformation(
+                "Custom parameter action triggered: {Param} -> {Action} on group {Group} (intensity: {Intensity}, duration: {Duration}ms)",
+                paramName, action.Action, programGroup.Name, intensity, duration);
+
+            OnAvatarActionTriggered?.Invoke(action);
+            OsTask.Run(() => SendCommand(programGroup, duration, intensity, action.Action));
+        }
+    }
+
+    private async Task ReceiverLoopAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
         {
             try
             {
-                await ReceiveLogic();
+                var receiveTask = _oscClient.ReceiveGameMessage();
+                if (receiveTask == null) break;
+                await receiveTask.WaitAsync(ct);
+                await ReceiveLogic(receiveTask.Result);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Error in receiver loop");
             }
         }
-        // ReSharper disable once FunctionNeverReturns
     }
 
-    private async Task ReceiveLogic()
+    private async Task ReceiveLogic(OscMessage received)
     {
-        OscMessage received;
-        try
-        {
-            received = await _oscClient.ReceiveGameMessage()!;
-        }
-        catch (Exception e)
-        {
-            _logger.LogTrace(e, "Error receiving message");
-            return;
-        }
-
         var addr = received.Address;
 
         if (addr.StartsWith("/avatar/parameters/"))
         {
             // FIXME: less alloc pls
             var fullName = addr[19..];
+            var oldValue = AllAvatarParams.GetValueOrDefault(fullName);
             if (AllAvatarParams.ContainsKey(fullName))
                 AllAvatarParams[fullName] = received.Arguments[0];
             else
                 AllAvatarParams.TryAdd(fullName, received.Arguments[0]);
             _onParamsChange.OnNext(false);
+
+            // Check custom avatar parameter actions
+            CheckCustomParameterAction(fullName, oldValue, received.Arguments[0]);
         }
 
         switch (addr)
@@ -512,12 +611,12 @@ public sealed class ShockOsc
         return _chatboxService.SendGenericMessage(_moduleConfig.Config.Chatbox.IgnoredAfk);
     }
 
-    private async Task SenderLoopAsync()
+    private async Task SenderLoopAsync(CancellationToken ct)
     {
-        while (_oscServerActive)
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(300));
+        while (await timer.WaitForNextTickAsync(ct))
         {
             await _oscHandler.SendParams();
-            await Task.Delay(300);
         }
     }
 
@@ -584,9 +683,11 @@ public sealed class ShockOsc
         await _chatboxService.SendLocalControlMessage(programGroup.Name, actualIntensity, actualDuration, type);
     }
 
-    private async Task CheckLoop()
+    private async Task CheckLoop(CancellationToken ct)
     {
-        while (_oscServerActive)
+        var intervalMs = Math.Max(10, _moduleConfig.Config.Behaviour.CheckLoopIntervalMs);
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(intervalMs));
+        while (await timer.WaitForNextTickAsync(ct))
         {
             try
             {
@@ -596,8 +697,6 @@ public sealed class ShockOsc
             {
                 _logger.LogError(e, "Error in check loop");
             }
-
-            await Task.Delay(20);
         }
     }
 

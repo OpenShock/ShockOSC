@@ -1,4 +1,4 @@
-﻿@using OpenShock.Desktop.ModuleBase
+@using OpenShock.Desktop.ModuleBase
 @using OpenShock.Desktop.ModuleBase.Api
 @using OpenShock.ShockOSC.Services
 @using OpenShock.ShockOSC.Utils
@@ -7,7 +7,22 @@
 @page "/dash/debug"
 
 <MudPaper Outlined="true" Class="mud-paper-padding">
-    <MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <MudChip T="string"
+                 Color="@(ShockOsc.IsGameConnected ? Color.Success : Color.Error)"
+                 Variant="Variant.Filled"
+                 Size="Size.Small">
+            @if (ShockOsc.IsGameConnected)
+            {
+                @($"Connected{(ShockOsc.IsConnectedViaOscQuery ? " (OSCQuery)" : " (Manual)")}")
+            }
+            else
+            {
+                @("Not Connected")
+            }
+        </MudChip>
+        <MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
+    </div>
 </MudPaper>
 <MudPaper Outlined="true" Class="mud-paper-padding-margin">
     <MudText>OSC Parameters</MudText>
@@ -72,21 +87,21 @@
     protected override void OnInitialized()
     {
         _onParamsVhangeSubscription = ShockOsc.OnParamsChangeObservable.Subscribe(OnParamsChange);
+        ShockOsc.OnGameConnectionChanged += OnConnectionChanged;
 
         OsTask.Run(UpdateParams);
     }
 
+    private void OnConnectionChanged() => _updateQueued = true;
+
     private async Task UpdateParams()
     {
-        while (!_cts.IsCancellationRequested)
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+        while (await timer.WaitForNextTickAsync(_cts.Token))
         {
-            if (!_updateQueued)
-                continue;
+            if (!_updateQueued) continue;
             _updateQueued = false;
-
             await InvokeAsync(StateHasChanged);
-
-            await Task.Delay(100);
         }
     }
 
@@ -96,6 +111,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        ShockOsc.OnGameConnectionChanged -= OnConnectionChanged;
         _onParamsVhangeSubscription?.Dispose();
         await _cts.CancelAsync();
     }

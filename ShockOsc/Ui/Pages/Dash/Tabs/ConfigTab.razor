@@ -34,12 +34,30 @@
 
     <br/>
 
-    <div style="display: flex; width: 600px; padding-top: 20px;">
-        <MudTextField Class="option-width" Variant="Variant.Filled"
-                      @bind-Value="ModuleConfig.Config.Behaviour.CooldownTime" Label="Cooldown Time (ms)"
-                      @bind-Value:after="OnSettingsValueChangeAsync"/>
-        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Behaviour.HoldTime"
-                      Label="Contact Hold Time (ms)" @bind-Value:after="OnSettingsValueChangeAsync"/>
+    <div style="display: flex; align-items: center; width: 600px; padding-top: 20px; gap: 12px;">
+        <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length"
+                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.CooldownTime"
+                         OnSaveAction="_ => OnSettingsValueChange()"
+                         Min="0" Max="30000" Step="500">
+            Cooldown: @MathF.Round(ModuleConfig.Config.Behaviour.CooldownTime / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
+        </DebouncedSlider>
+        <MudNumericField T="uint" Variant="Variant.Outlined" Style="max-width: 90px;"
+                         @bind-Value="ModuleConfig.Config.Behaviour.CooldownTime"
+                         @bind-Value:after="OnSettingsValueChangeAsync"
+                         Min="0" Label="ms"/>
+    </div>
+
+    <div style="display: flex; align-items: center; width: 600px; padding-top: 20px; gap: 12px;">
+        <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length"
+                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.HoldTime"
+                         OnSaveAction="_ => OnSettingsValueChange()"
+                         Min="0" Max="1000" Step="10">
+            Hold Time: @ModuleConfig.Config.Behaviour.HoldTime ms
+        </DebouncedSlider>
+        <MudNumericField T="uint" Variant="Variant.Outlined" Style="max-width: 90px;"
+                         @bind-Value="ModuleConfig.Config.Behaviour.HoldTime"
+                         @bind-Value:after="OnSettingsValueChangeAsync"
+                         Min="0" Label="ms"/>
     </div>
 
     <div style="display: flex; width: 600px; padding-top: 20px;">
@@ -179,6 +197,26 @@
                           @bind-Value:after="OnSettingsValueChange"/>
         }
     }
+</MudPaper>
+
+<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
+    <MudExpansionPanels Elevation="0">
+        <MudExpansionPanel Text="Advanced">
+            <div style="display: flex; align-items: center; width: 600px; gap: 12px;">
+                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length"
+                                 @bind-SliderValue="@ModuleConfig.Config.Behaviour.CheckLoopIntervalMs"
+                                 OnSaveAction="_ => OnSettingsValueChange()"
+                                 Min="10" Max="200" Step="5">
+                    Check Loop Interval: @ModuleConfig.Config.Behaviour.CheckLoopIntervalMs ms
+                </DebouncedSlider>
+                <MudNumericField T="uint" Variant="Variant.Outlined" Style="max-width: 90px;"
+                                 @bind-Value="ModuleConfig.Config.Behaviour.CheckLoopIntervalMs"
+                                 @bind-Value:after="OnSettingsValueChangeAsync"
+                                 Min="10" Label="ms"
+                                 HelperText="Next connection"/>
+            </div>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 </MudPaper>
 
 @code {
