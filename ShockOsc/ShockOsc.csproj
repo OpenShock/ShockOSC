@@ -37,7 +37,7 @@
         <PackageReference Include="OpenShock.Desktop.ModuleBase" Version="1.1.4" />
         <PackageReference Include="OscQueryLibrary" Version="1.2.0"/>
         <PackageReference Include="SmartFormat.NET" Version="3.6.1"/>
-        <PackageReference Include="System.Reactive" Version="6.1.0"/>
+        <PackageReference Include="System.Reactive" Version="7.0.0"/>
     </ItemGroup>
 
 
