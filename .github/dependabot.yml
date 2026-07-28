@@ -5,7 +5,26 @@
 
 version: 2
 updates:
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # Check for Nuget package updates
+  - package-ecosystem: nuget
+    directory: /
     schedule:
-      interval: "daily"
+      interval: weekly
+      day: wednesday
+      time: '14:00'
+    groups:
+      npm-dependencies:
+        patterns:
+          - '*' # Group all updates together
+
+  # Check for Github Actions version updates (for CI/CD)
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: '14:00'
+    groups:
+      github-actions:
+        patterns:
+          - '*' # Group all updates together
