@@ -11,7 +11,7 @@ using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.MinimalEvents;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Models;
-using OpenShock.ShockOSC.Utils;
+using OpenShock.Internal.Common.Utils;
 using OscQueryLibrary;
 using OscQueryLibrary.Utils;
 using Serilog;

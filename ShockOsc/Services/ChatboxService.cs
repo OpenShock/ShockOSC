@@ -4,7 +4,7 @@ using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Models;
-using OpenShock.ShockOSC.Utils;
+using OpenShock.Internal.Common.Utils;
 using SmartFormat;
 
 namespace OpenShock.ShockOSC.Services;

@@ -35,6 +35,7 @@
         <PackageReference Include="LucHeart.CoreOSC" Version="1.6.0"/>
         <PackageReference Include="MeaMod.DNS" Version="1.0.71"/>
         <PackageReference Include="OpenShock.Desktop.ModuleBase" Version="1.1.4" />
+        <PackageReference Include="OpenShock.Internal.Common" Version="1.1.0" />
         <PackageReference Include="OscQueryLibrary" Version="1.2.0"/>
         <PackageReference Include="SmartFormat.NET" Version="3.6.1"/>
         <PackageReference Include="System.Reactive" Version="7.0.0"/>
