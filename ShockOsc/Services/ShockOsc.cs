@@ -625,16 +625,9 @@ public sealed class ShockOsc
     {
         if (groupId == Guid.Empty)
         {
-            var controlCommandsAll = _openShockService.Data.Hubs.Value.SelectMany(x => x.Shockers)
-                .Select(x => new ShockerControl
-                {
-                    Id = x.Id,
-                    Duration = duration,
-                    Intensity = intensity,
-                    Type = type,
-                    Exclusive = exclusive
-                });
-            await _openShockService.Control.Control(controlCommandsAll);
+            // Owned and shared alike - the "all shockers" group means all of them. Desktop resolves the list and
+            // drops anything the user has not enabled or the owner has not granted.
+            await _openShockService.Control.ControlAll(duration, intensity, type, exclusive);
             return true;
         }
 

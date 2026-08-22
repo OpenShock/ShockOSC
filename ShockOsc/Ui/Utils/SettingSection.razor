@@ -1,0 +1,44 @@
+@* One settings card: tinted header with icon and title, optional header control, rows beneath. *@
+
+<MudPaper Outlined="true" Class="rounded-lg">
+    <div class="d-flex align-center justify-space-between gap-4 px-4 py-3 @HeaderClass">
+        <div class="d-flex align-center gap-3">
+            <MudIcon Icon="@Icon" Size="Size.Small" Color="Color.Primary"/>
+            <MudText Typo="Typo.overline" Style="@TitleStyle">@Title</MudText>
+        </div>
+        @HeaderContent
+    </div>
+    <MudDivider/>
+    <div class="px-4 pb-1">
+        @ChildContent
+    </div>
+</MudPaper>
+
+@* Lives here rather than on a page so every tab gets it; only one tab is rendered at a time. *@
+<style>
+    .setting-header {
+        background: var(--mud-palette-action-default-hover);
+    }
+</style>
+
+@code {
+
+    /// <summary>
+    /// Header strip fill. A class rather than an inline style because MudExpansionPanel exposes
+    /// HeaderClass but no HeaderStyle, and a collapsible section's header has to match.
+    /// </summary>
+    internal const string HeaderClass = "setting-header";
+
+    /// <summary>Overline is uppercase already, but only weight 400.</summary>
+    internal const string TitleStyle = "font-weight: 700; text-transform: uppercase;";
+
+    [Parameter] public string Icon { get; set; } = string.Empty;
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Right aligned control in the header, for a section wide toggle or note.</summary>
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+}

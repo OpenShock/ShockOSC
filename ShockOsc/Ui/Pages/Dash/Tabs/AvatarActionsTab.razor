@@ -202,6 +202,9 @@
         }
     }
 
+    private static string FormatSeconds(uint milliseconds) =>
+        MathF.Round(milliseconds / 1000f, 1).ToString(System.Globalization.CultureInfo.InvariantCulture) + "s";
+
     private ushort DurationValue
     {
         get => _selectedAction?.OverrideDuration ?? 2000;
@@ -214,176 +217,238 @@
     }
 }
 
-@if (string.IsNullOrEmpty(CurrentAvatarId))
-{
-    <MudPaper Outlined="true" Class="rounded-lg" Style="padding: 10px 15px; margin: 20px 0;">
-        <MudText Typo="Typo.h6">No avatar detected. Connect to VRChat to configure avatar parameter actions.</MudText>
-    </MudPaper>
-}
-else
-{
-    <MudPaper Outlined="true" Class="mud-paper-padding">
-        <MudText>Avatar ID: @CurrentAvatarId</MudText>
-    </MudPaper>
+<SettingsPage Title="Avatar Actions"
+              Description="Trigger shocks from any avatar parameter, not only PhysBones.">
+    <HeaderContent>
+        @if (!string.IsNullOrEmpty(CurrentAvatarId))
+        {
+            <MudButton OnClick="AddAction" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add"
+                       Color="Color.Primary">
+                Add action
+            </MudButton>
+        }
+    </HeaderContent>
+    <ChildContent>
 
-    <MudButton OnClick="AddAction" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add"
-               Color="Color.Primary" Style="margin: 10px 0;">
-        Add Parameter Action
-    </MudButton>
+        @if (string.IsNullOrEmpty(CurrentAvatarId))
+        {
+            <MudPaper Outlined="true" Class="rounded-lg px-4 py-3">
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    No avatar detected. Connect to VRChat to configure avatar parameter actions.
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <SettingSection Icon="@Icons.Material.Filled.Person" Title="Avatar">
+                <SettingRow Label="Avatar ID" Description="Actions are stored per avatar.">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@CurrentAvatarId</MudText>
+                </SettingRow>
+            </SettingSection>
 
-    @if (CurrentActions.Count == 0)
-    {
-        <MudPaper Outlined="true" Class="rounded-lg" Style="padding: 10px 15px; margin: 10px 0;">
-            <MudText Typo="Typo.body1">No parameter actions configured for this avatar. Click "Add Parameter Action" to
-                create one.
-            </MudText>
-        </MudPaper>
-    }
-    else
-    {
-        <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-            <MudText>Configured Actions</MudText>
-            <MudDivider/>
-            <br/>
-
-            <MudTable T="AvatarParameterAction" Items="CurrentActions" Hover="true" Dense="true"
-                      SelectedItem="_selectedAction" SelectedItemChanged="OnSelectAction">
+            <SettingSection Icon="@Icons.Material.Filled.PlaylistPlay" Title="Actions">
                 <HeaderContent>
-                    <MudTh Style="width: 16px;"></MudTh>
-                    <MudTh>Parameter</MudTh>
-                    <MudTh>Value</MudTh>
-                    <MudTh>Configuration</MudTh>
-                    <MudTh Style="width: 50px;"></MudTh>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@CurrentActions.Count configured</MudText>
                 </HeaderContent>
-                <RowTemplate>
-                    <MudTd>
-                        @if (IsRecentlyTriggered(context))
-                        {
-                            <MudIcon Icon="@Icons.Material.Filled.ElectricBolt" Color="Color.Warning" Size="Size.Small"/>
-                        }
-                    </MudTd>
-                    <MudTd DataLabel="Parameter">
-                        @(string.IsNullOrEmpty(context.ParameterName) ? "(not set)" : context.ParameterName)
-                    </MudTd>
-                    <MudTd DataLabel="Value">
-                        <MudText Typo="Typo.body2" Style="opacity: 0.7;">@GetCurrentValue(context.ParameterName)</MudText>
-                    </MudTd>
-                    <MudTd DataLabel="Configuration">@GetActionSummary(context)</MudTd>
-                    <MudTd>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                                       OnClick="() => RemoveAction(context)"/>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        </MudPaper>
-    }
-
-    @if (_selectedAction != null)
-    {
-        <MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-            <MudText>Action Settings</MudText>
-            <MudDivider/>
-            <br/>
-
-            <MudText Typo="Typo.subtitle2" Style="margin-bottom: 8px;">Select Avatar Parameter</MudText>
-            <MudTextField DebounceInterval="50" Variant="Variant.Outlined" @bind-Value="_parameterSearch"
-                          Label="Search Parameters" Style="margin-bottom: 8px;"/>
-
-            <div style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 16px;">
-                @foreach (var param in FilteredAvatarParams)
-                {
-                    var isSelected = _selectedAction.ParameterName == param.Key;
-                    <MudButton FullWidth="true" Variant="@(isSelected ? Variant.Filled : Variant.Text)"
-                               Color="@(isSelected ? Color.Primary : Color.Default)"
-                               OnClick="() => SelectParameter(param.Key)"
-                               Style="justify-content: flex-start; text-transform: none;">
-                        <MudText Typo="Typo.body2">@param.Key</MudText>
-                        <MudText Typo="Typo.caption" Style="margin-left: auto; opacity: 0.6;">@param.Value</MudText>
-                    </MudButton>
-                }
-            </div>
-
-            <MudTextField Label="Parameter Name (manual entry)" @bind-Value="_selectedAction.ParameterName"
-                          @bind-Value:after="OnActionChanged" Variant="Variant.Filled" Style="margin-bottom: 16px;"/>
-
-            <MudSelect T="ControlType" Label="Action Type" @bind-Value="_selectedAction.Action"
-                       @bind-Value:after="OnActionChanged" Variant="Variant.Filled" Style="margin-bottom: 16px;">
-                @foreach (var actionType in ActionTypes)
-                {
-                    <MudSelectItem Value="@actionType">@actionType</MudSelectItem>
-                }
-            </MudSelect>
-
-            <MudCheckBox @bind-Value="_selectedAction.IsLiveControl" Label="Live Control (continuous, driven by parameter value)"
-                         @bind-Value:after="OnActionChanged" Style="margin-bottom: 16px;"/>
-
-            @if (_selectedAction.IsLiveControl)
-            {
-                <div style="display: flex; gap: 16px; margin-bottom: 16px;">
-                    <MudNumericField T="float" Variant="Variant.Filled" @bind-Value="_selectedAction.LiveControlMin"
-                                     @bind-Value:after="OnActionChanged" Label="Input Min" Style="flex: 1;"
-                                     Step="0.1f"/>
-                    <MudNumericField T="float" Variant="Variant.Filled" @bind-Value="_selectedAction.LiveControlMax"
-                                     @bind-Value:after="OnActionChanged" Label="Input Max" Style="flex: 1;"
-                                     Step="0.1f"/>
-                </div>
-            }
-
-            @if (!_selectedAction.IsLiveControl)
-            {
-                <MudSelect T="ParameterTriggerKind" Label="Trigger" @bind-Value="_selectedAction.TriggerKind"
-                           @bind-Value:after="OnActionChanged" Variant="Variant.Filled" Style="margin-bottom: 16px;">
-                    @foreach (var trigger in TriggerKinds)
+                <ChildContent>
+                    @if (CurrentActions.Count == 0)
                     {
-                        <MudSelectItem Value="@trigger">@trigger</MudSelectItem>
+                        <div class="py-3">
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                No actions yet. Add one to drive a shock from an avatar parameter.
+                            </MudText>
+                        </div>
                     }
-                </MudSelect>
+                    else
+                    {
+                        <div class="py-3">
+                            <MudTable T="AvatarParameterAction" Items="CurrentActions" Hover="true" Dense="true"
+                                      Elevation="0" SelectedItem="_selectedAction"
+                                      SelectedItemChanged="OnSelectAction">
+                                <HeaderContent>
+                                    <MudTh Style="width: 16px;"></MudTh>
+                                    <MudTh>Parameter</MudTh>
+                                    <MudTh>Value</MudTh>
+                                    <MudTh>Configuration</MudTh>
+                                    <MudTh Style="width: 50px;"></MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>
+                                        @if (IsRecentlyTriggered(context))
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.ElectricBolt" Color="Color.Warning"
+                                                     Size="Size.Small"/>
+                                        }
+                                    </MudTd>
+                                    <MudTd DataLabel="Parameter">
+                                        @(string.IsNullOrEmpty(context.ParameterName) ? "(not set)" : context.ParameterName)
+                                    </MudTd>
+                                    <MudTd DataLabel="Value">
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                            @GetCurrentValue(context.ParameterName)
+                                        </MudText>
+                                    </MudTd>
+                                    <MudTd DataLabel="Configuration">@GetActionSummary(context)</MudTd>
+                                    <MudTd>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                                       Size="Size.Small" OnClick="() => RemoveAction(context)"/>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </div>
+                    }
+                </ChildContent>
+            </SettingSection>
 
-                @if (_selectedAction.TriggerKind == ParameterTriggerKind.Threshold)
-                {
-                    <MudSlider T="float" Size="Size.Large" Min="0f" Max="1f" Step="0.01f"
-                               Class="openshock-slider-length"
-                               @bind-Value="_selectedAction.Threshold"
-                               @bind-Value:after="OnActionChanged">
-                        Threshold: @_selectedAction.Threshold.ToString("F2")
-                    </MudSlider>
-                }
-            }
-
-            <MudSelect T="Guid" Label="Target Group" @bind-Value="_selectedAction.GroupId"
-                       @bind-Value:after="OnActionChanged" Variant="Variant.Filled" Style="margin-bottom: 16px;">
-                <MudSelectItem T="Guid" Value="@Guid.Empty">_All (All Shockers)</MudSelectItem>
-                @foreach (var group in ModuleConfig.Config.Groups)
-                {
-                    <MudSelectItem T="Guid" Value="@group.Key">@group.Value.Name</MudSelectItem>
-                }
-            </MudSelect>
-
-            @if (!_selectedAction.IsLiveControl)
+            @if (_selectedAction != null)
             {
-                <MudCheckBox @bind-Value="_overrideIntensity" Label="Override Intensity"
-                             @bind-Value:after="() => OnOverrideIntensityChanged(_overrideIntensity)"/>
-                @if (_overrideIntensity)
-                {
-                    <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
-                                     @bind-SliderValue="@IntensityValue"
-                                     OnSaveAction="_ => ModuleConfig.SaveDeferred()">
-                        Intensity: @IntensityValue%
-                    </DebouncedSlider>
-                }
+                <SettingSection Icon="@Icons.Material.Filled.MyLocation" Title="Parameter">
+                    <div class="py-3">
+                        <MudTextField T="string" DebounceInterval="50" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" @bind-Value="_parameterSearch"
+                                      Placeholder="Search parameters" Clearable="true"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"/>
+                    </div>
 
-                <MudCheckBox @bind-Value="_overrideDuration" Label="Override Duration"
-                             @bind-Value:after="() => OnOverrideDurationChanged(_overrideDuration)"/>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--mud-palette-lines-default); border-radius: 8px;">
+                        @foreach (var param in FilteredAvatarParams)
+                        {
+                            var isSelected = _selectedAction.ParameterName == param.Key;
+                            <MudButton FullWidth="true" Variant="@(isSelected ? Variant.Filled : Variant.Text)"
+                                       Color="@(isSelected ? Color.Primary : Color.Default)"
+                                       OnClick="() => SelectParameter(param.Key)"
+                                       Style="justify-content: flex-start; text-transform: none;">
+                                <MudText Typo="Typo.body2">@param.Key</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="margin-left: auto;">
+                                    @param.Value
+                                </MudText>
+                            </MudButton>
+                        }
+                    </div>
+
+                    <MudDivider Class="mt-4"/>
+
+                    <SettingRow Label="Parameter name" Description="Set it by hand if it is not in the list above.">
+                        <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                                      Style="width: 220px;" @bind-Value="_selectedAction.ParameterName"
+                                      @bind-Value:after="OnActionChanged"/>
+                    </SettingRow>
+                </SettingSection>
+
+                <SettingSection Icon="@Icons.Material.Filled.Tune" Title="Action">
+                    <SettingRow Label="Type" Description="What the shocker does when this fires.">
+                        <MudSelect T="ControlType" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                                   Style="width: 180px;" @bind-Value="_selectedAction.Action"
+                                   @bind-Value:after="OnActionChanged">
+                            @foreach (var actionType in ActionTypes)
+                            {
+                                <MudSelectItem Value="@actionType">@actionType</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </SettingRow>
+
+                    <MudDivider/>
+
+                    <SettingRow Label="Target group" Description="Which shockers this action drives.">
+                        <MudSelect T="Guid" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                                   Style="width: 180px;" @bind-Value="_selectedAction.GroupId"
+                                   @bind-Value:after="OnActionChanged">
+                            <MudSelectItem T="Guid" Value="@Guid.Empty">_All (All Shockers)</MudSelectItem>
+                            @foreach (var group in ModuleConfig.Config.Groups)
+                            {
+                                <MudSelectItem T="Guid" Value="@group.Key">@group.Value.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </SettingRow>
+
+                    <MudDivider/>
+
+                    <SettingRow Label="Live control"
+                                Description="Run continuously, with the strength following the parameter's value.">
+                        <MudSwitch T="bool" Color="Color.Primary" @bind-Value="_selectedAction.IsLiveControl"
+                                   @bind-Value:after="OnActionChanged"/>
+                    </SettingRow>
+
+                    <MudCollapse Expanded="_selectedAction.IsLiveControl">
+                        <MudDivider/>
+
+                        <SettingRow Label="Input range" Description="Parameter values mapped to the lowest and highest strength.">
+                            <MudNumericField T="float" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Class="flex-none" Style="width: 100px;" Label="Min" Step="0.1f"
+                                             @bind-Value="_selectedAction.LiveControlMin"
+                                             @bind-Value:after="OnActionChanged"/>
+                            <MudNumericField T="float" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Class="flex-none" Style="width: 100px;" Label="Max" Step="0.1f"
+                                             @bind-Value="_selectedAction.LiveControlMax"
+                                             @bind-Value:after="OnActionChanged"/>
+                        </SettingRow>
+                    </MudCollapse>
+
+                    <MudCollapse Expanded="!_selectedAction.IsLiveControl">
+                        <MudDivider/>
+
+                        <SettingRow Label="Trigger" Description="When the parameter should fire the action.">
+                            <MudSelect T="ParameterTriggerKind" Dense="true" Margin="Margin.Dense"
+                                       Variant="Variant.Outlined" Style="width: 180px;"
+                                       @bind-Value="_selectedAction.TriggerKind"
+                                       @bind-Value:after="OnActionChanged">
+                                @foreach (var trigger in TriggerKinds)
+                                {
+                                    <MudSelectItem Value="@trigger">@trigger</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </SettingRow>
+
+                        <MudCollapse Expanded="_selectedAction.TriggerKind == ParameterTriggerKind.Threshold">
+                            <MudDivider/>
+
+                            <SettingField Label="Threshold" Value="@_selectedAction.Threshold.ToString("F2")"
+                                          Description="Fires once the parameter reaches this value.">
+                                <MudSlider T="float" Size="Size.Medium" Min="0f" Max="1f" Step="0.01f"
+                                           Class="flex-grow-1 px-2" @bind-Value="_selectedAction.Threshold"
+                                           @bind-Value:after="OnActionChanged"/>
+                            </SettingField>
+                        </MudCollapse>
+                    </MudCollapse>
+                </SettingSection>
+
+                <SettingSection Icon="@Icons.Material.Filled.Bolt" Title="Overrides">
+                    <MudCollapse Expanded="!_selectedAction.IsLiveControl">
+                        <SettingRow Label="Override intensity" Description="Use a fixed intensity instead of the group's.">
+                            <MudSwitch T="bool" Color="Color.Primary" @bind-Value="_overrideIntensity"
+                                       @bind-Value:after="() => OnOverrideIntensityChanged(_overrideIntensity)"/>
+                        </SettingRow>
+
+                        <MudCollapse Expanded="_overrideIntensity">
+                            <MudDivider/>
+
+                            <SettingField Label="Intensity" Value="@($"{IntensityValue}%")">
+                                <DebouncedSlider T="byte" Size="Size.Medium" Min="0" Max="100"
+                                                 Class="flex-grow-1 px-2" @bind-SliderValue="@IntensityValue"
+                                                 OnSaveAction="_ => ModuleConfig.SaveDeferred()"/>
+                            </SettingField>
+                        </MudCollapse>
+
+                        <MudDivider/>
+
+                        <SettingRow Label="Override duration" Description="Use a fixed duration instead of the group's.">
+                            <MudSwitch T="bool" Color="Color.Primary" @bind-Value="_overrideDuration"
+                                       @bind-Value:after="() => OnOverrideDurationChanged(_overrideDuration)"/>
+                        </SettingRow>
+                    </MudCollapse>
+
+                    <MudCollapse Expanded="_overrideDuration">
+                        <MudDivider/>
+
+                        <SettingField Label="Duration" Value="@FormatSeconds(DurationValue)">
+                            <DebouncedSlider T="ushort" Size="Size.Medium" Min="300" Max="30000" Step="100"
+                                             Class="flex-grow-1 px-2" @bind-SliderValue="@DurationValue"
+                                             OnSaveAction="_ => ModuleConfig.SaveDeferred()"/>
+                        </SettingField>
+                    </MudCollapse>
+                </SettingSection>
             }
-            @if (_overrideDuration)
-            {
-                <DebouncedSlider T="ushort" Size="Size.Large" Min="300" Max="30000" Step="100"
-                                 Class="openshock-slider-length"
-                                 @bind-SliderValue="@DurationValue"
-                                 OnSaveAction="_ => ModuleConfig.SaveDeferred()">
-                    Duration: @MathF.Round(DurationValue / 1000f, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)s
-                </DebouncedSlider>
-            }
-        </MudPaper>
-    }
-}
+        }
+
+    </ChildContent>
+</SettingsPage>

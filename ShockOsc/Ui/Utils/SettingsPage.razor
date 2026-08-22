@@ -1,0 +1,28 @@
+@* Page shell: one constrained column, a title block, then sections. *@
+
+<div class="d-flex flex-column gap-4" style="max-width: 780px; margin: 0 auto;">
+    <div class="d-flex align-center justify-space-between gap-4">
+        <div>
+            <MudText Typo="Typo.h6">@Title</MudText>
+            @if (Description is not null)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">@Description</MudText>
+            }
+        </div>
+        @HeaderContent
+    </div>
+    @ChildContent
+</div>
+
+@code {
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Right aligned page level actions, such as an add button.</summary>
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+}

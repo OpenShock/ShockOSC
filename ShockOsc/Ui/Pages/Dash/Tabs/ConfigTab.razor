@@ -1,4 +1,4 @@
-﻿@using System.Globalization
+@using System.Globalization
 @using System.Net
 @using OpenShock.Desktop.ModuleBase
 @using OpenShock.Desktop.ModuleBase.Config
@@ -10,230 +10,315 @@
 
 @page "/dash/config"
 
-<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding">
-    <MudText>Global Shocker Options (_All Group)</MudText>
-    <MudDivider/>
-    <div style="display: flex; width: 600px; padding-top: 20px;">
-        <MudSelect Class="option-width" Dense="true" Variant="Variant.Filled"
-                   @bind-Value="ModuleConfig.Config.Behaviour.WhileBoneHeld" Label="While PhysBone Held"
-                   @bind-Value:after="OnSettingsValueChangeAsync">
-            @foreach (var boneHeldAction in BoneActionExtensions.BoneActions)
+<SettingsPage Title="Configuration"
+              Description="Global defaults for the _All group. Individual groups can override them.">
+
+    <SettingSection Icon="@Icons.Material.Filled.Bolt" Title="Intensity">
+        <HeaderContent>
+            <MudToggleGroup T="string" @bind-Value="RandomIntensityString" Style="width: 220px;"
+                            Delimiters="true" CheckMark="false" FixedContent="false"
+                            @bind-Value:after="OnSettingsValueChangeAsync">
+                <MudToggleItem Value="@("Fixed")"/>
+                <MudToggleItem Value="@("Random")"/>
+            </MudToggleGroup>
+        </HeaderContent>
+        <ChildContent>
+            @if (!ModuleConfig.Config.Behaviour.RandomIntensity)
             {
-                <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
+                <SettingField Label="Intensity" Value="@($"{ModuleConfig.Config.Behaviour.FixedIntensity}%")">
+                    <DebouncedSlider T="byte" Size="Size.Medium" Min="0" Max="100" Class="flex-grow-1 px-2"
+                                     @bind-SliderValue="@ModuleConfig.Config.Behaviour.FixedIntensity"
+                                     OnSaveAction="_ => OnSettingsValueChange()"/>
+                </SettingField>
             }
-        </MudSelect>
-        <MudSelect Class="option-width" Dense="true" Variant="Variant.Filled"
-                   @bind-Value="ModuleConfig.Config.Behaviour.WhenBoneReleased" Label="When PhysBone Released"
-                   @bind-Value:after="OnSettingsValueChangeAsync">
-            @foreach (var boneReleasedAction in BoneActionExtensions.BoneActions)
+            else
             {
-                <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
+                <SettingField Label="Minimum" Value="@($"{ModuleConfig.Config.Behaviour.IntensityRange.Min}%")">
+                    <DebouncedSlider T="byte" Size="Size.Medium" Min="0" Max="100" Class="flex-grow-1 px-2"
+                                     @bind-SliderValue="@ModuleConfig.Config.Behaviour.IntensityRange.Min"
+                                     OnValueChanged="u => { if (ModuleConfig.Config.Behaviour.IntensityRange.Max < u) ModuleConfig.Config.Behaviour.IntensityRange.Max = u; }"
+                                     OnSaveAction="_ => OnSettingsValueChange()"/>
+                </SettingField>
+
+                <MudDivider/>
+
+                <SettingField Label="Maximum" Value="@($"{ModuleConfig.Config.Behaviour.IntensityRange.Max}%")">
+                    <DebouncedSlider T="byte" Size="Size.Medium" Min="0" Max="100" Class="flex-grow-1 px-2"
+                                     @bind-SliderValue="@ModuleConfig.Config.Behaviour.IntensityRange.Max"
+                                     OnValueChanged="u => { if (ModuleConfig.Config.Behaviour.IntensityRange.Min > u) ModuleConfig.Config.Behaviour.IntensityRange.Min = u; }"
+                                     OnSaveAction="_ => OnSettingsValueChange()"/>
+                </SettingField>
+
+                <MudDivider/>
+
+                <SettingRow Label="Pull trigger random"
+                            Description="Pick a random value from the range instead of scaling intensity with pull distance.">
+                    <MudSwitch T="bool" Color="Color.Primary"
+                               @bind-Value="ModuleConfig.Config.Behaviour.OnPullTriggerRandomBehavior"
+                               @bind-Value:after="OnSettingsValueChangeAsync"/>
+                </SettingRow>
             }
-        </MudSelect>
-    </div>
+        </ChildContent>
+    </SettingSection>
 
-    <br/>
+    <SettingSection Icon="@Icons.Material.Filled.Timer" Title="Duration">
+        <HeaderContent>
+            <MudToggleGroup T="string" @bind-Value="RandomDurationString" Style="width: 220px;"
+                            Delimiters="true" CheckMark="false" FixedContent="false"
+                            @bind-Value:after="OnSettingsValueChangeAsync">
+                <MudToggleItem Value="@("Fixed")"/>
+                <MudToggleItem Value="@("Random")"/>
+            </MudToggleGroup>
+        </HeaderContent>
+        <ChildContent>
+            @if (!ModuleConfig.Config.Behaviour.RandomDuration)
+            {
+                <SettingField Label="Duration" Value="@FormatSeconds(ModuleConfig.Config.Behaviour.FixedDuration)">
+                    <DebouncedSlider T="ushort" Size="Size.Medium" Min="300" Max="30000" Step="100"
+                                     Class="flex-grow-1 px-2"
+                                     @bind-SliderValue="@ModuleConfig.Config.Behaviour.FixedDuration"
+                                     OnSaveAction="_ => OnSettingsValueChange()"/>
+                </SettingField>
+            }
+            else
+            {
+                <SettingField Label="Minimum" Value="@FormatSeconds(ModuleConfig.Config.Behaviour.DurationRange.Min)">
+                    <DebouncedSlider T="ushort" Size="Size.Medium" Min="300" Max="30000" Step="100"
+                                     Class="flex-grow-1 px-2"
+                                     @bind-SliderValue="@ModuleConfig.Config.Behaviour.DurationRange.Min"
+                                     OnValueChanged="u => { if (ModuleConfig.Config.Behaviour.DurationRange.Max < u) ModuleConfig.Config.Behaviour.DurationRange.Max = u; }"
+                                     OnSaveAction="_ => OnSettingsValueChange()"/>
+                </SettingField>
 
-    <div style="display: flex; align-items: center; width: 600px; padding-top: 20px; gap: 12px;">
-        <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length"
-                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.CooldownTime"
-                         OnSaveAction="_ => OnSettingsValueChange()"
-                         Min="0" Max="30000" Step="500">
-            Cooldown: @MathF.Round(ModuleConfig.Config.Behaviour.CooldownTime / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
-        </DebouncedSlider>
-        <MudNumericField T="uint" Variant="Variant.Outlined" Style="max-width: 90px;"
-                         @bind-Value="ModuleConfig.Config.Behaviour.CooldownTime"
-                         @bind-Value:after="OnSettingsValueChangeAsync"
-                         Min="0" Label="ms"/>
-    </div>
+                <MudDivider/>
 
-    <div style="display: flex; align-items: center; width: 600px; padding-top: 20px; gap: 12px;">
-        <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length"
-                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.HoldTime"
-                         OnSaveAction="_ => OnSettingsValueChange()"
-                         Min="0" Max="1000" Step="10">
-            Hold Time: @ModuleConfig.Config.Behaviour.HoldTime ms
-        </DebouncedSlider>
-        <MudNumericField T="uint" Variant="Variant.Outlined" Style="max-width: 90px;"
-                         @bind-Value="ModuleConfig.Config.Behaviour.HoldTime"
-                         @bind-Value:after="OnSettingsValueChangeAsync"
-                         Min="0" Label="ms"/>
-    </div>
+                <SettingField Label="Maximum" Value="@FormatSeconds(ModuleConfig.Config.Behaviour.DurationRange.Max)">
+                    <DebouncedSlider T="ushort" Size="Size.Medium" Min="300" Max="30000" Step="100"
+                                     Class="flex-grow-1 px-2"
+                                     @bind-SliderValue="@ModuleConfig.Config.Behaviour.DurationRange.Max"
+                                     OnValueChanged="u => { if (ModuleConfig.Config.Behaviour.DurationRange.Min > u) ModuleConfig.Config.Behaviour.DurationRange.Min = u; }"
+                                     OnSaveAction="_ => OnSettingsValueChange()"/>
+                </SettingField>
+            }
+        </ChildContent>
+    </SettingSection>
 
-    <div style="display: flex; width: 600px; padding-top: 20px;">
-        <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_limitBoneHeldDurationEnabled"
-                     Label="Limit Physbone held duration" @bind-Value:after="OnSettingsValueChangeAsync"/>
-        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="_limitBoneHeldDuration"
-                      Label="Limit Duration (ms)" Disabled="!_limitBoneHeldDurationEnabled"
-                      @bind-Value:after="OnSettingsValueChangeAsync"/>
-    </div>
+    <SettingSection Icon="@Icons.Material.Filled.HourglassBottom" Title="Timing">
+        <SettingField Label="Cooldown" Value="@FormatSeconds(ModuleConfig.Config.Behaviour.CooldownTime)"
+                      Description="Time a group has to wait after a trigger before it can fire again.">
+            <DebouncedSlider T="uint" Size="Size.Medium" Min="0" Max="30000" Step="500"
+                             Class="flex-grow-1 px-2"
+                             @bind-SliderValue="@ModuleConfig.Config.Behaviour.CooldownTime"
+                             OnSaveAction="_ => OnSettingsValueChange()"/>
+            <MudNumericField T="double" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                             Style="width: 110px;" Adornment="Adornment.End" AdornmentText="s"
+                             Min="0" Max="30" Step="0.5" Format="0.#"
+                             @bind-Value="CooldownSeconds"
+                             @bind-Value:after="OnSettingsValueChangeAsync"/>
+        </SettingField>
 
-    <br/>
-    <MudToggleGroup T="string" @bind-Value="RandomIntensityString" Style="width: 330px; margin: 30px 0 0 10px;"
-                    Delimiters="true" CheckMark="false" FixedContent="false"
-                    @bind-Value:after="OnSettingsValueChangeAsync">
-        <MudToggleItem Value="@("Fixed Intensity")"/>
-        <MudToggleItem Value="@("Random Intensity")"/>
-    </MudToggleGroup>
-    <br/>
+        <MudDivider/>
 
+        <SettingField Label="Hold time" Value="@($"{ModuleConfig.Config.Behaviour.HoldTime} ms")"
+                      Description="How long a manual trigger has to stay active before it fires.">
+            <DebouncedSlider T="uint" Size="Size.Medium" Min="0" Max="1000" Step="10"
+                             Class="flex-grow-1 px-2"
+                             @bind-SliderValue="@ModuleConfig.Config.Behaviour.HoldTime"
+                             OnSaveAction="_ => OnSettingsValueChange()"/>
+            <MudNumericField T="uint" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                             Style="width: 110px;" Adornment="Adornment.End" AdornmentText="ms" Min="0"
+                             @bind-Value="ModuleConfig.Config.Behaviour.HoldTime"
+                             @bind-Value:after="OnSettingsValueChangeAsync"/>
+        </SettingField>
+    </SettingSection>
 
-    @if (!ModuleConfig.Config.Behaviour.RandomIntensity)
-    {
-        <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
-                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.FixedIntensity"
-                         OnSaveAction="_ => OnSettingsValueChange()">
-            Intensity: @ModuleConfig.Config.Behaviour.FixedIntensity%
-        </DebouncedSlider>
-    }
-    else
-    {
-        <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
-                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.IntensityRange.Min"
-                         OnValueChanged="u => { if (ModuleConfig.Config.Behaviour.IntensityRange.Max < u) ModuleConfig.Config.Behaviour.IntensityRange.Max = u; }"
-                         OnSaveAction="_ => OnSettingsValueChange()">
-            Min Intensity: @ModuleConfig.Config.Behaviour.IntensityRange.Min%
-        </DebouncedSlider>
+    <SettingSection Icon="@Icons.Material.Filled.Vibration" Title="PhysBone">
+        <SettingRow Label="While held" Description="Action performed continuously while the bone is grabbed.">
+            <MudSelect T="BoneAction" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                       Style="width: 180px;"
+                       @bind-Value="ModuleConfig.Config.Behaviour.WhileBoneHeld"
+                       @bind-Value:after="OnSettingsValueChangeAsync">
+                @foreach (var boneHeldAction in BoneActionExtensions.BoneActions)
+                {
+                    <MudSelectItem Value="@boneHeldAction">@boneHeldAction</MudSelectItem>
+                }
+            </MudSelect>
+        </SettingRow>
 
-        <DebouncedSlider T="byte" Size="Size.Large" Min="0" Max="100" Class="openshock-slider-length"
-                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.IntensityRange.Max"
-                         OnValueChanged="u => { if (ModuleConfig.Config.Behaviour.IntensityRange.Min > u) ModuleConfig.Config.Behaviour.IntensityRange.Min = u; }"
-                         OnSaveAction="_ => OnSettingsValueChange()">
-            Max Intensity: @ModuleConfig.Config.Behaviour.IntensityRange.Max%
-        </DebouncedSlider>
+        <MudDivider/>
 
-        <br/>
+        <SettingRow Label="When released" Description="Action performed once the bone is let go.">
+            <MudSelect T="BoneAction" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                       Style="width: 180px;"
+                       @bind-Value="ModuleConfig.Config.Behaviour.WhenBoneReleased"
+                       @bind-Value:after="OnSettingsValueChangeAsync">
+                @foreach (var boneReleasedAction in BoneActionExtensions.BoneActions)
+                {
+                    <MudSelectItem Value="@boneReleasedAction">@boneReleasedAction</MudSelectItem>
+                }
+            </MudSelect>
+        </SettingRow>
 
-        <div style="display: flex; align-items: center;">
-            <MudCheckBox Class="option-width option-checkbox-height"
-                         @bind-Value="ModuleConfig.Config.Behaviour.OnPullTriggerRandomBehavior"
-                         Label="Pull Trigger Random" @bind-Value:after="OnSettingsValueChangeAsync"/>
+        <MudDivider/>
 
-            <MudTooltip
-                Text="When enabled, the shock will randomly choose between the two intensity values set above, instead of using the intensity based on distance.">
-                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Title="Information"/>
-            </MudTooltip>
-        </div>
-    }
+        <SettingRow Label="Limit held duration" Description="Stop the held action after a maximum amount of time.">
+            <MudNumericField T="double" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                             Style="width: 110px;" Adornment="Adornment.End" AdornmentText="s"
+                             Min="0" Max="60" Step="0.5" Format="0.#"
+                             Disabled="!_limitBoneHeldDurationEnabled"
+                             @bind-Value="BoneHeldDurationLimitSeconds"
+                             @bind-Value:after="OnSettingsValueChangeAsync"/>
+            <MudSwitch T="bool" Color="Color.Primary"
+                       @bind-Value="_limitBoneHeldDurationEnabled"
+                       @bind-Value:after="OnSettingsValueChangeAsync"/>
+        </SettingRow>
+    </SettingSection>
 
+    <SettingSection Icon="@Icons.Material.Filled.SportsEsports" Title="Game">
+        <SettingRow Label="Kill switch" Description="Blocks every command ShockOSC would send.">
+            <MudSwitch T="bool" Color="Color.Error"
+                       @bind-Value="UnderscoreConfig.KillSwitch"
+                       @bind-Value:after="OnSettingsValueChangeAsync"/>
+        </SettingRow>
 
-    <MudToggleGroup T="string" @bind-Value="RandomDurationString" Style="width: 330px; margin: 30px 0 0 10px;"
-                    Delimiters="true" CheckMark="false" FixedContent="false"
-                    @bind-Value:after="OnSettingsValueChangeAsync">
-        <MudToggleItem Value="@("Fixed Duration")"/>
-        <MudToggleItem Value="@("Random Duration")"/>
-    </MudToggleGroup>
-    <br/>
+        <MudDivider/>
 
-    @if (!ModuleConfig.Config.Behaviour.RandomDuration)
-    {
-        <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length"
-                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.FixedDuration"
-                         OnSaveAction="_ => OnSettingsValueChange()"
-                         Min="300" Max="30000" Step="100">
-            Duration: @MathF.Round(ModuleConfig.Config.Behaviour.FixedDuration / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
-        </DebouncedSlider>
-    }
-    else
-    {
-        <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length"
-                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.DurationRange.Min"
-                         OnValueChanged="u => { if (ModuleConfig.Config.Behaviour.DurationRange.Max < u) ModuleConfig.Config.Behaviour.DurationRange.Max = u; }"
-                         OnSaveAction="_ => OnSettingsValueChange()"
-                         Min="300" Max="30000" Step="100">
-            Min
-            Duration: @MathF.Round(ModuleConfig.Config.Behaviour.DurationRange.Min / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
-        </DebouncedSlider>
+        <SettingRow Label="Disable while AFK" Description="Ignore triggers while VRChat reports you as away.">
+            <MudSwitch T="bool" Color="Color.Primary"
+                       @bind-Value="ModuleConfig.Config.Behaviour.DisableWhileAfk"
+                       @bind-Value:after="OnSettingsValueChangeAsync"/>
+        </SettingRow>
 
-        <DebouncedSlider T="ushort" Size="Size.Large" Class="openshock-slider-length"
-                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.DurationRange.Max"
-                         OnValueChanged="u => { if (ModuleConfig.Config.Behaviour.DurationRange.Min > u) ModuleConfig.Config.Behaviour.DurationRange.Min = u; }"
-                         OnSaveAction="_ => OnSettingsValueChange()"
-                         Min="300" Max="30000" Step="100">
-            Max
-            Duration: @MathF.Round(ModuleConfig.Config.Behaviour.DurationRange.Max / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
-        </DebouncedSlider>
-    }
+        <MudDivider/>
 
-    <br/>
-    <br/>
-</MudPaper>
+        <SettingRow Label="Force unmute" Description="Unmute your microphone when a shock is sent.">
+            <MudSwitch T="bool" Color="Color.Primary"
+                       @bind-Value="ModuleConfig.Config.Behaviour.ForceUnmute"
+                       @bind-Value:after="OnSettingsValueChangeAsync"/>
+        </SettingRow>
+    </SettingSection>
 
-<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-    <MudText>Game Options</MudText>
-    <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="UnderscoreConfig.KillSwitch"
-                 Label="Kill Switch" @bind-Value:after="OnSettingsValueChangeAsync"/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Behaviour.DisableWhileAfk"
-                 Label="Disable While Afk" @bind-Value:after="OnSettingsValueChangeAsync"/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Behaviour.ForceUnmute"
-                 Label="Force Unmute" @bind-Value:after="OnSettingsValueChangeAsync"/>
-</MudPaper>
+    <SettingSection Icon="@Icons.Material.Filled.Cable" Title="OSC">
+        <HeaderContent>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Requires restart</MudText>
+        </HeaderContent>
+        <ChildContent>
+            <SettingRow Label="Allow any IP" Description="Listen on all interfaces instead of localhost only (Quest).">
+                <MudSwitch T="bool" Color="Color.Primary"
+                           @bind-Value="ModuleConfig.Config.Osc.QuestSupport"
+                           @bind-Value:after="OnSettingsValueChange"/>
+            </SettingRow>
 
+            <MudDivider/>
 
-<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-    <MudText>OSC Options (changing requires restart)</MudText>
-    <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Osc.QuestSupport"
-                 Label="Allow any IP?" @bind-Value:after="OnSettingsValueChange"/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Osc.OscQuery"
-                 Label="OSC Query" @bind-Value:after="OnSettingsValueChange"/>
-    @if (!ModuleConfig.Config.Osc.OscQuery)
-    {
-        <br/>
-        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendPort"
-                      Label="OSC Send Port" @bind-Value:after="OnSettingsValueChange"/>
-        <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscReceivePort"
-                      Label="OSC Receive Port" @bind-Value:after="OnSettingsValueChange"/>
-        @if (IPAddress.TryParse(ModuleConfig.Config.Osc.OscSendIp, out var _))
-        {
-            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendIp"
-                          Label="OSC Send IP" @bind-Value:after="OnSettingsValueChange"/>
-        }
-        else
-        {
-            <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.OscSendIp"
-                          Label="OSC Send IP" HelperText="Invalid Formatting"
-                          @bind-Value:after="OnSettingsValueChange"/>
-        }
-    }
-</MudPaper>
+            <SettingRow Label="OSC Query" Description="Discover VRChat and its ports automatically.">
+                <MudSwitch T="bool" Color="Color.Primary"
+                           @bind-Value="ModuleConfig.Config.Osc.OscQuery"
+                           @bind-Value:after="OnSettingsValueChange"/>
+            </SettingRow>
 
-<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-    <MudExpansionPanels Elevation="0">
-        <MudExpansionPanel Text="Advanced">
-            <div style="display: flex; align-items: center; width: 600px; gap: 12px;">
-                <DebouncedSlider T="uint" Size="Size.Large" Class="openshock-slider-length"
-                                 @bind-SliderValue="@ModuleConfig.Config.Behaviour.CheckLoopIntervalMs"
-                                 OnSaveAction="_ => OnSettingsValueChange()"
-                                 Min="10" Max="200" Step="5">
-                    Check Loop Interval: @ModuleConfig.Config.Behaviour.CheckLoopIntervalMs ms
-                </DebouncedSlider>
-                <MudNumericField T="uint" Variant="Variant.Outlined" Style="max-width: 90px;"
-                                 @bind-Value="ModuleConfig.Config.Behaviour.CheckLoopIntervalMs"
-                                 @bind-Value:after="OnSettingsValueChangeAsync"
-                                 Min="10" Label="ms"
-                                 HelperText="Next connection"/>
-            </div>
-        </MudExpansionPanel>
-    </MudExpansionPanels>
-</MudPaper>
+            <MudCollapse Expanded="@(!ModuleConfig.Config.Osc.OscQuery)">
+                <MudDivider/>
+
+                <SettingRow Label="Send port" Description="Port ShockOSC sends parameters to.">
+                    <MudNumericField T="ushort" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                                     Style="width: 150px;" Min="1" Max="65535" HideSpinButtons="true"
+                                     @bind-Value="ModuleConfig.Config.Osc.OscSendPort"
+                                     @bind-Value:after="OnSettingsValueChange"/>
+                </SettingRow>
+
+                <MudDivider/>
+
+                <SettingRow Label="Receive port" Description="Port ShockOSC listens on for parameters.">
+                    <MudNumericField T="ushort" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                                     Style="width: 150px;" Min="1" Max="65535" HideSpinButtons="true"
+                                     @bind-Value="ModuleConfig.Config.Osc.OscReceivePort"
+                                     @bind-Value:after="OnSettingsValueChange"/>
+                </SettingRow>
+
+                <MudDivider/>
+
+                <SettingRow Label="Send IP" Description="Address the OSC messages are sent to.">
+                    <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                                  Style="width: 150px;" Error="@(!IsSendIpValid)" ErrorText="Invalid IP address"
+                                  @bind-Value="ModuleConfig.Config.Osc.OscSendIp"
+                                  @bind-Value:after="OnSettingsValueChange"/>
+                </SettingRow>
+            </MudCollapse>
+        </ChildContent>
+    </SettingSection>
+
+    <MudPaper Outlined="true" Class="rounded-lg">
+        <MudExpansionPanels Elevation="0">
+            <MudExpansionPanel HeaderClass="@SettingSection.HeaderClass">
+                <TitleContent>
+                    <div class="d-flex align-center gap-3">
+                        <MudIcon Icon="@Icons.Material.Filled.Tune" Size="Size.Small" Color="Color.Primary"/>
+                        <MudText Typo="Typo.overline" Style="@SettingSection.TitleStyle">Advanced</MudText>
+                    </div>
+                </TitleContent>
+                <ChildContent>
+                    <SettingField Label="Check loop interval"
+                                  Value="@($"{ModuleConfig.Config.Behaviour.CheckLoopIntervalMs} ms")"
+                                  Description="How often incoming parameters are evaluated. Lower reacts faster but uses more CPU.">
+                        <DebouncedSlider T="uint" Size="Size.Medium" Min="10" Max="200" Step="5"
+                                         Class="flex-grow-1 px-2"
+                                         @bind-SliderValue="@ModuleConfig.Config.Behaviour.CheckLoopIntervalMs"
+                                         OnSaveAction="_ => OnSettingsValueChange()"/>
+                        <MudNumericField T="uint" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                                         Style="width: 110px;" Adornment="Adornment.End" AdornmentText="ms" Min="10"
+                                         @bind-Value="ModuleConfig.Config.Behaviour.CheckLoopIntervalMs"
+                                         @bind-Value:after="OnSettingsValueChangeAsync"/>
+                    </SettingField>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    </MudPaper>
+
+</SettingsPage>
 
 @code {
 
     [ModuleInject] private UnderscoreConfig UnderscoreConfig { get; set; } = null!;
     [ModuleInject] private IModuleConfig<ShockOscConfig> ModuleConfig { get; set; } = null!;
 
+    private const string Fixed = "Fixed";
+    private const string Random = "Random";
+
     private string RandomIntensityString
     {
-        get => ModuleConfig.Config.Behaviour.RandomIntensity ? "Random Intensity" : "Fixed Intensity";
-        set => ModuleConfig.Config.Behaviour.RandomIntensity = value == "Random Intensity";
+        get => ModuleConfig.Config.Behaviour.RandomIntensity ? Random : Fixed;
+        set => ModuleConfig.Config.Behaviour.RandomIntensity = value == Random;
     }
 
     private string RandomDurationString
     {
-        get => ModuleConfig.Config.Behaviour.RandomDuration ? "Random Duration" : "Fixed Duration";
-        set => ModuleConfig.Config.Behaviour.RandomDuration = value == "Random Duration";
+        get => ModuleConfig.Config.Behaviour.RandomDuration ? Random : Fixed;
+        set => ModuleConfig.Config.Behaviour.RandomDuration = value == Random;
+    }
+
+    private bool IsSendIpValid => IPAddress.TryParse(ModuleConfig.Config.Osc.OscSendIp, out _);
+
+    private static string FormatSeconds(uint milliseconds) =>
+        MathF.Round(milliseconds / 1000f, 1).ToString(CultureInfo.InvariantCulture) + "s";
+
+    /// <summary>
+    /// Both of these are stored in milliseconds but edited in seconds, so the field matches the
+    /// value shown above the slider. Rounded on the way back so 2.5 s stores as exactly 2500 ms.
+    /// </summary>
+    private static uint ToMilliseconds(double seconds, uint max) =>
+        (uint)Math.Clamp(Math.Round(seconds * 1000d), 0d, max);
+
+    private double CooldownSeconds
+    {
+        get => ModuleConfig.Config.Behaviour.CooldownTime / 1000d;
+        set => ModuleConfig.Config.Behaviour.CooldownTime = ToMilliseconds(value, 30_000);
+    }
+
+    private double BoneHeldDurationLimitSeconds
+    {
+        get => _limitBoneHeldDuration / 1000d;
+        set => _limitBoneHeldDuration = ToMilliseconds(value, 60_000);
     }
 
     private uint _limitBoneHeldDuration;
@@ -268,7 +353,6 @@
     public void Dispose()
     {
         UnderscoreConfig.OnConfigUpdate -= OnConfigUpdate;
-    }
-
+    } 
 
 }

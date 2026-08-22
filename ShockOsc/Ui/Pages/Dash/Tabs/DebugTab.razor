@@ -1,69 +1,74 @@
 @using OpenShock.Desktop.ModuleBase
 @using OpenShock.Desktop.ModuleBase.Api
 @using OpenShock.ShockOSC.Services
+@using OpenShock.ShockOSC.Ui.Utils
 @using OpenShock.Internal.Common.Utils
 @implements IAsyncDisposable
 
 @page "/dash/debug"
 
-<MudPaper Outlined="true" Class="mud-paper-padding">
-    <div style="display: flex; align-items: center; gap: 16px;">
-        <MudChip T="string"
-                 Color="@(ShockOsc.IsGameConnected ? Color.Success : Color.Error)"
-                 Variant="Variant.Filled"
-                 Size="Size.Small">
-            @if (ShockOsc.IsGameConnected)
+<SettingsPage Title="Debug" Description="Live view of what ShockOSC is receiving from the game.">
+
+    <SettingSection Icon="@Icons.Material.Filled.Cable" Title="Connection">
+        <HeaderContent>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                     Color="@(ShockOsc.IsGameConnected ? Color.Success : Color.Error)">
+                @(ShockOsc.IsGameConnected
+                    ? ShockOsc.IsConnectedViaOscQuery ? "Connected via OSCQuery" : "Connected manually"
+                    : "Not connected")
+            </MudChip>
+        </HeaderContent>
+        <ChildContent>
+            <SettingRow Label="Avatar" Description="The avatar ShockOSC is currently reading parameters from.">
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    @(string.IsNullOrEmpty(ShockOsc.AvatarId) ? "None detected" : ShockOsc.AvatarId)
+                </MudText>
+            </SettingRow>
+        </ChildContent>
+    </SettingSection>
+
+    <SettingSection Icon="@Icons.Material.Filled.Tag" Title="OSC Parameters">
+        <HeaderContent>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@VisibleParams.Count shown</MudText>
+        </HeaderContent>
+        <ChildContent>
+            <SettingRow Label="Show all avatar parameters"
+                        Description="Include parameters that do not belong to ShockOSC.">
+                <MudSwitch T="bool" Color="Color.Primary" @bind-Value="_showAllAvatarParams"/>
+            </SettingRow>
+
+            <MudDivider/>
+
+            <div class="py-3">
+                <MudTextField T="string" DebounceInterval="50" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              @bind-Value="_search" Placeholder="Search parameters" Clearable="true"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"/>
+            </div>
+
+            @if (VisibleParams.Count == 0)
             {
-                @($"Connected{(ShockOsc.IsConnectedViaOscQuery ? " (OSCQuery)" : " (Manual)")}")
+                <MudDivider/>
+                <div class="py-3">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        @(string.IsNullOrEmpty(_search) ? "No parameters received yet." : "No parameters match that search.")
+                    </MudText>
+                </div>
             }
             else
             {
-                @("Not Connected")
+                @foreach (var param in VisibleParams)
+                {
+                    <MudDivider/>
+                    <div class="d-flex align-center justify-space-between gap-4 py-2">
+                        <MudText Typo="Typo.body2" Style="word-break: break-all;">@param.Key</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Primary" Class="flex-none">@param.Value</MudText>
+                    </div>
+                }
             }
-        </MudChip>
-        <MudText>Avatar ID: @ShockOsc.AvatarId</MudText>
-    </div>
-</MudPaper>
-<MudPaper Outlined="true" Class="mud-paper-padding-margin">
-    <MudText>OSC Parameters</MudText>
-    <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="_showAllAvatarParams"
-                 Label="Show all avatar parameters"/>
-    <MudTextField DebounceInterval="50" Variant="Variant.Outlined" @bind-Value="_search" Label="Search Parameter"/>
-    <MudDivider/>
-    <br/>
-    @if (_showAllAvatarParams)
-    {
-        if (ShockOsc.AllAvatarParams.Count > 0)
-        {
-            @foreach (var param in ShockOsc.AllAvatarParams
-                              .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
-            {
-                <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
-            }
-        }
-        else
-        {
-            <MudText Typo="Typo.body1">No parameters available</MudText>
-        }
-    }
-    else
-    {
-        if (ShockOsc.ShockOscParams.Count > 0)
-        {
-            @foreach (var param in ShockOsc.ShockOscParams
-                              .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase)))
-            {
-                <MudTextField Variant="Variant.Filled" Value="@param.Value" Label="@param.Key" ReadOnly/>
-            }
-        }
-        else
-        {
-            <MudText Typo="Typo.body1">No parameters available</MudText>
-        }
-    }
+        </ChildContent>
+    </SettingSection>
 
-</MudPaper>
+</SettingsPage>
 
 @code {
 
@@ -72,6 +77,11 @@
 
     private bool _showAllAvatarParams = false;
     private string _search = "";
+
+    private List<KeyValuePair<string, object?>> VisibleParams =>
+        (_showAllAvatarParams ? ShockOsc.AllAvatarParams : ShockOsc.ShockOscParams)
+            .Where(x => x.Key.Contains(_search, StringComparison.InvariantCultureIgnoreCase))
+            .ToList();
 
     private void OnParamsChange(bool shockOscParam)
     {

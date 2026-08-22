@@ -7,83 +7,145 @@
 
 @page "/dash/chatbox"
 
-<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding">
-    <MudText>Chatbox General</MudText>
-    <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Chatbox.Enabled"
-                 Label="Chatbox" @bind-Value:after="OnSettingsValueChange"/>
-    <MudCheckBox Class="option-width option-checkbox-height"
-                 @bind-Value="ModuleConfig.Config.Chatbox.DisplayRemoteControl" Label="Display Remote Control"
-                 @bind-Value:after="OnSettingsValueChange"/>
-    <br/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Chatbox.TimeoutEnabled"
-                 Label="Timeout (Clear) Chatbox Automatically"></MudCheckBox>
-    <br/>
-    <DebouncedSlider T="uint" Size="Size.Large" Min="1_300" Max="30_000" Step="100"
-                     Style="margin-left: 16px; width: 500px !important;"
-                     @bind-SliderValue="@ModuleConfig.Config.Chatbox.Timeout"
-                     OnSaveAction="_ => ModuleConfig.SaveDeferred()">
-        Timeout: @MathF.Round(ModuleConfig.Config.Chatbox.Timeout / 1000f, 1).ToString(CultureInfo.InvariantCulture)s
-    </DebouncedSlider>
-</MudPaper>
+<SettingsPage Title="Chatbox" Description="What ShockOSC writes into the VRChat chatbox, and how it is worded.">
 
-<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-    <MudText>Hoscy</MudText>
-    <MudDivider/>
-    <MudCheckBox Class="option-width option-checkbox-height" @bind-Value="ModuleConfig.Config.Osc.Hoscy" Label="Hoscy"
-                 @bind-Value:after="OnSettingsValueChange"/>
-    <MudTextField Class="option-width" Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Osc.HoscySendPort"
-                  Label="Hoscy Send Port" @bind-Value:after="OnSettingsValueChange"/>
-    <MudPaper Style="display: inline-block; width: 200px; padding-top: 8px;">
-        <MudSelect Class="option-width" @bind-Value="ModuleConfig.Config.Chatbox.HoscyType" Label="Hoscy Type"
-                   @bind-Value:after="OnSettingsValueChange">
-            @foreach (ChatboxConf.HoscyMessageType hoscyMessageType in Enum.GetValues(typeof(ChatboxConf.HoscyMessageType)))
-            {
-                <MudSelectItem Value="@hoscyMessageType">@hoscyMessageType</MudSelectItem>
-            }
-        </MudSelect>
-    </MudPaper>
-</MudPaper>
+    <SettingSection Icon="@Icons.Material.Filled.Chat" Title="Chatbox">
+        <SettingRow Label="Enabled" Description="Send messages to the VRChat chatbox at all.">
+            <MudSwitch T="bool" Color="Color.Primary" @bind-Value="ModuleConfig.Config.Chatbox.Enabled"
+                       @bind-Value:after="OnSettingsValueChange"/>
+        </SettingRow>
 
-<MudPaper Outlined="true" Class="rounded-lg mud-paper-padding-margin">
-    <MudText>Message Options and Templates</MudText>
-    <MudDivider/>
-    <MudStack>
+        <MudDivider/>
 
-        <MudTextField Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Chatbox.Prefix" Label="Prefix Text"
-                      @bind-Value:after="OnSettingsValueChange"/>
-        <MudTextField Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Chatbox.IgnoredKillSwitchActive"
-                      Label="Ignored Kill Switch Text" @bind-Value:after="OnSettingsValueChange"/>
-        <MudTextField Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Chatbox.IgnoredGroupPauseActive"
-                      Label="Ignored Group Paused Text" @bind-Value:after="OnSettingsValueChange"/>
-        <MudTextField Variant="Variant.Filled" @bind-Value="ModuleConfig.Config.Chatbox.IgnoredAfk"
-                      Label="Ignored Afk Text" @bind-Value:after="OnSettingsValueChange"/>
-        <br/>
-        <MudTabs Elevation="2" Outlined="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-6" Class="rounded-lg">
-            @foreach (ControlType controlType in Enum.GetValues(typeof(ControlType)))
-            {
-                <MudTabPanel Text="@controlType.ToString()">
-                    <MudCheckBox @bind-Value="ModuleConfig.Config.Chatbox.Types[controlType].Enabled" Label="Enabled"
+        <SettingRow Label="Display remote control"
+                    Description="Also announce shocks triggered by someone else.">
+            <MudSwitch T="bool" Color="Color.Primary" @bind-Value="ModuleConfig.Config.Chatbox.DisplayRemoteControl"
+                       @bind-Value:after="OnSettingsValueChange"/>
+        </SettingRow>
+
+        <MudDivider/>
+
+        <SettingRow Label="Clear automatically" Description="Wipe the chatbox again after a while.">
+            <MudSwitch T="bool" Color="Color.Primary" @bind-Value="ModuleConfig.Config.Chatbox.TimeoutEnabled"
+                       @bind-Value:after="OnSettingsValueChange"/>
+        </SettingRow>
+
+        <MudCollapse Expanded="ModuleConfig.Config.Chatbox.TimeoutEnabled">
+            <MudDivider/>
+
+            <SettingField Label="Clear after" Value="@FormatSeconds(ModuleConfig.Config.Chatbox.Timeout)"
+                          Description="How long a message stays up before it is cleared.">
+                <DebouncedSlider T="uint" Size="Size.Medium" Min="1_300" Max="30_000" Step="100"
+                                 Class="flex-grow-1 px-2"
+                                 @bind-SliderValue="@ModuleConfig.Config.Chatbox.Timeout"
+                                 OnSaveAction="_ => ModuleConfig.SaveDeferred()"/>
+                <MudNumericField T="double" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                                 Style="width: 110px;" Adornment="Adornment.End" AdornmentText="s"
+                                 Min="1.3" Max="30" Step="0.5" Format="0.#"
+                                 @bind-Value="TimeoutSeconds"
                                  @bind-Value:after="OnSettingsValueChange"/>
-                    <MudTextField Variant="Variant.Filled"
-                                  @bind-Value="ModuleConfig.Config.Chatbox.Types[controlType].Local" Label="Local"
-                                  @bind-Value:after="OnSettingsValueChange"/>
-                    <MudTextField Variant="Variant.Filled"
-                                  @bind-Value="ModuleConfig.Config.Chatbox.Types[controlType].Remote" Label="Remote"
-                                  @bind-Value:after="OnSettingsValueChange"/>
-                    <MudTextField Variant="Variant.Filled"
-                                  @bind-Value="ModuleConfig.Config.Chatbox.Types[controlType].RemoteWithCustomName"
-                                  Label="Remote With Custom Name" @bind-Value:after="OnSettingsValueChange"/>
-                </MudTabPanel>
-            }
-        </MudTabs>
+            </SettingField>
+        </MudCollapse>
+    </SettingSection>
 
-    </MudStack>
-</MudPaper>
+    <SettingSection Icon="@Icons.Material.Filled.Hub" Title="Hoscy">
+        <SettingRow Label="Route through Hoscy" Description="Send messages to Hoscy instead of VRChat directly.">
+            <MudSwitch T="bool" Color="Color.Primary" @bind-Value="ModuleConfig.Config.Osc.Hoscy"
+                       @bind-Value:after="OnSettingsValueChange"/>
+        </SettingRow>
+
+        <MudCollapse Expanded="ModuleConfig.Config.Osc.Hoscy">
+            <MudDivider/>
+
+            <SettingRow Label="Send port" Description="Port Hoscy is listening on.">
+                <MudNumericField T="ushort" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-none"
+                                 Style="width: 150px;" Min="1" Max="65535" HideSpinButtons="true"
+                                 @bind-Value="ModuleConfig.Config.Osc.HoscySendPort"
+                                 @bind-Value:after="OnSettingsValueChange"/>
+            </SettingRow>
+
+            <MudDivider/>
+
+            <SettingRow Label="Message type" Description="Which Hoscy endpoint the message is sent as.">
+                <MudSelect T="ChatboxConf.HoscyMessageType" Dense="true" Margin="Margin.Dense"
+                           Variant="Variant.Outlined" Style="width: 180px;"
+                           @bind-Value="ModuleConfig.Config.Chatbox.HoscyType"
+                           @bind-Value:after="OnSettingsValueChange">
+                    @foreach (ChatboxConf.HoscyMessageType hoscyMessageType in Enum.GetValues<ChatboxConf.HoscyMessageType>())
+                    {
+                        <MudSelectItem Value="@hoscyMessageType">@hoscyMessageType</MudSelectItem>
+                    }
+                </MudSelect>
+            </SettingRow>
+        </MudCollapse>
+    </SettingSection>
+
+    <SettingSection Icon="@Icons.Material.Filled.ShortText" Title="Wording">
+        <div class="d-flex flex-column gap-3 py-3">
+            <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Prefix"
+                          HelperText="Put in front of every message."
+                          @bind-Value="ModuleConfig.Config.Chatbox.Prefix"
+                          @bind-Value:after="OnSettingsValueChange"/>
+            <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Ignored, kill switch"
+                          HelperText="Shown when a command was dropped by the kill switch."
+                          @bind-Value="ModuleConfig.Config.Chatbox.IgnoredKillSwitchActive"
+                          @bind-Value:after="OnSettingsValueChange"/>
+            <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Ignored, group paused"
+                          HelperText="Shown when the target group is paused."
+                          @bind-Value="ModuleConfig.Config.Chatbox.IgnoredGroupPauseActive"
+                          @bind-Value:after="OnSettingsValueChange"/>
+            <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Ignored, AFK"
+                          HelperText="Shown when a command was dropped because you are away."
+                          @bind-Value="ModuleConfig.Config.Chatbox.IgnoredAfk"
+                          @bind-Value:after="OnSettingsValueChange"/>
+        </div>
+    </SettingSection>
+
+    <SettingSection Icon="@Icons.Material.Filled.Notes" Title="Templates">
+        <div class="py-3">
+            <MudTabs Elevation="0" Outlined="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-4"
+                     Class="rounded-lg">
+                @foreach (ControlType controlType in Enum.GetValues<ControlType>())
+                {
+                    <MudTabPanel Text="@controlType.ToString()">
+                        <div class="d-flex flex-column gap-3">
+                            <SettingRow Label="Enabled" Description="Announce this control type in the chatbox.">
+                                <MudSwitch T="bool" Color="Color.Primary"
+                                           @bind-Value="ModuleConfig.Config.Chatbox.Types[controlType].Enabled"
+                                           @bind-Value:after="OnSettingsValueChange"/>
+                            </SettingRow>
+                            <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Local"
+                                          @bind-Value="ModuleConfig.Config.Chatbox.Types[controlType].Local"
+                                          @bind-Value:after="OnSettingsValueChange"/>
+                            <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Remote"
+                                          @bind-Value="ModuleConfig.Config.Chatbox.Types[controlType].Remote"
+                                          @bind-Value:after="OnSettingsValueChange"/>
+                            <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          Label="Remote with custom name"
+                                          @bind-Value="ModuleConfig.Config.Chatbox.Types[controlType].RemoteWithCustomName"
+                                          @bind-Value:after="OnSettingsValueChange"/>
+                        </div>
+                    </MudTabPanel>
+                }
+            </MudTabs>
+        </div>
+    </SettingSection>
+
+</SettingsPage>
 
 @code {
 
     [ModuleInject] private IModuleConfig<ShockOscConfig> ModuleConfig { get; set; } = null!;
+
+    private static string FormatSeconds(uint milliseconds) =>
+        MathF.Round(milliseconds / 1000f, 1).ToString(CultureInfo.InvariantCulture) + "s";
+
+    /// <summary>Stored in milliseconds, edited in seconds so it matches the value above the slider.</summary>
+    private double TimeoutSeconds
+    {
+        get => ModuleConfig.Config.Chatbox.Timeout / 1000d;
+        set => ModuleConfig.Config.Chatbox.Timeout = (uint)Math.Clamp(Math.Round(value * 1000d), 1_300d, 30_000d);
+    }
 
     private void OnSettingsValueChange()
     {

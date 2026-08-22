@@ -1,0 +1,27 @@
+@* Label and current value on one line, full width control beneath, optional description. *@
+
+<div class="py-3">
+    <div class="d-flex align-baseline justify-space-between gap-4">
+        <MudText Typo="Typo.body2">@Label</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Primary">@Value</MudText>
+    </div>
+    <div class="d-flex align-center gap-4">
+        @ChildContent
+    </div>
+    @if (Description is not null)
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Description</MudText>
+    }
+</div>
+
+@code {
+
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string? Value { get; set; }
+
+    [Parameter] public string? Description { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+}
