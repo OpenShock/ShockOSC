@@ -77,8 +77,10 @@ public sealed class OscHandler
     {
         // TODO: maybe force resend on avatar change
 
-        await UpdateAnyActive();
+        var (anyActiveRemote, maxIntensityRemote) = GetRemoteAnyActive();
 
+        var anyActiveLocal = false;
+        var maxIntensityLocal = 0f;
         var anyCooldown = false;
         var anyCooldownPercentage = 0f;
 
@@ -111,15 +113,23 @@ public sealed class OscHandler
             await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
             await shocker.ParamIntensity.SetValue(intensity);
 
+            if (isActive)
+            {
+                anyActiveLocal = true;
+                maxIntensityLocal = MathF.Max(maxIntensityLocal, intensity);
+            }
+
             if (onCoolDown) anyCooldown = true;
             anyCooldownPercentage = MathF.Max(anyCooldownPercentage, cooldownPercentage);
         }
 
+        await _paramAnyActive.SetValue(anyActiveRemote || anyActiveLocal);
+        await _paramAnyIntensity.SetValue(MathF.Max(maxIntensityRemote, maxIntensityLocal));
         await _paramAnyCooldown.SetValue(anyCooldown);
         await _paramAnyCooldownPercentage.SetValue(anyCooldownPercentage);
     }
 
-    private async Task UpdateAnyActive()
+    private (bool AnyActive, float MaxIntensity) GetRemoteAnyActive()
     {
         var now = DateTimeOffset.UtcNow;
         var anyActive = false;
@@ -137,8 +147,7 @@ public sealed class OscHandler
             maxIntensity = MathF.Max(maxIntensity, intensity);
         }
 
-        await _paramAnyActive.SetValue(anyActive);
-        await _paramAnyIntensity.SetValue(maxIntensity);
+        return (anyActive, maxIntensity);
     }
 
     public void SetLastControlCommand(LastControlLogEntry controlLogs)
