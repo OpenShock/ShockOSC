@@ -9,7 +9,7 @@ using OpenShock.ShockOSC;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Services;
 using OpenShock.ShockOSC.Ui.Pages.Dash.Tabs;
-using OscQueryLibrary;
+using OscQueryLibrary.VRChat;
 
 // ReSharper disable InconsistentNaming
 
@@ -81,7 +81,7 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
         services.AddSingleton(_ =>
         {
             var listenAddress = config.Config.Osc.QuestSupport ? IPAddress.Any : IPAddress.Loopback;
-            return new OscQueryServer("ShockOSC", listenAddress);
+            return new VrOscQueryServer("ShockOSC", listenAddress);
         });
 
         services.AddSingleton<ShockOsc>();
@@ -97,7 +97,7 @@ public sealed class ShockOSCModule : DesktopModuleBase, IAsyncDisposable
 
         await ModuleServiceProvider.GetRequiredService<ShockOsc>().Start();
 
-        if (config.Config.Osc.OscQuery) ModuleServiceProvider.GetRequiredService<OscQueryServer>().Start();
+        if (config.Config.Osc.OscQuery) ModuleServiceProvider.GetRequiredService<VrOscQueryServer>().Start();
 
         var chatboxService = ModuleServiceProvider.GetRequiredService<ChatboxService>();
         var oscHandler = ModuleServiceProvider.GetRequiredService<OscHandler>();

@@ -217,6 +217,24 @@
                            @bind-Value:after="OnSettingsValueChange"/>
             </SettingRow>
 
+            <MudCollapse Expanded="@ShowVrClientSelect">
+                <MudDivider/>
+
+                <SettingRow Label="VRChat client"
+                            Description="Several VRChat clients were found. Automatic prefers the one on this PC. Applies immediately.">
+                    <MudSelect T="string" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                               Style="width: 320px;" ToStringFunc="@VrClientLabel"
+                               Value="@(ShockOsc.PinnedVrClient ?? AutomaticVrClient)"
+                               ValueChanged="OnVrClientSelected">
+                        <MudSelectItem Value="@AutomaticVrClient">@VrClientLabel(AutomaticVrClient)</MudSelectItem>
+                        @foreach (var client in ShockOsc.VrClients.OrderByDescending(c => c.IsLocal).ThenBy(c => c.InstanceName))
+                        {
+                            <MudSelectItem Value="@client.InstanceName">@ShockOsc.FormatVrClient(client)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </SettingRow>
+            </MudCollapse>
+
             <MudCollapse Expanded="@(!ModuleConfig.Config.Osc.OscQuery)">
                 <MudDivider/>
 
@@ -281,6 +299,7 @@
 
     [ModuleInject] private UnderscoreConfig UnderscoreConfig { get; set; } = null!;
     [ModuleInject] private IModuleConfig<ShockOscConfig> ModuleConfig { get; set; } = null!;
+    [ModuleInject] private ShockOsc ShockOsc { get; set; } = null!;
 
     private const string Fixed = "Fixed";
     private const string Random = "Random";
@@ -298,6 +317,34 @@
     }
 
     private bool IsSendIpValid => IPAddress.TryParse(ModuleConfig.Config.Osc.OscSendIp, out _);
+
+    private const string AutomaticVrClient = "__automatic";
+
+    // Only worth showing once there is a choice to make, or to get back from a manual pick
+    private bool ShowVrClientSelect => ModuleConfig.Config.Osc.OscQuery &&
+                                       (ShockOsc.VrClients.Count > 1 || ShockOsc.PinnedVrClient != null);
+
+    private string? VrClientLabel(string? instanceName)
+    {
+        if (instanceName is null or AutomaticVrClient)
+            return ShockOsc.PinnedVrClient == null && ShockOsc.CurrentVrClient is { } current
+                ? $"Automatic ({ShockOsc.FormatVrClient(current)})"
+                : "Automatic";
+
+        var client = ShockOsc.VrClients.FirstOrDefault(c => c.InstanceName == instanceName);
+        return client == null ? instanceName : ShockOsc.FormatVrClient(client);
+    }
+
+    private void OnVrClientSelected(string instanceName)
+    {
+        // A client that vanished in the meantime falls back to automatic
+        var client = instanceName == AutomaticVrClient
+            ? null
+            : ShockOsc.VrClients.FirstOrDefault(c => c.InstanceName == instanceName);
+
+        // Switching clients reconnects to the game, keep that off the UI thread
+        OsTask.Run(() => ShockOsc.SelectVrClient(client));
+    }
 
     private static string FormatSeconds(uint milliseconds) =>
         MathF.Round(milliseconds / 1000f, 1).ToString(CultureInfo.InvariantCulture) + "s";
@@ -343,6 +390,8 @@
         _limitBoneHeldDuration = ModuleConfig.Config.Behaviour.BoneHeldDurationLimit ?? 2000;
 
         UnderscoreConfig.OnConfigUpdate += OnConfigUpdate;
+        ShockOsc.OnVrClientsChanged += OnConfigUpdate;
+        ShockOsc.OnGameConnectionChanged += OnConfigUpdate;
     }
 
     private void OnConfigUpdate()
@@ -353,6 +402,8 @@
     public void Dispose()
     {
         UnderscoreConfig.OnConfigUpdate -= OnConfigUpdate;
+        ShockOsc.OnVrClientsChanged -= OnConfigUpdate;
+        ShockOsc.OnGameConnectionChanged -= OnConfigUpdate;
     } 
 
 }

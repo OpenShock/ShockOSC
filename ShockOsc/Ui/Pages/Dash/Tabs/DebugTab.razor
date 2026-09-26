@@ -24,6 +24,19 @@
                     @(string.IsNullOrEmpty(ShockOsc.AvatarId) ? "None detected" : ShockOsc.AvatarId)
                 </MudText>
             </SettingRow>
+
+            @if (ShockOsc.IsConnectedViaOscQuery)
+            {
+                <MudDivider/>
+
+                <SettingRow Label="VRChat client" Description="The VRChat instance ShockOSC is connected to.">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        @(ShockOsc.CurrentVrClient is { } client
+                            ? ShockOsc.FormatVrClient(client) + (ShockOsc.PinnedVrClient != null ? ", selected manually" : "")
+                            : "None")
+                    </MudText>
+                </SettingRow>
+            }
         </ChildContent>
     </SettingSection>
 
@@ -98,6 +111,7 @@
     {
         _onParamsVhangeSubscription = ShockOsc.OnParamsChangeObservable.Subscribe(OnParamsChange);
         ShockOsc.OnGameConnectionChanged += OnConnectionChanged;
+        ShockOsc.OnVrClientsChanged += OnConnectionChanged;
 
         OsTask.Run(UpdateParams);
     }
@@ -122,6 +136,7 @@
     public async ValueTask DisposeAsync()
     {
         ShockOsc.OnGameConnectionChanged -= OnConnectionChanged;
+        ShockOsc.OnVrClientsChanged -= OnConnectionChanged;
         _onParamsVhangeSubscription?.Dispose();
         await _cts.CancelAsync();
     }

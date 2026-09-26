@@ -12,8 +12,8 @@ using OpenShock.MinimalEvents;
 using OpenShock.ShockOSC.Config;
 using OpenShock.ShockOSC.Models;
 using OpenShock.Internal.Common.Utils;
-using OscQueryLibrary;
-using OscQueryLibrary.Utils;
+using OscQueryLibrary.Models;
+using OscQueryLibrary.VRChat;
 using Serilog;
 
 #pragma warning disable CS4014
@@ -27,7 +27,7 @@ public sealed class ShockOsc
     private readonly IOpenShockService _openShockService;
     private readonly UnderscoreConfig _underscoreConfig;
     private readonly IModuleConfig<ShockOscConfig> _moduleConfig;
-    private readonly OscQueryServer _oscQueryServer;
+    private readonly VrOscQueryServer _oscQueryServer;
     private readonly ShockOscData _dataLayer;
     private readonly OscHandler _oscHandler;
     private readonly ChatboxService _chatboxService;
@@ -39,6 +39,21 @@ public sealed class ShockOsc
     public bool IsConnectedViaOscQuery { get; private set; }
     public event Action? OnGameConnectionChanged;
     public event Action<AvatarParameterAction>? OnAvatarActionTriggered;
+    public event Action? OnVrClientsChanged;
+
+    /// <summary>
+    /// VRChat clients found via OSCQuery, only filled while OSCQuery is enabled
+    /// </summary>
+    public IReadOnlyCollection<OscQueryServiceInfo> VrClients => _oscQueryServer.VrcClients;
+
+    // The library only drops its current client after VrClientLost fired, don't report one that is already gone
+    public OscQueryServiceInfo? CurrentVrClient =>
+        _oscQueryServer.CurrentVrClient is { } client && VrClients.Contains(client) ? client : null;
+
+    /// <summary>
+    /// Instance name of the manually selected VRChat client, null while picking automatically
+    /// </summary>
+    public string? PinnedVrClient { get; private set; }
     public string AvatarId = string.Empty;
     private readonly Random Random = new();
 
@@ -79,7 +94,7 @@ public sealed class ShockOsc
         IOpenShockService openShockService,
         UnderscoreConfig underscoreConfig,
         IModuleConfig<ShockOscConfig> moduleConfig,
-        OscQueryServer oscQueryServer,
+        VrOscQueryServer oscQueryServer,
         ShockOscData dataLayer,
         OscHandler oscHandler,
         ChatboxService chatboxService)
@@ -96,9 +111,15 @@ public sealed class ShockOsc
 
         _onGroupsChanged.Subscribe(SetupGroups);
 
-        oscQueryServer.FoundVrcClient.SubscribeAsync(endPoint => SetupVrcClient((oscQueryServer, endPoint))).AsTask()
+        oscQueryServer.FoundVrClient.SubscribeAsync(endPoint => SetupVrcClient((oscQueryServer, endPoint))).AsTask()
             .Wait();
         oscQueryServer.ParameterUpdate.SubscribeAsync(OnAvatarChange).AsTask().Wait();
+        oscQueryServer.VrClientDiscovered.SubscribeAsync(_ =>
+        {
+            OnVrClientsChanged?.Invoke();
+            return Task.CompletedTask;
+        }).AsTask().Wait();
+        oscQueryServer.VrClientLost.SubscribeAsync(OnVrClientLost).AsTask().Wait();
 
         SetupGroups();
     }
@@ -121,7 +142,29 @@ public sealed class ShockOsc
 
     public void RaiseOnGroupsChanged() => _onGroupsChanged.Invoke();
 
-    private async Task SetupVrcClient((OscQueryServer, IPEndPoint)? client)
+    /// <summary>
+    /// Pin a VRChat client, null goes back to automatic selection.
+    /// Reconnects to the game, so do not await this from a FoundVrClient handler.
+    /// </summary>
+    public async Task SelectVrClient(OscQueryServiceInfo? client)
+    {
+        PinnedVrClient = client?.InstanceName;
+        OnVrClientsChanged?.Invoke();
+        await _oscQueryServer.SelectVrClient(client);
+    }
+
+    public static string FormatVrClient(OscQueryServiceInfo client) =>
+        $"{client.InstanceName} · {client.OscEndPoint.Address}{(client.IsLocal ? " (this PC)" : "")}";
+
+    private Task OnVrClientLost(OscQueryServiceInfo client)
+    {
+        // The library drops the pin once that client is gone, mirror it
+        if (PinnedVrClient == client.InstanceName) PinnedVrClient = null;
+        OnVrClientsChanged?.Invoke();
+        return Task.CompletedTask;
+    }
+
+    private async Task SetupVrcClient((VrOscQueryServer, IPEndPoint)? client)
     {
         // Stop existing loops
         await _loopCts.CancelAsync();
@@ -168,7 +211,7 @@ public sealed class ShockOsc
         await _chatboxService.SendGenericMessage("Game Connected");
     }
 
-    private Task OnAvatarChange(OscQueryServer.ParameterUpdateArgs parameterUpdateArgs)
+    private Task OnAvatarChange(VrOscQueryServer.ParameterUpdateArgs parameterUpdateArgs)
     {
         AvatarId = parameterUpdateArgs.AvatarId;
         var parameters = parameterUpdateArgs.Parameters;
