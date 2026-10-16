@@ -68,6 +68,7 @@ public sealed class ShockOsc
         "Active",
         "Intensity",
         "CooldownPercentage",
+        "DurationRemaining",
         "IShock",
         "IVibrate",
         "ISound",
