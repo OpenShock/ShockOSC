@@ -6,4 +6,5 @@ public sealed class BehaviourConf : SharedBehaviourConfig
     public bool DisableWhileAfk { get; set; } = true;
     public bool ForceUnmute { get; set; }
     public uint CheckLoopIntervalMs { get; set; } = 50;
+    public bool ScaleDurationRemainingToMax { get; set; }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.ShockOSC.Config;
+using OpenShock.ShockOSC.Models;
 using OpenShock.ShockOSC.OscChangeTracker;
 using OpenShock.Internal.Common.Utils;
 
@@ -111,12 +112,12 @@ public sealed class OscHandler
                                                         .TotalMilliseconds /
                                                         cooldownTime);
 
-            // 1f = shock just started, 0f = finished (or not active)
+            // 1f = shock just started (or max duration, when scaling to max), 0f = finished (or not active)
             var durationRemaining = 0f;
             if (isActive && shocker.LastDuration > 0)
-                durationRemaining = MathUtils.Saturate(
+                durationRemaining = GetDurationRemaining(
                     (float)(shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) - DateTime.UtcNow)
-                    .TotalMilliseconds / shocker.LastDuration);
+                    .TotalMilliseconds, shocker.LastDuration, GetMaxDuration(shocker));
 
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);
@@ -142,6 +143,29 @@ public sealed class OscHandler
         await _paramAnyDurationRemaining.SetValue(MathF.Max(maxDurationRemainingRemote, anyDurationRemaining));
     }
 
+    /// <summary>
+    /// Normalizes the remaining time of a shock. By default relative to the shock's own duration, with
+    /// <see cref="BehaviourConf.ScaleDurationRemainingToMax"/> relative to the maximum possible duration, so a 7.5s
+    /// shock with a 10s max starts at 0.75f and counts down at the same speed as a 10s one.
+    /// </summary>
+    private float GetDurationRemaining(float remainingMs, float durationMs, float maxDurationMs)
+    {
+        var denominator = _moduleConfig.Config.Behaviour.ScaleDurationRemainingToMax
+            ? MathF.Max(maxDurationMs, durationMs) // max can be lower than the shock if config changed mid-shock
+            : durationMs;
+        return denominator <= 0f ? 0f : MathUtils.Saturate(remainingMs / denominator);
+    }
+
+    private static float GetMaxDuration(SharedBehaviourConfig config) =>
+        config.RandomDuration ? config.DurationRange.Max : config.FixedDuration;
+
+    private float GetGlobalMaxDuration() => GetMaxDuration(_moduleConfig.Config.Behaviour);
+
+    private float GetMaxDuration(ProgramGroup shocker) =>
+        shocker.ConfigGroup is { OverrideDuration: true } group
+            ? GetMaxDuration(group)
+            : GetGlobalMaxDuration();
+
     private (bool AnyActive, float MaxIntensity, float MaxDurationRemaining) GetRemoteAnyActive()
     {
         var now = DateTimeOffset.UtcNow;
@@ -162,8 +186,8 @@ public sealed class OscHandler
 
             if (logEntry.ControlLog.Duration > 0)
             {
-                var remaining = MathUtils.Saturate(
-                    (float)(activeUntil - now).TotalMilliseconds / logEntry.ControlLog.Duration);
+                var remaining = GetDurationRemaining((float)(activeUntil - now).TotalMilliseconds,
+                    logEntry.ControlLog.Duration, GetGlobalMaxDuration());
                 maxDurationRemaining = MathF.Max(maxDurationRemaining, remaining);
             }
         }
