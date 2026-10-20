@@ -130,6 +130,15 @@
                              @bind-Value="ModuleConfig.Config.Behaviour.HoldTime"
                              @bind-Value:after="OnSettingsValueChangeAsync"/>
         </SettingField>
+
+        <MudDivider/>
+
+        <SettingRow Label="Scale duration remaining to max"
+                    Description="Avatar parameter _DurationRemaining starts at shock duration / max duration (e.g. 0.75 for 7.5s of 10s) instead of always starting at 1.">
+            <MudSwitch T="bool" Color="Color.Primary"
+                       @bind-Value="ModuleConfig.Config.Behaviour.ScaleDurationRemainingToMax"
+                       @bind-Value:after="OnSettingsValueChangeAsync"/>
+        </SettingRow>
     </SettingSection>
 
     <SettingSection Icon="@Icons.Material.Filled.Vibration" Title="PhysBone">

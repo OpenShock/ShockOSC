@@ -30,6 +30,7 @@ public sealed class ProgramGroup
     public ChangeTrackedOscParam<bool> ParamActive { get; }
     public ChangeTrackedOscParam<bool> ParamCooldown { get; }
     public ChangeTrackedOscParam<float> ParamCooldownPercentage { get; }
+    public ChangeTrackedOscParam<float> ParamDurationRemaining { get; }
     public ChangeTrackedOscParam<float> ParamIntensity { get; }
 
     public byte LastConcurrentIntensity { get; set; } = 0;
@@ -51,6 +52,7 @@ public sealed class ProgramGroup
         ParamActive = new ChangeTrackedOscParam<bool>(Name, "_Active", false, oscClient);
         ParamCooldown = new ChangeTrackedOscParam<bool>(Name, "_Cooldown", false, oscClient);
         ParamCooldownPercentage = new ChangeTrackedOscParam<float>(Name, "_CooldownPercentage", 0f, oscClient);
+        ParamDurationRemaining = new ChangeTrackedOscParam<float>(Name, "_DurationRemaining", 0f, oscClient);
         ParamIntensity = new ChangeTrackedOscParam<float>(Name, "_Intensity", 0f, oscClient);
     }
 

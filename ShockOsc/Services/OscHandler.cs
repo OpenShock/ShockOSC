@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using OpenShock.Desktop.ModuleBase.Config;
 using OpenShock.Desktop.ModuleBase.Models;
 using OpenShock.ShockOSC.Config;
+using OpenShock.ShockOSC.Models;
 using OpenShock.ShockOSC.OscChangeTracker;
 using OpenShock.Internal.Common.Utils;
 
@@ -13,6 +14,7 @@ public sealed class OscHandler
     private readonly ChangeTrackedOscParam<bool> _paramAnyActive;
     private readonly ChangeTrackedOscParam<bool> _paramAnyCooldown;
     private readonly ChangeTrackedOscParam<float> _paramAnyCooldownPercentage;
+    private readonly ChangeTrackedOscParam<float> _paramAnyDurationRemaining;
     private readonly ChangeTrackedOscParam<float> _paramAnyIntensity;
 
     private readonly ConcurrentDictionary<Guid, LastControlLogEntry> _lastControlLogs = new();
@@ -33,6 +35,7 @@ public sealed class OscHandler
         _paramAnyActive = new ChangeTrackedOscParam<bool>("_Any", "_Active", false, _oscClient);
         _paramAnyCooldown = new ChangeTrackedOscParam<bool>("_Any", "_Cooldown", false, _oscClient);
         _paramAnyCooldownPercentage = new ChangeTrackedOscParam<float>("_Any", "_CooldownPercentage", 0f, _oscClient);
+        _paramAnyDurationRemaining = new ChangeTrackedOscParam<float>("_Any", "_DurationRemaining", 0f, _oscClient);
         _paramAnyIntensity = new ChangeTrackedOscParam<float>("_Any", "_Intensity", 0f, _oscClient);
     }
 
@@ -77,12 +80,13 @@ public sealed class OscHandler
     {
         // TODO: maybe force resend on avatar change
 
-        var (anyActiveRemote, maxIntensityRemote) = GetRemoteAnyActive();
+        var (anyActiveRemote, maxIntensityRemote, maxDurationRemainingRemote) = GetRemoteAnyActive();
 
         var anyActiveLocal = false;
         var maxIntensityLocal = 0f;
         var anyCooldown = false;
         var anyCooldownPercentage = 0f;
+        var anyDurationRemaining = 0f;
 
         foreach (var shocker in _shockOscData.ProgramGroups.Values)
         {
@@ -108,15 +112,24 @@ public sealed class OscHandler
                                                         .TotalMilliseconds /
                                                         cooldownTime);
 
+            // 1f = shock just started (or max duration, when scaling to max), 0f = finished (or not active)
+            var durationRemaining = 0f;
+            if (isActive && shocker.LastDuration > 0)
+                durationRemaining = GetDurationRemaining(
+                    (float)(shocker.LastExecuted.AddMilliseconds(shocker.LastDuration) - DateTime.UtcNow)
+                    .TotalMilliseconds, shocker.LastDuration, GetMaxDuration(shocker));
+
             await shocker.ParamActive.SetValue(isActive);
             await shocker.ParamCooldown.SetValue(onCoolDown);
             await shocker.ParamCooldownPercentage.SetValue(cooldownPercentage);
             await shocker.ParamIntensity.SetValue(intensity);
+            await shocker.ParamDurationRemaining.SetValue(durationRemaining);
 
             if (isActive)
             {
                 anyActiveLocal = true;
                 maxIntensityLocal = MathF.Max(maxIntensityLocal, intensity);
+                anyDurationRemaining = MathF.Max(anyDurationRemaining, durationRemaining);
             }
 
             if (onCoolDown) anyCooldown = true;
@@ -127,13 +140,38 @@ public sealed class OscHandler
         await _paramAnyIntensity.SetValue(MathF.Max(maxIntensityRemote, maxIntensityLocal));
         await _paramAnyCooldown.SetValue(anyCooldown);
         await _paramAnyCooldownPercentage.SetValue(anyCooldownPercentage);
+        await _paramAnyDurationRemaining.SetValue(MathF.Max(maxDurationRemainingRemote, anyDurationRemaining));
     }
 
-    private (bool AnyActive, float MaxIntensity) GetRemoteAnyActive()
+    /// <summary>
+    /// Normalizes the remaining time of a shock. By default relative to the shock's own duration, with
+    /// <see cref="BehaviourConf.ScaleDurationRemainingToMax"/> relative to the maximum possible duration, so a 7.5s
+    /// shock with a 10s max starts at 0.75f and counts down at the same speed as a 10s one.
+    /// </summary>
+    private float GetDurationRemaining(float remainingMs, float durationMs, float maxDurationMs)
+    {
+        var denominator = _moduleConfig.Config.Behaviour.ScaleDurationRemainingToMax
+            ? MathF.Max(maxDurationMs, durationMs) // max can be lower than the shock if config changed mid-shock
+            : durationMs;
+        return denominator <= 0f ? 0f : MathUtils.Saturate(remainingMs / denominator);
+    }
+
+    private static float GetMaxDuration(SharedBehaviourConfig config) =>
+        config.RandomDuration ? config.DurationRange.Max : config.FixedDuration;
+
+    private float GetGlobalMaxDuration() => GetMaxDuration(_moduleConfig.Config.Behaviour);
+
+    private float GetMaxDuration(ProgramGroup shocker) =>
+        shocker.ConfigGroup is { OverrideDuration: true } group
+            ? GetMaxDuration(group)
+            : GetGlobalMaxDuration();
+
+    private (bool AnyActive, float MaxIntensity, float MaxDurationRemaining) GetRemoteAnyActive()
     {
         var now = DateTimeOffset.UtcNow;
         var anyActive = false;
         var maxIntensity = 0f;
+        var maxDurationRemaining = 0f;
 
         foreach (var logEntry in _lastControlLogs.Values)
         {
@@ -145,9 +183,16 @@ public sealed class OscHandler
             anyActive = true;
             var intensity = MathUtils.Saturate(logEntry.ControlLog.Intensity / 100f);
             maxIntensity = MathF.Max(maxIntensity, intensity);
+
+            if (logEntry.ControlLog.Duration > 0)
+            {
+                var remaining = GetDurationRemaining((float)(activeUntil - now).TotalMilliseconds,
+                    logEntry.ControlLog.Duration, GetGlobalMaxDuration());
+                maxDurationRemaining = MathF.Max(maxDurationRemaining, remaining);
+            }
         }
 
-        return (anyActive, maxIntensity);
+        return (anyActive, maxIntensity, maxDurationRemaining);
     }
 
     public void SetLastControlCommand(LastControlLogEntry controlLogs)

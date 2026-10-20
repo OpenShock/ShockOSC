@@ -28,6 +28,7 @@ Add these parameters to your avatars animator & params file.
 - **bool** `ShockOsc/{GroupName}_Active` enabled only while the shocker is active
 - **bool** `ShockOsc/{GroupName}_Cooldown` enabled only while the shocker isn't active and on cooldown
 - **float** `ShockOsc/{GroupName}_CooldownPercentage` 0f = shocker isn't on cooldown, 1f = shocker on cooldown (0f while shocker is active)
+- **float** `ShockOsc/{GroupName}_DurationRemaining` 1f = shock just started, counts down linearly to 0f when the shock ends (0f while the shocker isn't active). With the "Scale duration remaining to max" setting it starts at `duration / max duration` instead (e.g. 0.75f for a 7.5s shock when the max is 10s)
 - **float** `ShockOsc/{GroupName}_Intensity` 0..1f percentage value that represents how close the shock was to maximum intensity from `IntensityRange` (except for FixedIntensity)
 
 #### Virtual Groups (visual)
@@ -37,6 +38,7 @@ You can use the virtual, or pseudo, shockers with the name `_Any` and `_All` for
 ##### `_Any`
 - `ShockOsc/_Any_Active` is true whenever there is any shocker currently **shocking**
 - `ShockOsc/_Any_Cooldown` is true whenever there is any shocker currently **on cooldown**
+- `ShockOsc/_Any_DurationRemaining` is the highest `_DurationRemaining` of any shocker currently **shocking**
 
 ##### `_All`
 This one can be used to make all shockers configured go off at the same time or with the same trigger.  
