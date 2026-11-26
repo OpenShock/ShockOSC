@@ -1,6 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ]
+  "extends": ["local>OpenShock/org-config//renovate/default", "local>OpenShock/org-config//renovate/automerge"]
 }
