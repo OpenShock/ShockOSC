@@ -25,11 +25,17 @@ jobs:
           skip-decompress: true
 
       - name: Create release
-        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: true
-          prerelease: ${{ contains(github.ref_name, '-preview.') || contains(github.ref_name, '-rc.') }}
-          generate_release_notes: true
-          files: artifacts/OpenShock.ShockOSC.module.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          TITLE: ${{ github.ref_name }}
+          PRERELEASE: ${{ contains(github.ref_name, '-preview.') || contains(github.ref_name, '-rc.') }}
+        run: |
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "$TITLE" \
+            --draft \
+            --prerelease="$PRERELEASE" \
+            --generate-notes \
+            artifacts/OpenShock.ShockOSC.module.zip

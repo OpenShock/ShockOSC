@@ -1,0 +1,4 @@
+# Owners must have write access to the repo, otherwise GitHub ignores the line.
+*            @hhvrc @LucHeart
+/SECURITY.md @hhvrc @LucHeart
+/.github/    @hhvrc @LucHeart
